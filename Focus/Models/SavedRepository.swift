@@ -8,6 +8,7 @@ final class SavedRepository {
     var githubId: String
     var owner: String
     var name: String
+    var displayName: String
     var primaryLanguage: String?
     var dependabotAlerts: Int
     var codeScanningAlerts: Int
@@ -17,6 +18,7 @@ final class SavedRepository {
         githubId: String,
         owner: String,
         name: String,
+        displayName: String,
         primaryLanguage: String? = nil,
         dependabotAlerts: Int = 0,
         codeScanningAlerts: Int = 0,
@@ -25,6 +27,7 @@ final class SavedRepository {
         self.githubId = githubId
         self.owner = owner
         self.name = name
+        self.displayName = displayName
         self.primaryLanguage = primaryLanguage
         self.dependabotAlerts = dependabotAlerts
         self.codeScanningAlerts = codeScanningAlerts
