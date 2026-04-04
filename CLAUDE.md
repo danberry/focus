@@ -8,16 +8,23 @@
 
 ```
 .
-├── .gitignore        # Swift/Xcode/CocoaPods/Carthage/fastlane ignores
-├── README.md         # Project readme
-└── CLAUDE.md         # This file
+├── Focus.xcodeproj/          # Xcode project file
+├── Focus/                    # App source code
+│   ├── FocusApp.swift        # App entry point (@main)
+│   ├── ContentView.swift     # Root SwiftUI view
+│   └── Assets.xcassets/      # Asset catalog (icons, colors)
+├── FocusTests/               # Unit tests (Swift Testing)
+│   └── ContentViewTests.swift
+├── .gitignore
+├── README.md
+└── CLAUDE.md
 ```
 
 ## Tech Stack
 
-- **Language**: Swift
-- **Platform**: iOS (Apple ecosystem)
-- **IDE**: Xcode
+- **Language**: Swift 6
+- **Platform**: iOS 26 (Apple ecosystem)
+- **IDE**: Xcode 26
 - **Package Management**: Swift Package Manager (SPM) preferred; CocoaPods and Carthage supported via .gitignore
 - **Build System**: Xcode / xcodebuild
 
@@ -27,14 +34,14 @@
 2. Select the appropriate scheme and simulator/device
 3. Build with `Cmd+B` or run with `Cmd+R`
 
-### CLI Build & Test (when project files exist)
+### CLI Build & Test
 
 ```bash
 # Build
-xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 17' build
 
 # Run tests
-xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 16' test
+xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 17' test
 
 # Clean
 xcodebuild clean
@@ -67,7 +74,9 @@ xcodebuild clean
 
 ## Notes for AI Assistants
 
-- This project is in early stages; source code and Xcode project files have not yet been added
+- The project uses SwiftUI with the `@main` App protocol (no AppDelegate/SceneDelegate)
+- Deployment target is iOS 26.0
+- Bundle identifier: `com.danberry.Focus`
 - The .gitignore is configured for Swift/Xcode development with support for SPM, CocoaPods, Carthage, and fastlane
 - When adding new files, follow iOS project conventions (group by feature or layer)
 - Do not commit Xcode user-specific data (`xcuserdata/`)
