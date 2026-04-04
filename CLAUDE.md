@@ -12,9 +12,19 @@
 ├── Focus/                    # App source code
 │   ├── FocusApp.swift        # App entry point (@main)
 │   ├── ContentView.swift     # Root SwiftUI view
-│   └── Assets.xcassets/      # Asset catalog (icons, colors)
+│   ├── Assets.xcassets/      # Asset catalog (icons, colors)
+│   ├── Models/               # Domain models (GitHubUser, GitHubRepository, etc.)
+│   ├── Networking/           # HTTPClient protocol, GraphQLClient, RESTClient
+│   ├── Services/             # AuthenticationService, UserService, RepositoryService, TeamService
+│   ├── Queries/              # GraphQL query strings (UserQueries, RepositoryQueries)
+│   ├── Views/                # SwiftUI views (LoginView, etc.)
+│   └── Utilities/            # KeychainHelper
 ├── FocusTests/               # Unit tests (Swift Testing)
-│   └── ContentViewTests.swift
+│   ├── ContentViewTests.swift
+│   ├── Mocks/                # MockHTTPClient
+│   ├── Networking/           # GraphQLClient/RESTClient tests
+│   ├── Services/             # Service layer tests
+│   └── Models/               # Model decoding tests
 ├── .gitignore
 ├── README.md
 └── CLAUDE.md
@@ -72,6 +82,15 @@ xcodebuild clean
 - Test files should mirror the source structure with a `Tests` suffix
 - Aim for meaningful test coverage on business logic
 
+## GitHub API Integration
+
+- **Primary**: GitHub GraphQL API (v4) for users and repositories
+- **Fallback**: GitHub REST API (v3) for team operations (requires lower permission scope)
+- **Authentication**: Personal access token stored in Keychain
+- **Networking**: Custom `HTTPClient` protocol over `URLSession` — no third-party dependencies
+- **Architecture**: Layer-based (Models → Networking → Services → Views)
+- **Testability**: All networking goes through the `HTTPClient` protocol, mocked in tests via `MockHTTPClient`
+
 ## Notes for AI Assistants
 
 - The project uses SwiftUI with the `@main` App protocol (no AppDelegate/SceneDelegate)
@@ -79,4 +98,5 @@ xcodebuild clean
 - Bundle identifier: `com.danberry.Focus`
 - The .gitignore is configured for Swift/Xcode development with support for SPM, CocoaPods, Carthage, and fastlane
 - When adding new files, follow iOS project conventions (group by feature or layer)
+- When adding new files, update the `project.pbxproj` with file references, build file entries, and group membership
 - Do not commit Xcode user-specific data (`xcuserdata/`)
