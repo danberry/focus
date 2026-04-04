@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct FocusApp: App {
@@ -13,5 +14,6 @@ struct FocusApp: App {
             }
         }
         .environment(authService)
+        .modelContainer(for: SavedRepository.self)
     }
 }
