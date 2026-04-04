@@ -42,6 +42,7 @@
 		40825500000000000000B02B /* SecurityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02B /* SecurityService.swift */; };
 		40825500000000000000B02C /* SecurityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02C /* SecurityServiceTests.swift */; };
 		40825500000000000000B02D /* RepositoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02D /* RepositoryDetailView.swift */; };
+		40825500000000000000B02E /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02E /* MainTabView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,6 +93,7 @@
 		40825500000000000000A02B /* SecurityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityService.swift; sourceTree = "<group>"; };
 		40825500000000000000A02C /* SecurityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityServiceTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A02D /* RepositoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryDetailView.swift; sourceTree = "<group>"; };
+		40825500000000000000A02E /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -210,6 +212,7 @@
 				40825500000000000000A011 /* LoginView.swift */,
 				40825500000000000000A028 /* AddRepositoryView.swift */,
 				40825500000000000000A02D /* RepositoryDetailView.swift */,
+				40825500000000000000A02E /* MainTabView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -374,6 +377,7 @@
 				40825500000000000000B02A /* RepositorySecurityMetrics.swift in Sources */,
 				40825500000000000000B02B /* SecurityService.swift in Sources */,
 				40825500000000000000B02D /* RepositoryDetailView.swift in Sources */,
+				40825500000000000000B02E /* MainTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
