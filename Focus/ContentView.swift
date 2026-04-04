@@ -66,7 +66,7 @@ private struct SavedRepositoryRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(repository.name)
+            Text(repository.displayName)
                 .font(.body)
             if let language = repository.primaryLanguage {
                 Text(language)

@@ -12,18 +12,26 @@ struct AddRepositoryView: View {
 
     @State private var owner = ""
     @State private var repoName = ""
+    @State private var displayName = ""
     @State private var isLoading = false
     @State private var error: GitHubError?
 
     private var canSubmit: Bool {
         !owner.trimmingCharacters(in: .whitespaces).isEmpty &&
         !repoName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !displayName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !isLoading
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    TextField("e.g. My Swift Repo", text: $displayName)
+                } header: {
+                    Text("Display Name")
+                }
+
                 Section {
                     TextField("e.g. apple", text: $owner)
                         .autocorrectionDisabled()
@@ -73,6 +81,7 @@ struct AddRepositoryView: View {
     private func save() async {
         let trimmedOwner = owner.trimmingCharacters(in: .whitespaces)
         let trimmedName = repoName.trimmingCharacters(in: .whitespaces)
+        let trimmedDisplayName = displayName.trimmingCharacters(in: .whitespaces)
 
         isLoading = true
         error = nil
@@ -84,6 +93,7 @@ struct AddRepositoryView: View {
                 githubId: repo.id,
                 owner: trimmedOwner,
                 name: repo.name,
+                displayName: trimmedDisplayName,
                 primaryLanguage: repo.primaryLanguage?.name,
                 dependabotAlerts: metrics.dependabotAlerts ?? 0,
                 codeScanningAlerts: metrics.codeScanningAlerts ?? 0,
