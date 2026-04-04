@@ -59,7 +59,9 @@ xcodebuild clean
 
 ## Testing
 
-- Use XCTest for unit and UI tests
+- Use the **Swift Testing** framework (`import Testing`), not XCTest
+- Use `@Test` functions and `#expect` / `#require` macros for assertions
+- Use `@Suite` to group related tests
 - Test files should mirror the source structure with a `Tests` suffix
 - Aim for meaningful test coverage on business logic
 
