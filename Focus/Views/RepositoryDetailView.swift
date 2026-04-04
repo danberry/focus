@@ -25,6 +25,6 @@ struct RepositoryDetailView: View {
             }
         }
         .navigationTitle(repository.displayName)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
