@@ -1,0 +1,39 @@
+import Foundation
+import SwiftData
+
+// MARK: - SavedRepository
+
+@Model
+final class SavedRepository {
+    var githubId: String
+    var owner: String
+    var name: String
+    var primaryLanguage: String?
+    var dependabotAlerts: Int
+    var codeScanningAlerts: Int
+    var secretScanningAlerts: Int
+
+    init(
+        githubId: String,
+        owner: String,
+        name: String,
+        primaryLanguage: String? = nil,
+        dependabotAlerts: Int = 0,
+        codeScanningAlerts: Int = 0,
+        secretScanningAlerts: Int = 0
+    ) {
+        self.githubId = githubId
+        self.owner = owner
+        self.name = name
+        self.primaryLanguage = primaryLanguage
+        self.dependabotAlerts = dependabotAlerts
+        self.codeScanningAlerts = codeScanningAlerts
+        self.secretScanningAlerts = secretScanningAlerts
+    }
+
+    // MARK: - Computed
+
+    var totalSecurityAlerts: Int {
+        dependabotAlerts + codeScanningAlerts + secretScanningAlerts
+    }
+}
