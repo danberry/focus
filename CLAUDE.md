@@ -22,9 +22,9 @@
 
 ## Tech Stack
 
-- **Language**: Swift
-- **Platform**: iOS (Apple ecosystem)
-- **IDE**: Xcode
+- **Language**: Swift 6
+- **Platform**: iOS 26 (Apple ecosystem)
+- **IDE**: Xcode 26
 - **Package Management**: Swift Package Manager (SPM) preferred; CocoaPods and Carthage supported via .gitignore
 - **Build System**: Xcode / xcodebuild
 
@@ -38,10 +38,10 @@
 
 ```bash
 # Build
-xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 17' build
 
 # Run tests
-xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 16' test
+xcodebuild -scheme Focus -destination 'platform=iOS Simulator,name=iPhone 17' test
 
 # Clean
 xcodebuild clean
@@ -75,7 +75,7 @@ xcodebuild clean
 ## Notes for AI Assistants
 
 - The project uses SwiftUI with the `@main` App protocol (no AppDelegate/SceneDelegate)
-- Deployment target is iOS 17.0
+- Deployment target is iOS 26.0
 - Bundle identifier: `com.danberry.Focus`
 - The .gitignore is configured for Swift/Xcode development with support for SPM, CocoaPods, Carthage, and fastlane
 - When adding new files, follow iOS project conventions (group by feature or layer)
