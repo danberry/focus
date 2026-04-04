@@ -14,7 +14,9 @@ struct ContentView: View {
         NavigationStack {
             List {
                 ForEach(repositories) { repo in
-                    SavedRepositoryRow(repository: repo)
+                    NavigationLink(destination: RepositoryDetailView(repository: repo)) {
+                        SavedRepositoryRow(repository: repo)
+                    }
                 }
                 .onDelete(perform: delete)
             }
