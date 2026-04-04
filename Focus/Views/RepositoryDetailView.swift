@@ -11,7 +11,8 @@ struct RepositoryDetailView: View {
             // MARK: Info
 
             Section("Info") {
-                LabeledContent("Owner/Name", value: "\(repository.owner)/\(repository.name)")
+                LabeledContent("Owner", value: repository.owner)
+                LabeledContent("Name", value: repository.name)
                 LabeledContent("Language", value: repository.primaryLanguage ?? "None")
             }
 
