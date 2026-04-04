@@ -8,7 +8,7 @@ struct FocusApp: App {
     var body: some Scene {
         WindowGroup {
             if authService.isAuthenticated {
-                ContentView()
+                MainTabView()
             } else {
                 LoginView()
             }
