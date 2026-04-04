@@ -23,7 +23,7 @@ struct RepositoryDetailView: View {
                 LabeledContent("Secret Scanning", value: "\(repository.secretScanningAlerts)")
             }
         }
-        .navigationTitle(repository.name)
+        .navigationTitle(repository.displayName)
         .navigationBarTitleDisplayMode(.large)
     }
 }
