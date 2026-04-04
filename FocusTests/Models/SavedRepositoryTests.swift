@@ -19,14 +19,15 @@ struct SavedRepositoryTests {
     // MARK: - Tests
 
     @Test func initializesWithAllFields() {
-        let repo = SavedRepository(githubId: "MDEwOlJlcG9zaXRvcnk0NDgzODAxMg==", name: "swift", primaryLanguage: "Swift")
+        let repo = SavedRepository(githubId: "MDEwOlJlcG9zaXRvcnk0NDgzODAxMg==", owner: "apple", name: "swift", primaryLanguage: "Swift")
         #expect(repo.githubId == "MDEwOlJlcG9zaXRvcnk0NDgzODAxMg==")
+        #expect(repo.owner == "apple")
         #expect(repo.name == "swift")
         #expect(repo.primaryLanguage == "Swift")
     }
 
     @Test func initializesWithNilLanguage() {
-        let repo = SavedRepository(githubId: "abc123", name: "swift")
+        let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift")
         #expect(repo.primaryLanguage == nil)
     }
 
@@ -34,7 +35,7 @@ struct SavedRepositoryTests {
         let container = try makeContainer()
         let context = ModelContext(container)
 
-        let repo = SavedRepository(githubId: "abc123", name: "swift", primaryLanguage: "Swift")
+        let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift", primaryLanguage: "Swift")
         context.insert(repo)
         try context.save()
 
@@ -43,6 +44,7 @@ struct SavedRepositoryTests {
 
         #expect(results.count == 1)
         #expect(results[0].githubId == "abc123")
+        #expect(results[0].owner == "apple")
         #expect(results[0].name == "swift")
         #expect(results[0].primaryLanguage == "Swift")
     }
@@ -51,7 +53,7 @@ struct SavedRepositoryTests {
         let container = try makeContainer()
         let context = ModelContext(container)
 
-        let repo = SavedRepository(githubId: "abc123", name: "swift")
+        let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift")
         context.insert(repo)
         try context.save()
 
@@ -68,9 +70,9 @@ struct SavedRepositoryTests {
         let container = try makeContainer()
         let context = ModelContext(container)
 
-        context.insert(SavedRepository(githubId: "id1", name: "zed"))
-        context.insert(SavedRepository(githubId: "id2", name: "apple"))
-        context.insert(SavedRepository(githubId: "id3", name: "vapor"))
+        context.insert(SavedRepository(githubId: "id1", owner: "a", name: "zed"))
+        context.insert(SavedRepository(githubId: "id2", owner: "b", name: "apple"))
+        context.insert(SavedRepository(githubId: "id3", owner: "c", name: "vapor"))
         try context.save()
 
         let descriptor = FetchDescriptor<SavedRepository>(
@@ -79,5 +81,22 @@ struct SavedRepositoryTests {
         let results = try context.fetch(descriptor)
 
         #expect(results.map(\.name) == ["apple", "vapor", "zed"])
+    }
+
+    @Test func totalSecurityAlertsReturnsSumOfAllCounts() {
+        let repo = SavedRepository(
+            githubId: "abc123",
+            owner: "apple",
+            name: "swift",
+            dependabotAlerts: 3,
+            codeScanningAlerts: 5,
+            secretScanningAlerts: 1
+        )
+        #expect(repo.totalSecurityAlerts == 9)
+    }
+
+    @Test func totalSecurityAlertsIsZeroWhenAllZero() {
+        let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift")
+        #expect(repo.totalSecurityAlerts == 0)
     }
 }

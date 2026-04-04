@@ -39,6 +39,9 @@ struct ContentView: View {
                 AddRepositoryView(
                     repositoryService: RepositoryService(
                         graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
+                    ),
+                    securityService: SecurityService(
+                        rest: RESTClient(tokenProvider: authService.tokenProvider)
                     )
                 )
             }
@@ -69,6 +72,7 @@ private struct SavedRepositoryRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .badge(repository.totalSecurityAlerts)
     }
 }
 

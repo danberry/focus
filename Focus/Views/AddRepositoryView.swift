@@ -5,6 +5,7 @@ import SwiftData
 
 struct AddRepositoryView: View {
     let repositoryService: RepositoryService
+    let securityService: SecurityService
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -78,10 +79,15 @@ struct AddRepositoryView: View {
 
         do {
             let repo = try await repositoryService.fetchRepository(owner: trimmedOwner, name: trimmedName)
+            let metrics = await securityService.fetchMetrics(owner: trimmedOwner, repo: trimmedName)
             let saved = SavedRepository(
                 githubId: repo.id,
+                owner: trimmedOwner,
                 name: repo.name,
-                primaryLanguage: repo.primaryLanguage?.name
+                primaryLanguage: repo.primaryLanguage?.name,
+                dependabotAlerts: metrics.dependabotAlerts ?? 0,
+                codeScanningAlerts: metrics.codeScanningAlerts ?? 0,
+                secretScanningAlerts: metrics.secretScanningAlerts ?? 0
             )
             modelContext.insert(saved)
             dismiss()

@@ -38,6 +38,9 @@
 		40825500000000000000B027 /* SavedRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A027 /* SavedRepository.swift */; };
 		40825500000000000000B028 /* AddRepositoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A028 /* AddRepositoryView.swift */; };
 		40825500000000000000B029 /* SavedRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A029 /* SavedRepositoryTests.swift */; };
+		40825500000000000000B02A /* RepositorySecurityMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02A /* RepositorySecurityMetrics.swift */; };
+		40825500000000000000B02B /* SecurityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02B /* SecurityService.swift */; };
+		40825500000000000000B02C /* SecurityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02C /* SecurityServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,6 +87,9 @@
 		40825500000000000000A027 /* SavedRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRepository.swift; sourceTree = "<group>"; };
 		40825500000000000000A028 /* AddRepositoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRepositoryView.swift; sourceTree = "<group>"; };
 		40825500000000000000A029 /* SavedRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRepositoryTests.swift; sourceTree = "<group>"; };
+		40825500000000000000A02A /* RepositorySecurityMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositorySecurityMetrics.swift; sourceTree = "<group>"; };
+		40825500000000000000A02B /* SecurityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityService.swift; sourceTree = "<group>"; };
+		40825500000000000000A02C /* SecurityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +165,7 @@
 				40825500000000000000A008 /* GitHubTeam.swift */,
 				40825500000000000000A009 /* GitHubOrganization.swift */,
 				40825500000000000000A027 /* SavedRepository.swift */,
+				40825500000000000000A02A /* RepositorySecurityMetrics.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -181,6 +188,7 @@
 				40825500000000000000A00C /* UserService.swift */,
 				40825500000000000000A00D /* RepositoryService.swift */,
 				40825500000000000000A00E /* TeamService.swift */,
+				40825500000000000000A02B /* SecurityService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -234,6 +242,7 @@
 				40825500000000000000A023 /* UserServiceTests.swift */,
 				40825500000000000000A024 /* RepositoryServiceTests.swift */,
 				40825500000000000000A025 /* TeamServiceTests.swift */,
+				40825500000000000000A02C /* SecurityServiceTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -359,6 +368,8 @@
 				40825500000000000000B011 /* LoginView.swift in Sources */,
 				40825500000000000000B027 /* SavedRepository.swift in Sources */,
 				40825500000000000000B028 /* AddRepositoryView.swift in Sources */,
+				40825500000000000000B02A /* RepositorySecurityMetrics.swift in Sources */,
+				40825500000000000000B02B /* SecurityService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -375,6 +386,7 @@
 				40825500000000000000B025 /* TeamServiceTests.swift in Sources */,
 				40825500000000000000B026 /* ModelDecodingTests.swift in Sources */,
 				40825500000000000000B029 /* SavedRepositoryTests.swift in Sources */,
+				40825500000000000000B02C /* SecurityServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
