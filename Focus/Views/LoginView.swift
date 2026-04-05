@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     @Environment(AuthenticationService.self) private var authService
+    @Environment(\.dismiss) private var dismiss
     @State private var tokenInput = ""
 
     var body: some View {
@@ -42,7 +43,18 @@ struct LoginView: View {
                     }
                 }
             }
-            .navigationTitle("Focus")
+            .navigationTitle("GitHub Token")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .disabled(authService.isLoading)
+                }
+            }
+            .onChange(of: authService.authState) { _, newState in
+                if newState == .authenticated {
+                    dismiss()
+                }
+            }
         }
     }
 }

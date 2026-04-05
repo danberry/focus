@@ -8,6 +8,7 @@ struct AddMemberView: View {
     let restClient: RESTClient
     let contributionService: ContributionService
 
+    @Environment(AuthenticationService.self) private var authService
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -15,6 +16,7 @@ struct AddMemberView: View {
     @State private var githubLogin = ""
     @State private var isLoading = false
     @State private var error: GitHubError?
+    @State private var showTokenEntry = false
 
     private var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isLoading
@@ -56,6 +58,13 @@ struct AddMemberView: View {
             }
             .navigationTitle("New Member")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showTokenEntry) {
+                LoginView()
+            }
+            .onChange(of: showTokenEntry) { _, isPresenting in
+                guard !isPresenting, authService.authState == .authenticated else { return }
+                Task { await save() }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
@@ -81,6 +90,11 @@ struct AddMemberView: View {
     private func save() async {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let trimmedLogin = githubLogin.trimmingCharacters(in: .whitespaces)
+
+        if !trimmedLogin.isEmpty, authService.authState != .authenticated {
+            showTokenEntry = true
+            return
+        }
 
         isLoading = true
         error = nil
