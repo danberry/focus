@@ -15,7 +15,10 @@ struct SecurityServiceTests {
 
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(for: SavedRepository.self, configurations: config)
+        return try ModelContainer(
+            for: SavedRepository.self, DependabotAlert.self, CodeScanningAlert.self, SecretScanningAlert.self,
+            configurations: config
+        )
     }
 
     @Test func fetchMetricsReturnsCorrectCounts() async {
