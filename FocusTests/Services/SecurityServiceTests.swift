@@ -1,5 +1,5 @@
-import Testing
 import Foundation
+import Testing
 import SwiftData
 @testable import Focus
 
@@ -56,6 +56,109 @@ struct SecurityServiceTests {
         #expect(url?.host == "api.github.com")
         let path = url?.path ?? ""
         #expect(path.hasPrefix("/repos/octocat/hello-world/"))
+    }
+
+    // MARK: - syncDependabotAlerts
+
+    @Test func syncDependabotAlertsCreatesAlerts() async throws {
+        let json = """
+        [
+          {
+            "number": 42,
+            "created_at": "2024-01-15T10:00:00Z",
+            "security_advisory": { "severity": "high" },
+            "security_vulnerability": {
+              "package": { "name": "lodash" },
+              "first_patched_version": { "identifier": "4.17.21" }
+            }
+          },
+          {
+            "number": 99,
+            "created_at": "2024-02-20T08:30:00Z",
+            "security_advisory": { "severity": "critical" },
+            "security_vulnerability": {
+              "package": { "name": "axios" },
+              "first_patched_version": null
+            }
+          }
+        ]
+        """
+        mockHTTP.setSuccess(json: json)
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+
+        let first = try #require(alerts.first)
+        #expect(first.alertNumber == 42)
+        #expect(first.packageName == "lodash")
+        #expect(first.severity == "high")
+        #expect(first.fixVersion == "4.17.21")
+
+        let second = alerts[1]
+        #expect(second.alertNumber == 99)
+        #expect(second.packageName == "axios")
+        #expect(second.severity == "critical")
+        #expect(second.fixVersion == nil)
+    }
+
+    @Test func syncDependabotAlertsReplacesExistingAlerts() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        // Insert a stale alert and persist it
+        let stale = DependabotAlert(alertNumber: 1, packageName: "old-pkg", severity: "low", fixVersion: nil, createdAt: Date())
+        stale.repository = repo
+        context.insert(stale)
+        try context.save()
+        #expect(repo.dependabotAlertDetails.count == 1)
+
+        let json = """
+        [
+          {
+            "number": 7,
+            "created_at": "2024-03-01T00:00:00Z",
+            "security_advisory": { "severity": "medium" },
+            "security_vulnerability": {
+              "package": { "name": "new-pkg" },
+              "first_patched_version": null
+            }
+          }
+        ]
+        """
+        mockHTTP.setSuccess(json: json)
+
+        await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        #expect(repo.dependabotAlertDetails.count == 1)
+        let alert = try #require(repo.dependabotAlertDetails.first)
+        #expect(alert.alertNumber == 7)
+        #expect(alert.packageName == "new-pkg")
+    }
+
+    @Test func syncDependabotAlertsKeepsExistingOnError() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        let existing = DependabotAlert(alertNumber: 5, packageName: "kept-pkg", severity: "low", fixVersion: nil, createdAt: Date())
+        existing.repository = repo
+        context.insert(existing)
+
+        mockHTTP.setSuccess(json: "{}", statusCode: 403)
+
+        await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        #expect(repo.dependabotAlertDetails.count == 1)
     }
 
     // MARK: - syncCodeScanningAlerts

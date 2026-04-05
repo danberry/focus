@@ -19,9 +19,14 @@ struct RepositoryDetailView: View {
             // MARK: Security Alerts
 
             Section("Dependabot Alerts") {
-                // Placeholder — Task 1 replaces this
-                Text("No open alerts")
-                    .foregroundStyle(.secondary)
+                if repository.dependabotAlertDetails.isEmpty {
+                    Text("No open alerts")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(repository.dependabotAlertDetails.sorted { $0.createdAt < $1.createdAt }) { alert in
+                        LabeledContent(alert.packageName, value: alert.severity)
+                    }
+                }
             }
 
             Section("Code Scanning Alerts") {

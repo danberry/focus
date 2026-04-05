@@ -14,7 +14,34 @@ struct SecurityService: Sendable {
 
     @MainActor
     func syncDependabotAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
-        // Implemented in Task 1
+        let queryItems = [
+            URLQueryItem(name: "state", value: "open"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+
+        do {
+            let alerts: [DependabotAlertResponse] = try await rest.get(
+                path: Endpoint.dependabotAlerts(owner: owner, repo: repo).path,
+                queryItems: queryItems
+            )
+
+            repository.dependabotAlertDetails.forEach { context.delete($0) }
+
+            for alert in alerts {
+                let model = DependabotAlert(
+                    alertNumber: alert.number,
+                    packageName: alert.securityVulnerability.package.name,
+                    severity: alert.securityAdvisory.severity,
+                    fixVersion: alert.securityVulnerability.firstPatchedVersion?.identifier,
+                    createdAt: alert.createdAt
+                )
+                model.repository = repository
+                context.insert(model)
+            }
+            try? context.save()
+        } catch {
+            // Silently fail — keeps any existing data intact
+        }
     }
 
     @MainActor
@@ -133,6 +160,32 @@ struct SecurityService: Sendable {
 // MARK: - AlertStub
 
 private struct AlertStub: Decodable, Sendable {}
+
+// MARK: - DependabotAlertResponse
+
+private struct DependabotAlertResponse: Decodable, Sendable {
+    let number: Int
+    let createdAt: Date
+    let securityAdvisory: SecurityAdvisory
+    let securityVulnerability: SecurityVulnerability
+
+    struct SecurityAdvisory: Decodable, Sendable {
+        let severity: String
+    }
+
+    struct SecurityVulnerability: Decodable, Sendable {
+        let package: Package
+        let firstPatchedVersion: FirstPatchedVersion?
+
+        struct Package: Decodable, Sendable {
+            let name: String
+        }
+
+        struct FirstPatchedVersion: Decodable, Sendable {
+            let identifier: String
+        }
+    }
+}
 
 // MARK: - CodeScanningAlertResponse
 
