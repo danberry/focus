@@ -46,6 +46,7 @@
 		40825500000000000000B02F /* DependabotAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02F /* DependabotAlert.swift */; };
 		40825500000000000000B030 /* CodeScanningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A030 /* CodeScanningAlert.swift */; };
 		40825500000000000000B031 /* SecretScanningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A031 /* SecretScanningAlert.swift */; };
+		40825500000000000000B032 /* DependabotAlertDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A032 /* DependabotAlertDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +101,7 @@
 		40825500000000000000A02F /* DependabotAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlert.swift; sourceTree = "<group>"; };
 		40825500000000000000A030 /* CodeScanningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeScanningAlert.swift; sourceTree = "<group>"; };
 		40825500000000000000A031 /* SecretScanningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretScanningAlert.swift; sourceTree = "<group>"; };
+		40825500000000000000A032 /* DependabotAlertDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlertDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -222,6 +224,7 @@
 				40825500000000000000A028 /* AddRepositoryView.swift */,
 				40825500000000000000A02D /* RepositoryDetailView.swift */,
 				40825500000000000000A02E /* MainTabView.swift */,
+				40825500000000000000A032 /* DependabotAlertDetailView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -390,6 +393,7 @@
 				40825500000000000000B02F /* DependabotAlert.swift in Sources */,
 				40825500000000000000B030 /* CodeScanningAlert.swift in Sources */,
 				40825500000000000000B031 /* SecretScanningAlert.swift in Sources */,
+				40825500000000000000B032 /* DependabotAlertDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -33,7 +33,16 @@ struct SecurityService: Sendable {
                     packageName: alert.securityVulnerability.package.name,
                     severity: alert.securityAdvisory.severity,
                     fixVersion: alert.securityVulnerability.firstPatchedVersion?.identifier,
-                    createdAt: alert.createdAt
+                    createdAt: alert.createdAt,
+                    summary: alert.securityAdvisory.summary,
+                    advisoryDescription: alert.securityAdvisory.description,
+                    ecosystem: alert.securityVulnerability.package.ecosystem,
+                    vulnerableVersionRange: alert.securityVulnerability.vulnerableVersionRange,
+                    ghsaId: alert.securityAdvisory.ghsaId,
+                    cveId: alert.securityAdvisory.cveId,
+                    cvssScore: alert.securityAdvisory.cvss?.score,
+                    htmlUrl: alert.htmlUrl,
+                    manifestPath: alert.dependency.manifestPath
                 )
                 model.repository = repository
                 context.insert(model)
@@ -166,24 +175,41 @@ private struct AlertStub: Decodable, Sendable {}
 private struct DependabotAlertResponse: Decodable, Sendable {
     let number: Int
     let createdAt: Date
+    let htmlUrl: String
     let securityAdvisory: SecurityAdvisory
     let securityVulnerability: SecurityVulnerability
+    let dependency: Dependency
 
     struct SecurityAdvisory: Decodable, Sendable {
+        let ghsaId: String
+        let cveId: String?
+        let summary: String
+        let description: String
         let severity: String
+        let cvss: CVSS?
+
+        struct CVSS: Decodable, Sendable {
+            let score: Double?
+        }
     }
 
     struct SecurityVulnerability: Decodable, Sendable {
         let package: Package
         let firstPatchedVersion: FirstPatchedVersion?
+        let vulnerableVersionRange: String
 
         struct Package: Decodable, Sendable {
+            let ecosystem: String
             let name: String
         }
 
         struct FirstPatchedVersion: Decodable, Sendable {
             let identifier: String
         }
+    }
+
+    struct Dependency: Decodable, Sendable {
+        let manifestPath: String?
     }
 }
 
