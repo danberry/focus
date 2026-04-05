@@ -5,6 +5,7 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(AuthenticationService.self) private var authService
+    @Environment(BackgroundSyncManager.self) private var syncManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \SavedRepository.name) private var repositories: [SavedRepository]
 
@@ -21,6 +22,7 @@ struct ContentView: View {
                 .onDelete(perform: delete)
             }
             .navigationTitle("Repositories")
+            .navigationSubtitle(syncSubtitle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add", systemImage: "plus") {
@@ -54,6 +56,20 @@ struct ContentView: View {
     }
 
     // MARK: - Private
+
+    private var syncSubtitle: String {
+        if syncManager.isSyncing {
+            return "Loading..."
+        }
+        guard let date = syncManager.lastSyncedAt else {
+            return ""
+        }
+        if Calendar.current.isDateInToday(date) {
+            return "Last updated • " + date.formatted(date: .omitted, time: .shortened)
+        } else {
+            return "Last updated • " + date.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+        }
+    }
 
     private func delete(at offsets: IndexSet) {
         for index in offsets {
