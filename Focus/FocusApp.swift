@@ -13,10 +13,13 @@ struct FocusApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if authService.isAuthenticated {
-                    MainTabView()
-                } else {
+                switch authService.authState {
+                case .unauthenticated:
                     LoginView()
+                case .locked:
+                    LockView()
+                case .authenticated:
+                    MainTabView()
                 }
             }
             .task {
@@ -28,7 +31,7 @@ struct FocusApp: App {
                 syncManager.scheduleNextSync()
             }
             .onChange(of: scenePhase) { _, newPhase in
-                guard newPhase == .active, authService.isAuthenticated else { return }
+                guard newPhase == .active, authService.authState == .authenticated else { return }
                 Task { @MainActor in
                     let context = ModelContext(modelContainer)
                     await syncManager.syncIfNeeded(context: context)
