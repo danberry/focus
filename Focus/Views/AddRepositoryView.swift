@@ -8,6 +8,7 @@ struct AddRepositoryView: View {
     let securityService: SecurityService
     let codeownersService: CodeownersService
 
+    @Environment(AuthenticationService.self) private var authService
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -16,6 +17,7 @@ struct AddRepositoryView: View {
     @State private var displayName = ""
     @State private var isLoading = false
     @State private var error: GitHubError?
+    @State private var showTokenEntry = false
 
     private var canSubmit: Bool {
         !owner.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -58,6 +60,13 @@ struct AddRepositoryView: View {
             }
             .navigationTitle("New Repository")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showTokenEntry) {
+                LoginView()
+            }
+            .onChange(of: showTokenEntry) { _, isPresenting in
+                guard !isPresenting, authService.authState == .authenticated else { return }
+                Task { await save() }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
@@ -84,6 +93,11 @@ struct AddRepositoryView: View {
         let trimmedOwner = owner.trimmingCharacters(in: .whitespaces)
         let trimmedName = repoName.trimmingCharacters(in: .whitespaces)
         let trimmedDisplayName = displayName.trimmingCharacters(in: .whitespaces)
+
+        guard authService.authState == .authenticated else {
+            showTokenEntry = true
+            return
+        }
 
         isLoading = true
         error = nil

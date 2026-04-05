@@ -14,12 +14,10 @@ struct FocusApp: App {
         WindowGroup {
             Group {
                 switch authService.authState {
-                case .unauthenticated:
-                    LoginView()
+                case .unauthenticated, .authenticated:
+                    MainTabView()
                 case .locked:
                     LockView()
-                case .authenticated:
-                    MainTabView()
                 }
             }
             .task {
