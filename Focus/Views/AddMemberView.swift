@@ -6,6 +6,7 @@ import SwiftData
 struct AddMemberView: View {
     let team: Team
     let restClient: RESTClient
+    let contributionService: ContributionService
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -92,9 +93,22 @@ struct AddMemberView: View {
                 )
                 githubId = lookup.id
             }
-            let member = Member(name: trimmedName, githubId: githubId)
+            let member = Member(
+                name: trimmedName,
+                githubId: githubId,
+                githubLogin: trimmedLogin.isEmpty ? nil : trimmedLogin
+            )
             member.team = team
             modelContext.insert(member)
+
+            if !trimmedLogin.isEmpty {
+                await contributionService.syncContributions(
+                    login: trimmedLogin,
+                    member: member,
+                    in: modelContext
+                )
+            }
+
             dismiss()
         } catch let ghError as GitHubError {
             error = ghError

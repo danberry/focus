@@ -36,6 +36,7 @@ struct TeamDetailView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        .badge(member.totalContributions)
                     }
                     .onDelete(perform: deleteMember)
                 }
@@ -55,7 +56,10 @@ struct TeamDetailView: View {
         .sheet(isPresented: $isAddingMember) {
             AddMemberView(
                 team: team,
-                restClient: RESTClient(tokenProvider: authService.tokenProvider)
+                restClient: RESTClient(tokenProvider: authService.tokenProvider),
+                contributionService: ContributionService(
+                    graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
+                )
             )
         }
     }
