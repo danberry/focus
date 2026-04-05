@@ -3,14 +3,10 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
-		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
-		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
-		408255DA2CAFC99600000023 /* ContentViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000013 /* ContentViewTests.swift */; };
 		40825500000000000000B001 /* GitHubError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A001 /* GitHubError.swift */; };
 		40825500000000000000B002 /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A002 /* HTTPClient.swift */; };
 		40825500000000000000B003 /* GraphQLClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A003 /* GraphQLClient.swift */; };
@@ -47,6 +43,10 @@
 		40825500000000000000B030 /* CodeScanningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A030 /* CodeScanningAlert.swift */; };
 		40825500000000000000B031 /* SecretScanningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A031 /* SecretScanningAlert.swift */; };
 		40825500000000000000B032 /* DependabotAlertDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A032 /* DependabotAlertDetailView.swift */; };
+		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
+		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
+		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
+		408255DA2CAFC99600000023 /* ContentViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000013 /* ContentViewTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,12 +60,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
-		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		408255DA2CAFC99600000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		408255DA2CAFC99600000013 /* ContentViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewTests.swift; sourceTree = "<group>"; };
-		408255DA2CAFC99600000030 /* Focus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Focus.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		408255DA2CAFC99600000031 /* FocusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		40825500000000000000A001 /* GitHubError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubError.swift; sourceTree = "<group>"; };
 		40825500000000000000A002 /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
 		40825500000000000000A003 /* GraphQLClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphQLClient.swift; sourceTree = "<group>"; };
@@ -102,6 +96,12 @@
 		40825500000000000000A030 /* CodeScanningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeScanningAlert.swift; sourceTree = "<group>"; };
 		40825500000000000000A031 /* SecretScanningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretScanningAlert.swift; sourceTree = "<group>"; };
 		40825500000000000000A032 /* DependabotAlertDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlertDetailView.swift; sourceTree = "<group>"; };
+		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
+		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		408255DA2CAFC99600000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		408255DA2CAFC99600000013 /* ContentViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewTests.swift; sourceTree = "<group>"; };
+		408255DA2CAFC99600000030 /* Focus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Focus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		408255DA2CAFC99600000031 /* FocusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,52 +122,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		408255DA2CAFC99600000002 /* root */ = {
-			isa = PBXGroup;
-			children = (
-				408255DA2CAFC99600000003 /* Focus */,
-				408255DA2CAFC99600000004 /* FocusTests */,
-				408255DA2CAFC99600000005 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		408255DA2CAFC99600000003 /* Focus */ = {
-			isa = PBXGroup;
-			children = (
-				408255DA2CAFC99600000010 /* FocusApp.swift */,
-				408255DA2CAFC99600000011 /* ContentView.swift */,
-				408255DA2CAFC99600000012 /* Assets.xcassets */,
-				40825500000000000000C001 /* Models */,
-				40825500000000000000C002 /* Networking */,
-				40825500000000000000C003 /* Services */,
-				40825500000000000000C004 /* Queries */,
-				40825500000000000000C005 /* Views */,
-				40825500000000000000C006 /* Utilities */,
-			);
-			path = Focus;
-			sourceTree = "<group>";
-		};
-		408255DA2CAFC99600000004 /* FocusTests */ = {
-			isa = PBXGroup;
-			children = (
-				408255DA2CAFC99600000013 /* ContentViewTests.swift */,
-				40825500000000000000C007 /* Mocks */,
-				40825500000000000000C008 /* Networking */,
-				40825500000000000000C009 /* Services */,
-				40825500000000000000C00A /* Models */,
-			);
-			path = FocusTests;
-			sourceTree = "<group>";
-		};
-		408255DA2CAFC99600000005 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				408255DA2CAFC99600000030 /* Focus.app */,
-				408255DA2CAFC99600000031 /* FocusTests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		40825500000000000000C001 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -272,6 +226,52 @@
 				40825500000000000000A029 /* SavedRepositoryTests.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		408255DA2CAFC99600000002 = {
+			isa = PBXGroup;
+			children = (
+				408255DA2CAFC99600000003 /* Focus */,
+				408255DA2CAFC99600000004 /* FocusTests */,
+				408255DA2CAFC99600000005 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		408255DA2CAFC99600000003 /* Focus */ = {
+			isa = PBXGroup;
+			children = (
+				408255DA2CAFC99600000010 /* FocusApp.swift */,
+				408255DA2CAFC99600000011 /* ContentView.swift */,
+				408255DA2CAFC99600000012 /* Assets.xcassets */,
+				40825500000000000000C001 /* Models */,
+				40825500000000000000C002 /* Networking */,
+				40825500000000000000C003 /* Services */,
+				40825500000000000000C004 /* Queries */,
+				40825500000000000000C005 /* Views */,
+				40825500000000000000C006 /* Utilities */,
+			);
+			path = Focus;
+			sourceTree = "<group>";
+		};
+		408255DA2CAFC99600000004 /* FocusTests */ = {
+			isa = PBXGroup;
+			children = (
+				408255DA2CAFC99600000013 /* ContentViewTests.swift */,
+				40825500000000000000C007 /* Mocks */,
+				40825500000000000000C008 /* Networking */,
+				40825500000000000000C009 /* Services */,
+				40825500000000000000C00A /* Models */,
+			);
+			path = FocusTests;
+			sourceTree = "<group>";
+		};
+		408255DA2CAFC99600000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				408255DA2CAFC99600000030 /* Focus.app */,
+				408255DA2CAFC99600000031 /* FocusTests.xctest */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -432,6 +432,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P7A5Q97UJ7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -457,6 +458,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P7A5Q97UJ7;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
