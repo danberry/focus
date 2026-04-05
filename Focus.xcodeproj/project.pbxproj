@@ -59,6 +59,10 @@
 		40825500000000000000B040 /* TeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A041 /* TeamsView.swift */; };
 		40825500000000000000B041 /* AddTeamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A042 /* AddTeamView.swift */; };
 		40825500000000000000B042 /* TeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A043 /* TeamTests.swift */; };
+		40825500000000000000B043 /* Member.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A044 /* Member.swift */; };
+		40825500000000000000B044 /* TeamDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A045 /* TeamDetailView.swift */; };
+		40825500000000000000B045 /* AddMemberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A046 /* AddMemberView.swift */; };
+		40825500000000000000B046 /* MemberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A047 /* MemberTests.swift */; };
 		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
@@ -128,6 +132,10 @@
 		40825500000000000000A041 /* TeamsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsView.swift; sourceTree = "<group>"; };
 		40825500000000000000A042 /* AddTeamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTeamView.swift; sourceTree = "<group>"; };
 		40825500000000000000A043 /* TeamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTests.swift; sourceTree = "<group>"; };
+		40825500000000000000A044 /* Member.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Member.swift; sourceTree = "<group>"; };
+		40825500000000000000A045 /* TeamDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamDetailView.swift; sourceTree = "<group>"; };
+		40825500000000000000A046 /* AddMemberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMemberView.swift; sourceTree = "<group>"; };
+		40825500000000000000A047 /* MemberTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -170,6 +178,7 @@
 				40825500000000000000A031 /* SecretScanningAlert.swift */,
 				40825500000000000000A034 /* Codeowner.swift */,
 				40825500000000000000A040 /* Team.swift */,
+				40825500000000000000A044 /* Member.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -221,6 +230,8 @@
 				40825500000000000000A033 /* SettingsView.swift */,
 				40825500000000000000A041 /* TeamsView.swift */,
 				40825500000000000000A042 /* AddTeamView.swift */,
+				40825500000000000000A045 /* TeamDetailView.swift */,
+				40825500000000000000A046 /* AddMemberView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -280,6 +291,7 @@
 				40825500000000000000A026 /* ModelDecodingTests.swift */,
 				40825500000000000000A029 /* SavedRepositoryTests.swift */,
 				40825500000000000000A043 /* TeamTests.swift */,
+				40825500000000000000A047 /* MemberTests.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -463,6 +475,9 @@
 				40825500000000000000B03F /* Team.swift in Sources */,
 				40825500000000000000B040 /* TeamsView.swift in Sources */,
 				40825500000000000000B041 /* AddTeamView.swift in Sources */,
+				40825500000000000000B043 /* Member.swift in Sources */,
+				40825500000000000000B044 /* TeamDetailView.swift in Sources */,
+				40825500000000000000B045 /* AddMemberView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -485,6 +500,7 @@
 				40825500000000000000B03B /* CodeownerEmailServiceTests.swift in Sources */,
 				40825500000000000000B03C /* CodeownersServiceTests.swift in Sources */,
 				40825500000000000000B042 /* TeamTests.swift in Sources */,
+				40825500000000000000B046 /* MemberTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

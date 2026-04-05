@@ -21,11 +21,13 @@ struct TeamsView: View {
                 } else {
                     List {
                         ForEach(teams) { team in
-                            VStack(alignment: .leading) {
-                                Text(team.name)
-                                Text(team.teamDescription)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            NavigationLink(destination: TeamDetailView(team: team)) {
+                                VStack(alignment: .leading) {
+                                    Text(team.name)
+                                    Text(team.teamDescription)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                         .onDelete(perform: delete)
@@ -60,5 +62,5 @@ struct TeamsView: View {
 
 #Preview {
     TeamsView()
-        .modelContainer(for: Team.self, inMemory: true)
+        .modelContainer(for: [Team.self, Member.self], inMemory: true)
 }
