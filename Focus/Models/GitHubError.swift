@@ -12,6 +12,8 @@ enum GitHubError: Error, Sendable {
     case decodingError(underlying: any Error)
     case unexpectedStatusCode(Int)
     case invalidResponse
+    case authenticationFailed
+    case noPasscodeSet
 }
 
 // MARK: - LocalizedError
@@ -41,6 +43,10 @@ extension GitHubError: LocalizedError {
             "Unexpected HTTP status code: \(code)"
         case .invalidResponse:
             "Received an invalid response from the server."
+        case .authenticationFailed:
+            "Authentication failed. Please unlock Focus to continue."
+        case .noPasscodeSet:
+            "A device passcode is required to save your token securely. Set a passcode in Settings and try again."
         }
     }
 }
