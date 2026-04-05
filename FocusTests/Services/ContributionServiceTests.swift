@@ -16,7 +16,7 @@ struct ContributionServiceTests {
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
-            for: Team.self, Member.self, MemberContribution.self,
+            for: Team.self, Member.self, MemberContribution.self, DailyContribution.self,
             configurations: config
         )
     }
@@ -30,7 +30,17 @@ struct ContributionServiceTests {
                 "totalCommitContributions": \(commits),
                 "totalPullRequestContributions": \(prs),
                 "totalPullRequestReviewContributions": \(reviews),
-                "totalIssueContributions": \(issues)
+                "totalIssueContributions": \(issues),
+                "contributionCalendar": {
+                  "weeks": [
+                    {
+                      "contributionDays": [
+                        { "date": "2025-04-05", "contributionCount": \(commits) },
+                        { "date": "2025-04-06", "contributionCount": 0 }
+                      ]
+                    }
+                  ]
+                }
               }
             }
           }
@@ -202,8 +212,8 @@ struct ContributionServiceTests {
         #expect(record.periodEnd >= before)
         #expect(record.periodEnd <= after)
 
-        // periodStart should be approximately 30 days ago
-        let expectedStart = Calendar.current.date(byAdding: .day, value: -30, to: before)!
+        // periodStart should be approximately 365 days ago
+        let expectedStart = Calendar.current.date(byAdding: .day, value: -365, to: before)!
         #expect(record.periodStart >= expectedStart.addingTimeInterval(-5))
         #expect(record.periodStart <= after)
 

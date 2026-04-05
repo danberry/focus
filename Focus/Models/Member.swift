@@ -14,6 +14,9 @@ final class Member {
     @Relationship(deleteRule: .cascade, inverse: \MemberContribution.member)
     var contributions: [MemberContribution] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \DailyContribution.member)
+    var dailyContributions: [DailyContribution] = []
+
     init(name: String, githubId: Int? = nil, githubLogin: String? = nil) {
         self.name = name
         self.githubId = githubId
