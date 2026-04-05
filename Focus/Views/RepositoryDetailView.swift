@@ -24,7 +24,9 @@ struct RepositoryDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(repository.dependabotAlertDetails.sorted { $0.createdAt < $1.createdAt }) { alert in
-                        LabeledContent(alert.packageName, value: alert.severity)
+                        NavigationLink(destination: DependabotAlertDetailView(alert: alert)) {
+                            LabeledContent(alert.packageName, value: alert.severity)
+                        }
                     }
                 }
             }

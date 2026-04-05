@@ -69,20 +69,40 @@ struct SecurityServiceTests {
           {
             "number": 42,
             "created_at": "2024-01-15T10:00:00Z",
-            "security_advisory": { "severity": "high" },
+            "html_url": "https://github.com/apple/swift/security/dependabot/42",
+            "security_advisory": {
+              "ghsa_id": "GHSA-1234-5678-abcd",
+              "cve_id": "CVE-2024-0001",
+              "summary": "Prototype pollution in lodash",
+              "description": "Lodash versions prior to 4.17.21 are vulnerable to prototype pollution.",
+              "severity": "high",
+              "cvss": { "score": 7.5 }
+            },
             "security_vulnerability": {
-              "package": { "name": "lodash" },
-              "first_patched_version": { "identifier": "4.17.21" }
-            }
+              "package": { "ecosystem": "npm", "name": "lodash" },
+              "first_patched_version": { "identifier": "4.17.21" },
+              "vulnerable_version_range": "< 4.17.21"
+            },
+            "dependency": { "manifest_path": "package-lock.json" }
           },
           {
             "number": 99,
             "created_at": "2024-02-20T08:30:00Z",
-            "security_advisory": { "severity": "critical" },
+            "html_url": "https://github.com/apple/swift/security/dependabot/99",
+            "security_advisory": {
+              "ghsa_id": "GHSA-abcd-1234-5678",
+              "cve_id": null,
+              "summary": "Server-side request forgery in axios",
+              "description": "Axios is vulnerable to SSRF.",
+              "severity": "critical",
+              "cvss": null
+            },
             "security_vulnerability": {
-              "package": { "name": "axios" },
-              "first_patched_version": null
-            }
+              "package": { "ecosystem": "npm", "name": "axios" },
+              "first_patched_version": null,
+              "vulnerable_version_range": ">= 0.8.1, < 1.6.0"
+            },
+            "dependency": { "manifest_path": null }
           }
         ]
         """
@@ -103,12 +123,23 @@ struct SecurityServiceTests {
         #expect(first.packageName == "lodash")
         #expect(first.severity == "high")
         #expect(first.fixVersion == "4.17.21")
+        #expect(first.summary == "Prototype pollution in lodash")
+        #expect(first.ecosystem == "npm")
+        #expect(first.vulnerableVersionRange == "< 4.17.21")
+        #expect(first.ghsaId == "GHSA-1234-5678-abcd")
+        #expect(first.cveId == "CVE-2024-0001")
+        #expect(first.cvssScore == 7.5)
+        #expect(first.htmlUrl == "https://github.com/apple/swift/security/dependabot/42")
+        #expect(first.manifestPath == "package-lock.json")
 
         let second = alerts[1]
         #expect(second.alertNumber == 99)
         #expect(second.packageName == "axios")
         #expect(second.severity == "critical")
         #expect(second.fixVersion == nil)
+        #expect(second.cveId == nil)
+        #expect(second.cvssScore == nil)
+        #expect(second.manifestPath == nil)
     }
 
     @Test func syncDependabotAlertsReplacesExistingAlerts() async throws {
@@ -129,11 +160,21 @@ struct SecurityServiceTests {
           {
             "number": 7,
             "created_at": "2024-03-01T00:00:00Z",
-            "security_advisory": { "severity": "medium" },
+            "html_url": "https://github.com/apple/swift/security/dependabot/7",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0000-0000-0000",
+              "cve_id": null,
+              "summary": "Vulnerability in new-pkg",
+              "description": "Description of the vulnerability.",
+              "severity": "medium",
+              "cvss": null
+            },
             "security_vulnerability": {
-              "package": { "name": "new-pkg" },
-              "first_patched_version": null
-            }
+              "package": { "ecosystem": "pip", "name": "new-pkg" },
+              "first_patched_version": null,
+              "vulnerable_version_range": ">= 1.0, < 2.0"
+            },
+            "dependency": { "manifest_path": "requirements.txt" }
           }
         ]
         """
