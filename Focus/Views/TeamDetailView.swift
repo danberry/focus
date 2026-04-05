@@ -42,8 +42,8 @@ struct TeamDetailView: View {
                                     }
                                 }
                             }
+                            .badge(member.totalContributions)
                         }
-                        .badge(member.totalContributions)
                     }
                     .onDelete(perform: deleteMember)
                 }
