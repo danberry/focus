@@ -86,6 +86,7 @@ struct RepositoryDetailView: View {
                 }
             }
         }
+        .listStyle(.plain)
         .navigationTitle(repository.displayName)
         .navigationBarTitleDisplayMode(.inline)
     }

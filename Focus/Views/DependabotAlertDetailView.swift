@@ -65,6 +65,7 @@ struct DependabotAlertDetailView: View {
                 }
             }
         }
+        .listStyle(.plain)
         .navigationTitle(alert.packageName)
         .navigationBarTitleDisplayMode(.inline)
     }
