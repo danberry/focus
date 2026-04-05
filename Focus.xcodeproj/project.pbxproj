@@ -70,6 +70,7 @@
 		40825500000000000000B04B /* MemberAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04C /* MemberAvatarView.swift */; };
 		40825500000000000000B04C /* DailyContribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04D /* DailyContribution.swift */; };
 		40825500000000000000B04D /* MemberDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04E /* MemberDetailView.swift */; };
+		40825500000000000000B04E /* BackgroundSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04F /* BackgroundSyncManagerTests.swift */; };
 		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
@@ -150,6 +151,7 @@
 		40825500000000000000A04C /* MemberAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberAvatarView.swift; sourceTree = "<group>"; };
 		40825500000000000000A04D /* DailyContribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyContribution.swift; sourceTree = "<group>"; };
 		40825500000000000000A04E /* MemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDetailView.swift; sourceTree = "<group>"; };
+		40825500000000000000A04F /* BackgroundSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncManagerTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -293,6 +295,7 @@
 				40825500000000000000A03B /* CodeownerEmailServiceTests.swift */,
 				40825500000000000000A03C /* CodeownersServiceTests.swift */,
 				40825500000000000000A04B /* ContributionServiceTests.swift */,
+				40825500000000000000A04F /* BackgroundSyncManagerTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -529,6 +532,7 @@
 				40825500000000000000B042 /* TeamTests.swift in Sources */,
 				40825500000000000000B046 /* MemberTests.swift in Sources */,
 				40825500000000000000B04A /* ContributionServiceTests.swift in Sources */,
+				40825500000000000000B04E /* BackgroundSyncManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
