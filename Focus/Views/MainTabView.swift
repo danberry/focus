@@ -8,6 +8,9 @@ struct MainTabView: View {
             Tab("Repositories", systemImage: "books.vertical") {
                 ContentView()
             }
+            Tab("Teams", systemImage: "person.2") {
+                TeamsView()
+            }
             Tab("Settings", systemImage: "gearshape") {
                 SettingsView()
             }
@@ -17,5 +20,5 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
-        .modelContainer(for: SavedRepository.self, inMemory: true)
+        .modelContainer(for: [SavedRepository.self, Team.self], inMemory: true)
 }

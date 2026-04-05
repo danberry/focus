@@ -55,6 +55,10 @@
 		40825500000000000000B03C /* CodeownersServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03C /* CodeownersServiceTests.swift */; };
 		40825500000000000000B03D /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03D /* SyncService.swift */; };
 		40825500000000000000B03E /* BackgroundSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03E /* BackgroundSyncManager.swift */; };
+		40825500000000000000B03F /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A040 /* Team.swift */; };
+		40825500000000000000B040 /* TeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A041 /* TeamsView.swift */; };
+		40825500000000000000B041 /* AddTeamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A042 /* AddTeamView.swift */; };
+		40825500000000000000B042 /* TeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A043 /* TeamTests.swift */; };
 		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
@@ -120,6 +124,10 @@
 		40825500000000000000A03C /* CodeownersServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownersServiceTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A03D /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		40825500000000000000A03E /* BackgroundSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncManager.swift; sourceTree = "<group>"; };
+		40825500000000000000A040 /* Team.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Team.swift; sourceTree = "<group>"; };
+		40825500000000000000A041 /* TeamsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsView.swift; sourceTree = "<group>"; };
+		40825500000000000000A042 /* AddTeamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTeamView.swift; sourceTree = "<group>"; };
+		40825500000000000000A043 /* TeamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -161,6 +169,7 @@
 				40825500000000000000A030 /* CodeScanningAlert.swift */,
 				40825500000000000000A031 /* SecretScanningAlert.swift */,
 				40825500000000000000A034 /* Codeowner.swift */,
+				40825500000000000000A040 /* Team.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -210,6 +219,8 @@
 				40825500000000000000A02E /* MainTabView.swift */,
 				40825500000000000000A032 /* DependabotAlertDetailView.swift */,
 				40825500000000000000A033 /* SettingsView.swift */,
+				40825500000000000000A041 /* TeamsView.swift */,
+				40825500000000000000A042 /* AddTeamView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -268,6 +279,7 @@
 			children = (
 				40825500000000000000A026 /* ModelDecodingTests.swift */,
 				40825500000000000000A029 /* SavedRepositoryTests.swift */,
+				40825500000000000000A043 /* TeamTests.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -448,6 +460,9 @@
 				40825500000000000000B038 /* CodeownerEmailService.swift in Sources */,
 				40825500000000000000B03D /* SyncService.swift in Sources */,
 				40825500000000000000B03E /* BackgroundSyncManager.swift in Sources */,
+				40825500000000000000B03F /* Team.swift in Sources */,
+				40825500000000000000B040 /* TeamsView.swift in Sources */,
+				40825500000000000000B041 /* AddTeamView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -469,6 +484,7 @@
 				40825500000000000000B03A /* MailtoComposerTests.swift in Sources */,
 				40825500000000000000B03B /* CodeownerEmailServiceTests.swift in Sources */,
 				40825500000000000000B03C /* CodeownersServiceTests.swift in Sources */,
+				40825500000000000000B042 /* TeamTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
