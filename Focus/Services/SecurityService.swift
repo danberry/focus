@@ -55,7 +55,39 @@ struct SecurityService: Sendable {
 
     @MainActor
     func syncSecretScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
-        // Implemented in Task 3
+        let queryItems = [
+            URLQueryItem(name: "state", value: "open"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        let responses: [SecretScanningAlertResponse]
+        do {
+            responses = try await rest.get(
+                path: Endpoint.secretScanningAlerts(owner: owner, repo: repo).path,
+                queryItems: queryItems
+            )
+        } catch {
+            return
+        }
+
+        // Full replace sync: delete existing alerts for this repository.
+        // Nil out the inverse relationship first so SwiftData updates the array synchronously.
+        let existing = repository.secretScanningAlertDetails
+        for alert in existing {
+            alert.repository = nil
+            context.delete(alert)
+        }
+
+        for response in responses {
+            let alert = SecretScanningAlert(
+                alertNumber: response.number,
+                secretTypeDisplayName: response.secretTypeDisplayName,
+                validity: response.validity,
+                publiclyLeaked: response.publiclyLeaked,
+                createdAt: response.createdAt
+            )
+            alert.repository = repository
+            context.insert(alert)
+        }
     }
 
     // MARK: - Fetch Metrics
@@ -113,4 +145,14 @@ struct CodeScanningAlertResponse: Decodable, Sendable {
         let name: String
         let securitySeverityLevel: String?
     }
+}
+
+// MARK: - SecretScanningAlertResponse
+
+private struct SecretScanningAlertResponse: Decodable, Sendable {
+    let number: Int
+    let secretTypeDisplayName: String
+    let validity: String
+    let publiclyLeaked: Bool
+    let createdAt: Date
 }
