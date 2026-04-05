@@ -28,12 +28,15 @@ struct TeamDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(sortedMembers) { member in
-                        VStack(alignment: .leading) {
-                            Text(member.name)
-                            if member.githubId != nil {
-                                Text("GitHub account linked")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        HStack(spacing: 10) {
+                            MemberAvatarView(member: member)
+                            VStack(alignment: .leading) {
+                                Text(member.name)
+                                if member.githubId != nil {
+                                    Text("GitHub account linked")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                         .badge(member.totalContributions)
