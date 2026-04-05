@@ -25,9 +25,22 @@ struct RepositoryDetailView: View {
             }
 
             Section("Code Scanning Alerts") {
-                // Placeholder — Task 2 replaces this
-                Text("No open alerts")
-                    .foregroundStyle(.secondary)
+                let sorted = repository.codeScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                if sorted.isEmpty {
+                    Text("No open alerts")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(sorted) { alert in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(alert.ruleName)
+                            if let severity = alert.securitySeverityLevel {
+                                Text(severity)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
             }
 
             Section("Secret Scanning Alerts") {

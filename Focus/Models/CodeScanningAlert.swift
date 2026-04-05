@@ -5,7 +5,16 @@ import SwiftData
 
 @Model
 final class CodeScanningAlert {
+    var alertNumber: Int
+    var ruleName: String
+    var securitySeverityLevel: String?
+    var createdAt: Date
     var repository: SavedRepository?
 
-    init() {}
+    init(alertNumber: Int, ruleName: String, securitySeverityLevel: String?, createdAt: Date) {
+        self.alertNumber = alertNumber
+        self.ruleName = ruleName
+        self.securitySeverityLevel = securitySeverityLevel
+        self.createdAt = createdAt
+    }
 }
