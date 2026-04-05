@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 // MARK: - SecurityService
 
@@ -7,6 +8,23 @@ struct SecurityService: Sendable {
 
     init(rest: RESTClient) {
         self.rest = rest
+    }
+
+    // MARK: - Sync Alert Details
+
+    @MainActor
+    func syncDependabotAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        // Implemented in Task 1
+    }
+
+    @MainActor
+    func syncCodeScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        // Implemented in Task 2
+    }
+
+    @MainActor
+    func syncSecretScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        // Implemented in Task 3
     }
 
     // MARK: - Fetch Metrics
