@@ -4,7 +4,10 @@ import SwiftData
 
 // MARK: - BackgroundSyncManager
 
-/// Manages the 8-hour background sync of security alerts and codeowners for all saved repositories.
+/// Manages background sync of security alerts, codeowners, and contribution data.
+///
+/// Security alerts and codeowners sync on an 8-hour cadence.
+/// Member contribution data syncs on a 24-hour cadence.
 ///
 /// Call ``setup(modelContainer:tokenProvider:)`` once at app launch to register the
 /// `BGProcessingTask` handler, then call ``syncIfNeeded(context:)`` whenever the app
@@ -16,13 +19,16 @@ final class BackgroundSyncManager {
     // MARK: - Constants
 
     static let taskIdentifier = "com.danberry.Focus.sync"
-    private static let syncInterval: TimeInterval = 8 * 60 * 60  // 8 hours
-    private static let lastSyncedAtKey = "com.danberry.Focus.lastSyncedAt"
+    static let securitySyncInterval: TimeInterval = 8 * 60 * 60    // 8 hours
+    static let contributionSyncInterval: TimeInterval = 24 * 60 * 60 // 24 hours
+    static let lastSyncedAtKey = "com.danberry.Focus.lastSyncedAt"
+    static let lastContributionSyncedAtKey = "com.danberry.Focus.lastContributionSyncedAt"
 
     // MARK: - State
 
     private(set) var isSyncing = false
     private(set) var lastSyncedAt: Date?
+    private(set) var lastContributionSyncedAt: Date?
 
     // MARK: - Dependencies (set during setup)
 
@@ -34,6 +40,7 @@ final class BackgroundSyncManager {
 
     init() {
         lastSyncedAt = UserDefaults.standard.object(forKey: Self.lastSyncedAtKey) as? Date
+        lastContributionSyncedAt = UserDefaults.standard.object(forKey: Self.lastContributionSyncedAtKey) as? Date
     }
 
     // MARK: - Setup
@@ -69,18 +76,18 @@ final class BackgroundSyncManager {
     func scheduleNextSync() {
         let request = BGProcessingTaskRequest(identifier: Self.taskIdentifier)
         request.requiresNetworkConnectivity = true
-        request.earliestBeginDate = Date(timeIntervalSinceNow: Self.syncInterval)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: Self.securitySyncInterval)
         try? BGTaskScheduler.shared.submit(request)
     }
 
     // MARK: - Foreground Sync
 
-    /// Syncs if no successful sync has occurred in the last 8 hours.
+    /// Syncs if security alerts are stale (>8 hours) or contributions are stale (>24 hours).
     func syncIfNeeded(context: ModelContext) async {
         guard isSetup, !isSyncing else { return }
-        if let last = lastSyncedAt, Date.now.timeIntervalSince(last) < Self.syncInterval {
-            return
-        }
+        let securityStale = lastSyncedAt.map { Date.now.timeIntervalSince($0) >= Self.securitySyncInterval } ?? true
+        let contributionsStale = lastContributionSyncedAt.map { Date.now.timeIntervalSince($0) >= Self.contributionSyncInterval } ?? true
+        guard securityStale || contributionsStale else { return }
         await sync(context: context)
     }
 
@@ -91,17 +98,39 @@ final class BackgroundSyncManager {
         isSyncing = true
         defer { isSyncing = false }
 
+        // Security + codeowners — always sync on every invocation.
         let rest = RESTClient(tokenProvider: tokenProvider)
-        let service = SyncService(
+        let syncService = SyncService(
             securityService: SecurityService(rest: rest),
             codeownersService: CodeownersService(rest: rest)
         )
-
-        await service.syncAll(in: context)
-
+        await syncService.syncAll(in: context)
         lastSyncedAt = .now
         UserDefaults.standard.set(lastSyncedAt, forKey: Self.lastSyncedAtKey)
+
+        // Contributions — sync only when the 24-hour window has elapsed.
+        let contributionsStale = lastContributionSyncedAt.map { Date.now.timeIntervalSince($0) >= Self.contributionSyncInterval } ?? true
+        if contributionsStale {
+            let graphQL = GraphQLClient(tokenProvider: tokenProvider)
+            await syncAllContributions(using: ContributionService(graphQL: graphQL), in: context)
+            lastContributionSyncedAt = .now
+            UserDefaults.standard.set(lastContributionSyncedAt, forKey: Self.lastContributionSyncedAtKey)
+        }
+
         scheduleNextSync()
+    }
+
+    private func syncAllContributions(using service: ContributionService, in context: ModelContext) async {
+        let members: [Member]
+        do {
+            members = try context.fetch(FetchDescriptor<Member>())
+        } catch {
+            return
+        }
+        for member in members {
+            guard let login = member.githubLogin else { continue }
+            await service.syncContributions(login: login, member: member, in: context)
+        }
     }
 
     private func handleBackgroundTask(_ task: BGProcessingTask) async {

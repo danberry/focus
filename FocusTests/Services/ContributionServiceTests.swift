@@ -255,6 +255,53 @@ struct ContributionServiceTests {
         #expect(url?.path == "/graphql")
     }
 
+    // MARK: - Multi-member sync (pattern used by BackgroundSyncManager.syncAllContributions)
+
+    @Test func syncAllSkipsMembersWithoutGitHubLogin() async throws {
+        mockHTTP.setSuccess(json: makeResponse(commits: 5, prs: 1, reviews: 0, issues: 0))
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let linked = Member(name: "Alice", githubLogin: "alice")
+        let unlinked = Member(name: "Bob")  // no GitHub login
+        context.insert(linked)
+        context.insert(unlinked)
+
+        let service = makeService()
+        for member in [linked, unlinked] {
+            guard let login = member.githubLogin else { continue }
+            await service.syncContributions(login: login, member: member, in: context)
+        }
+
+        #expect(linked.contributions.count == 1)
+        #expect(unlinked.contributions.isEmpty)
+        #expect(unlinked.contributionCount == 0)
+    }
+
+    @Test func syncAllSyncsEachLinkedMemberIndependently() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let alice = Member(name: "Alice", githubLogin: "alice")
+        let bob = Member(name: "Bob", githubLogin: "bob")
+        context.insert(alice)
+        context.insert(bob)
+
+        let service = makeService()
+
+        // First call returns Alice's data.
+        mockHTTP.setSuccess(json: makeResponse(commits: 10, prs: 2, reviews: 1, issues: 0))
+        await service.syncContributions(login: "alice", member: alice, in: context)
+
+        // Second call returns Bob's data.
+        mockHTTP.setSuccess(json: makeResponse(commits: 3, prs: 0, reviews: 0, issues: 1))
+        await service.syncContributions(login: "bob", member: bob, in: context)
+
+        #expect(alice.contributions.count == 1)
+        #expect(alice.contributions.first?.commits == 10)
+        #expect(bob.contributions.count == 1)
+        #expect(bob.contributions.first?.commits == 3)
+    }
+
     // MARK: - Zero contributions
 
     @Test func syncContributionsHandlesZeroContributions() async throws {
