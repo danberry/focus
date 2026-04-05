@@ -9,6 +9,7 @@ enum Endpoint {
     case dependabotAlerts(owner: String, repo: String)
     case codeScanningAlerts(owner: String, repo: String)
     case secretScanningAlerts(owner: String, repo: String)
+    case repoContents(owner: String, repo: String, path: String)
 
     var path: String {
         switch self {
@@ -24,6 +25,8 @@ enum Endpoint {
             "/repos/\(owner)/\(repo)/code-scanning/alerts"
         case .secretScanningAlerts(let owner, let repo):
             "/repos/\(owner)/\(repo)/secret-scanning/alerts"
+        case .repoContents(let owner, let repo, let path):
+            "/repos/\(owner)/\(repo)/contents/\(path)"
         }
     }
 }

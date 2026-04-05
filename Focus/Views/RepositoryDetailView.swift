@@ -10,10 +10,28 @@ struct RepositoryDetailView: View {
         List {
             // MARK: Info
 
+            // MARK: Info
+
             Section("Info") {
                 LabeledContent("Owner", value: repository.owner)
                 LabeledContent("Name", value: repository.name)
                 LabeledContent("Language", value: repository.primaryLanguage ?? "None")
+            }
+
+            // MARK: Codeowners
+
+            Section("Code Owners") {
+                if repository.codeowners.isEmpty {
+                    Text("None")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(repository.codeowners.sorted { $0.handle < $1.handle }) { codeowner in
+                        Label(
+                            codeowner.handle,
+                            systemImage: codeowner.isTeam ? "person.2" : "person"
+                        )
+                    }
+                }
             }
 
             // MARK: Security Alerts

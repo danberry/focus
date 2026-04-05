@@ -45,6 +45,9 @@ final class SavedRepository {
     @Relationship(deleteRule: .cascade, inverse: \SecretScanningAlert.repository)
     var secretScanningAlertDetails: [SecretScanningAlert] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \Codeowner.repository)
+    var codeowners: [Codeowner] = []
+
     // MARK: - Computed
 
     var totalSecurityAlerts: Int {

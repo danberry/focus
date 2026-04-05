@@ -6,6 +6,7 @@ import SwiftData
 struct AddRepositoryView: View {
     let repositoryService: RepositoryService
     let securityService: SecurityService
+    let codeownersService: CodeownersService
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -105,6 +106,7 @@ struct AddRepositoryView: View {
             await securityService.syncDependabotAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await securityService.syncCodeScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await securityService.syncSecretScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await codeownersService.syncCodeowners(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
 
             dismiss()
         } catch let ghError as GitHubError {
