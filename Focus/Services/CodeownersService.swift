@@ -42,7 +42,9 @@ struct CodeownersService: Sendable {
 
         for path in candidates {
             if let content = await fetchFileContent(path: path) {
-                return parseCodeowners(content)
+                let entries = parseCodeowners(content)
+                print("[CodeownersService] Parsed \(entries.count) entr(ies): \(entries.map { "\($0.pattern) → \($0.handle)" })")
+                return entries
             }
         }
         return []
@@ -64,7 +66,8 @@ struct CodeownersService: Sendable {
                 print("[CodeownersService] UTF-8 decode failed at \(path)")
                 return nil
             }
-            print("[CodeownersService] Loaded \(path) — \(text.components(separatedBy: .newlines).filter { !$0.isEmpty && !$0.hasPrefix("#") }.count) rule(s)")
+            let ruleCount = text.components(separatedBy: .newlines).filter { !$0.isEmpty && !$0.hasPrefix("#") }.count
+            print("[CodeownersService] Loaded \(path) — \(ruleCount) rule(s), raw:\n\(text)")
             return text
         } catch {
             print("[CodeownersService] Fetch failed at \(path): \(error)")
