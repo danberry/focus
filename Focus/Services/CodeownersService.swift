@@ -14,7 +14,7 @@ struct CodeownersService: Sendable {
 
     @MainActor
     func syncCodeowners(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
-        let handles = await fetchHandles(owner: owner, repo: repo)
+        let entries = await fetchEntries(owner: owner, repo: repo)
 
         let existing = repository.codeowners
         for codeowner in existing {
@@ -22,16 +22,18 @@ struct CodeownersService: Sendable {
             context.delete(codeowner)
         }
 
-        for handle in handles {
-            let codeowner = Codeowner(handle: handle)
+        for (pattern, handle) in entries {
+            let codeowner = Codeowner(handle: handle, pathPattern: pattern)
             codeowner.repository = repository
             context.insert(codeowner)
         }
+
+        try? context.save()
     }
 
     // MARK: - Private
 
-    private func fetchHandles(owner: String, repo: String) async -> [String] {
+    private func fetchEntries(owner: String, repo: String) async -> [(pattern: String, handle: String)] {
         let candidates = [
             Endpoint.repoContents(owner: owner, repo: repo, path: "CODEOWNERS").path,
             Endpoint.repoContents(owner: owner, repo: repo, path: ".github/CODEOWNERS").path,
@@ -59,17 +61,31 @@ struct CodeownersService: Sendable {
         }
     }
 
-    private func parseCodeowners(_ content: String) -> [String] {
-        var seen = Set<String>()
+    private func parseCodeowners(_ content: String) -> [(pattern: String, handle: String)] {
+        var result: [(String, String)] = []
         for line in content.components(separatedBy: .newlines) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty, !trimmed.hasPrefix("#") else { continue }
             let parts = trimmed.components(separatedBy: .whitespaces)
-            for part in parts.dropFirst() where part.hasPrefix("@") {
-                seen.insert(part)
+            guard let first = parts.first else { continue }
+
+            // If the first token is a handle (starts with @), there is no explicit
+            // path pattern — treat it as a global catch-all ("*").
+            let pattern: String
+            let handleTokens: ArraySlice<String>
+            if first.hasPrefix("@") {
+                pattern = "*"
+                handleTokens = parts[...]
+            } else {
+                pattern = first
+                handleTokens = parts.dropFirst()
+            }
+
+            for handle in handleTokens where handle.hasPrefix("@") {
+                result.append((pattern, handle))
             }
         }
-        return seen.sorted()
+        return result
     }
 }
 

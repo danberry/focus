@@ -21,14 +21,15 @@ struct RepositoryDetailView: View {
             // MARK: Codeowners
 
             Section("Code Owners") {
-                if repository.codeowners.isEmpty {
+                let uniqueHandles = Array(Set(repository.codeowners.map(\.handle))).sorted()
+                if uniqueHandles.isEmpty {
                     Text("None")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(repository.codeowners.sorted { $0.handle < $1.handle }) { codeowner in
+                    ForEach(uniqueHandles, id: \.self) { handle in
                         Label(
-                            codeowner.handle,
-                            systemImage: codeowner.isTeam ? "person.2" : "person"
+                            handle,
+                            systemImage: handle.contains("/") ? "person.2" : "person"
                         )
                     }
                 }
@@ -42,7 +43,7 @@ struct RepositoryDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(repository.dependabotAlertDetails.sorted { $0.createdAt < $1.createdAt }) { alert in
-                        NavigationLink(destination: DependabotAlertDetailView(alert: alert)) {
+                        NavigationLink(destination: DependabotAlertDetailView(alert: alert, repository: repository)) {
                             LabeledContent(alert.packageName, value: alert.severity)
                         }
                     }
