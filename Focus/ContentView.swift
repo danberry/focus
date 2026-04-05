@@ -21,6 +21,7 @@ struct ContentView: View {
                 }
                 .onDelete(perform: delete)
             }
+            .listStyle(.plain)
             .navigationTitle("Repositories")
             .navigationSubtitle(syncSubtitle)
             .toolbar {
