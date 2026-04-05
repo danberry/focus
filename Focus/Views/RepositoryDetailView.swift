@@ -21,14 +21,15 @@ struct RepositoryDetailView: View {
             // MARK: Codeowners
 
             Section("Code Owners") {
-                if repository.codeowners.isEmpty {
+                let uniqueHandles = Array(Set(repository.codeowners.map(\.handle))).sorted()
+                if uniqueHandles.isEmpty {
                     Text("None")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(repository.codeowners.sorted { $0.handle < $1.handle }) { codeowner in
+                    ForEach(uniqueHandles, id: \.self) { handle in
                         Label(
-                            codeowner.handle,
-                            systemImage: codeowner.isTeam ? "person.2" : "person"
+                            handle,
+                            systemImage: handle.contains("/") ? "person.2" : "person"
                         )
                     }
                 }
