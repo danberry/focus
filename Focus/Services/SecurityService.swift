@@ -19,7 +19,38 @@ struct SecurityService: Sendable {
 
     @MainActor
     func syncCodeScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
-        // Implemented in Task 2
+        let queryItems = [
+            URLQueryItem(name: "state", value: "open"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        let alerts: [CodeScanningAlertResponse]
+        do {
+            alerts = try await rest.get(
+                path: Endpoint.codeScanningAlerts(owner: owner, repo: repo).path,
+                queryItems: queryItems
+            )
+        } catch {
+            return
+        }
+
+        // Full replace sync: delete existing alerts for this repository.
+        // Nil out the inverse relationship first so SwiftData updates the array synchronously.
+        let toDelete = repository.codeScanningAlertDetails
+        for existing in toDelete {
+            existing.repository = nil
+            context.delete(existing)
+        }
+
+        for response in alerts {
+            let alert = CodeScanningAlert(
+                alertNumber: response.number,
+                ruleName: response.rule.name,
+                securitySeverityLevel: response.rule.securitySeverityLevel,
+                createdAt: response.createdAt
+            )
+            alert.repository = repository
+            context.insert(alert)
+        }
     }
 
     @MainActor
@@ -70,3 +101,16 @@ struct SecurityService: Sendable {
 // MARK: - AlertStub
 
 private struct AlertStub: Decodable, Sendable {}
+
+// MARK: - CodeScanningAlertResponse
+
+struct CodeScanningAlertResponse: Decodable, Sendable {
+    let number: Int
+    let createdAt: Date
+    let rule: Rule
+
+    struct Rule: Decodable, Sendable {
+        let name: String
+        let securitySeverityLevel: String?
+    }
+}
