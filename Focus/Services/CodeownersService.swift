@@ -27,6 +27,8 @@ struct CodeownersService: Sendable {
             codeowner.repository = repository
             context.insert(codeowner)
         }
+
+        try? context.save()
     }
 
     // MARK: - Private
@@ -49,12 +51,23 @@ struct CodeownersService: Sendable {
     private func fetchFileContent(path: String) async -> String? {
         do {
             let response: FileContentResponse = try await rest.get(path: path)
-            guard response.encoding == "base64" else { return nil }
+            guard response.encoding == "base64" else {
+                print("[CodeownersService] Unexpected encoding '\(response.encoding)' at \(path)")
+                return nil
+            }
             let cleaned = response.content.filter { !$0.isWhitespace }
-            guard let data = Data(base64Encoded: cleaned),
-                  let text = String(data: data, encoding: .utf8) else { return nil }
+            guard let data = Data(base64Encoded: cleaned) else {
+                print("[CodeownersService] Base64 decode failed at \(path)")
+                return nil
+            }
+            guard let text = String(data: data, encoding: .utf8) else {
+                print("[CodeownersService] UTF-8 decode failed at \(path)")
+                return nil
+            }
+            print("[CodeownersService] Loaded \(path) — \(text.components(separatedBy: .newlines).filter { !$0.isEmpty && !$0.hasPrefix("#") }.count) rule(s)")
             return text
         } catch {
+            print("[CodeownersService] Fetch failed at \(path): \(error)")
             return nil
         }
     }

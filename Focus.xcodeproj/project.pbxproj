@@ -52,6 +52,7 @@
 		40825500000000000000B039 /* CodeownerResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A039 /* CodeownerResolverTests.swift */; };
 		40825500000000000000B03A /* MailtoComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03A /* MailtoComposerTests.swift */; };
 		40825500000000000000B03B /* CodeownerEmailServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03B /* CodeownerEmailServiceTests.swift */; };
+		40825500000000000000B03C /* CodeownersServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03C /* CodeownersServiceTests.swift */; };
 		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
@@ -114,6 +115,7 @@
 		40825500000000000000A039 /* CodeownerResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownerResolverTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A03A /* MailtoComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailtoComposerTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A03B /* CodeownerEmailServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownerEmailServiceTests.swift; sourceTree = "<group>"; };
+		40825500000000000000A03C /* CodeownersServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownersServiceTests.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -240,6 +242,7 @@
 				40825500000000000000A025 /* TeamServiceTests.swift */,
 				40825500000000000000A02C /* SecurityServiceTests.swift */,
 				40825500000000000000A03B /* CodeownerEmailServiceTests.swift */,
+				40825500000000000000A03C /* CodeownersServiceTests.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -455,6 +458,7 @@
 				40825500000000000000B039 /* CodeownerResolverTests.swift in Sources */,
 				40825500000000000000B03A /* MailtoComposerTests.swift in Sources */,
 				40825500000000000000B03B /* CodeownerEmailServiceTests.swift in Sources */,
+				40825500000000000000B03C /* CodeownersServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
