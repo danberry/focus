@@ -34,6 +34,17 @@ final class SavedRepository {
         self.secretScanningAlerts = secretScanningAlerts
     }
 
+    // MARK: - Relationships
+
+    @Relationship(deleteRule: .cascade, inverse: \DependabotAlert.repository)
+    var dependabotAlertDetails: [DependabotAlert] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \CodeScanningAlert.repository)
+    var codeScanningAlertDetails: [CodeScanningAlert] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \SecretScanningAlert.repository)
+    var secretScanningAlertDetails: [SecretScanningAlert] = []
+
     // MARK: - Computed
 
     var totalSecurityAlerts: Int {

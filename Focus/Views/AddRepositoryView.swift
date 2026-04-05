@@ -78,6 +78,7 @@ struct AddRepositoryView: View {
 
     // MARK: - Private
 
+    @MainActor
     private func save() async {
         let trimmedOwner = owner.trimmingCharacters(in: .whitespaces)
         let trimmedName = repoName.trimmingCharacters(in: .whitespaces)
@@ -100,6 +101,11 @@ struct AddRepositoryView: View {
                 secretScanningAlerts: metrics.secretScanningAlerts ?? 0
             )
             modelContext.insert(saved)
+
+            await securityService.syncDependabotAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await securityService.syncCodeScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await securityService.syncSecretScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+
             dismiss()
         } catch let ghError as GitHubError {
             error = ghError

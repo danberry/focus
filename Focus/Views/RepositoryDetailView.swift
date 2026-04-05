@@ -18,10 +18,22 @@ struct RepositoryDetailView: View {
 
             // MARK: Security Alerts
 
-            Section("Security Alerts") {
-                LabeledContent("Dependabot", value: "\(repository.dependabotAlerts)")
-                LabeledContent("Code Scanning", value: "\(repository.codeScanningAlerts)")
-                LabeledContent("Secret Scanning", value: "\(repository.secretScanningAlerts)")
+            Section("Dependabot Alerts") {
+                // Placeholder — Task 1 replaces this
+                Text("No open alerts")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Code Scanning Alerts") {
+                // Placeholder — Task 2 replaces this
+                Text("No open alerts")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Secret Scanning Alerts") {
+                // Placeholder — Task 3 replaces this
+                Text("No open alerts")
+                    .foregroundStyle(.secondary)
             }
         }
         .navigationTitle(repository.displayName)
