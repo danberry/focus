@@ -8,6 +8,9 @@ struct MainTabView: View {
             Tab("Repositories", systemImage: "books.vertical") {
                 ContentView()
             }
+            Tab("Settings", systemImage: "gearshape") {
+                SettingsView()
+            }
         }
     }
 }
