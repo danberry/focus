@@ -44,9 +44,20 @@ struct RepositoryDetailView: View {
             }
 
             Section("Secret Scanning Alerts") {
-                // Placeholder — Task 3 replaces this
-                Text("No open alerts")
-                    .foregroundStyle(.secondary)
+                let sorted = repository.secretScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                if sorted.isEmpty {
+                    Text("No open alerts")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(sorted) { alert in
+                        HStack {
+                            Text(alert.secretTypeDisplayName)
+                            Spacer()
+                            Text(alert.validity)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
         }
         .navigationTitle(repository.displayName)
