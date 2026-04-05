@@ -67,6 +67,7 @@
 		40825500000000000000B048 /* ContributionQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A049 /* ContributionQueries.swift */; };
 		40825500000000000000B049 /* ContributionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04A /* ContributionService.swift */; };
 		40825500000000000000B04A /* ContributionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04B /* ContributionServiceTests.swift */; };
+		40825500000000000000B04B /* MemberAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04C /* MemberAvatarView.swift */; };
 		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
@@ -144,6 +145,7 @@
 		40825500000000000000A049 /* ContributionQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionQueries.swift; sourceTree = "<group>"; };
 		40825500000000000000A04A /* ContributionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionService.swift; sourceTree = "<group>"; };
 		40825500000000000000A04B /* ContributionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionServiceTests.swift; sourceTree = "<group>"; };
+		40825500000000000000A04C /* MemberAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberAvatarView.swift; sourceTree = "<group>"; };
 		40825500000000000000A03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -243,6 +245,7 @@
 				40825500000000000000A042 /* AddTeamView.swift */,
 				40825500000000000000A045 /* TeamDetailView.swift */,
 				40825500000000000000A046 /* AddMemberView.swift */,
+				40825500000000000000A04C /* MemberAvatarView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -490,6 +493,7 @@
 				40825500000000000000B043 /* Member.swift in Sources */,
 				40825500000000000000B044 /* TeamDetailView.swift in Sources */,
 				40825500000000000000B045 /* AddMemberView.swift in Sources */,
+				40825500000000000000B04B /* MemberAvatarView.swift in Sources */,
 				40825500000000000000B047 /* MemberContribution.swift in Sources */,
 				40825500000000000000B048 /* ContributionQueries.swift in Sources */,
 				40825500000000000000B049 /* ContributionService.swift in Sources */,
