@@ -44,6 +44,8 @@
 		40825500000000000000B031 /* SecretScanningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A031 /* SecretScanningAlert.swift */; };
 		40825500000000000000B032 /* DependabotAlertDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A032 /* DependabotAlertDetailView.swift */; };
 		40825500000000000000B033 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A033 /* SettingsView.swift */; };
+		40825500000000000000B034 /* Codeowner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A034 /* Codeowner.swift */; };
+		40825500000000000000B035 /* CodeownersService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A035 /* CodeownersService.swift */; };
 		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
@@ -98,6 +100,8 @@
 		40825500000000000000A031 /* SecretScanningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretScanningAlert.swift; sourceTree = "<group>"; };
 		40825500000000000000A032 /* DependabotAlertDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlertDetailView.swift; sourceTree = "<group>"; };
 		40825500000000000000A033 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		40825500000000000000A034 /* Codeowner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Codeowner.swift; sourceTree = "<group>"; };
+		40825500000000000000A035 /* CodeownersService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownersService.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -137,6 +141,7 @@
 				40825500000000000000A02F /* DependabotAlert.swift */,
 				40825500000000000000A030 /* CodeScanningAlert.swift */,
 				40825500000000000000A031 /* SecretScanningAlert.swift */,
+				40825500000000000000A034 /* Codeowner.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -160,6 +165,7 @@
 				40825500000000000000A00D /* RepositoryService.swift */,
 				40825500000000000000A00E /* TeamService.swift */,
 				40825500000000000000A02B /* SecurityService.swift */,
+				40825500000000000000A035 /* CodeownersService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -398,6 +404,8 @@
 				40825500000000000000B031 /* SecretScanningAlert.swift in Sources */,
 				40825500000000000000B032 /* DependabotAlertDetailView.swift in Sources */,
 				40825500000000000000B033 /* SettingsView.swift in Sources */,
+				40825500000000000000B034 /* Codeowner.swift in Sources */,
+				40825500000000000000B035 /* CodeownersService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -44,6 +44,9 @@ struct ContentView: View {
                     ),
                     securityService: SecurityService(
                         rest: RESTClient(tokenProvider: authService.tokenProvider)
+                    ),
+                    codeownersService: CodeownersService(
+                        rest: RESTClient(tokenProvider: authService.tokenProvider)
                     )
                 )
             }
