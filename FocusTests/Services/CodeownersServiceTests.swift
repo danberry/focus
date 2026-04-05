@@ -162,6 +162,24 @@ struct CodeownersServiceTests {
         #expect(codeowner.repository === repo)
     }
 
+    @Test func syncCodeownersHandlesHandleWithNoPattern() async throws {
+        // CODEOWNERS file with only a handle and no explicit path pattern
+        let content = "@acme/mobile-team\n"
+        mockHTTP.setSuccess(json: contentsResponse(for: content))
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "acme", name: "app", displayName: "acme/app")
+        context.insert(repo)
+
+        await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
+
+        let codeowner = try #require(repo.codeowners.first)
+        #expect(codeowner.handle == "@acme/mobile-team")
+        #expect(codeowner.pathPattern == "*")
+        #expect(codeowner.isTeam == true)
+    }
+
     @Test func syncCodeownersHandlesPatternWithoutOwners() async throws {
         // A line with only a path pattern and no @ handles should produce no records
         let content = """

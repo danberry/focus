@@ -42,9 +42,7 @@ struct CodeownersService: Sendable {
 
         for path in candidates {
             if let content = await fetchFileContent(path: path) {
-                let entries = parseCodeowners(content)
-                print("[CodeownersService] Parsed \(entries.count) entr(ies): \(entries.map { "\($0.pattern) → \($0.handle)" })")
-                return entries
+                return parseCodeowners(content)
             }
         }
         return []
@@ -53,24 +51,12 @@ struct CodeownersService: Sendable {
     private func fetchFileContent(path: String) async -> String? {
         do {
             let response: FileContentResponse = try await rest.get(path: path)
-            guard response.encoding == "base64" else {
-                print("[CodeownersService] Unexpected encoding '\(response.encoding)' at \(path)")
-                return nil
-            }
+            guard response.encoding == "base64" else { return nil }
             let cleaned = response.content.filter { !$0.isWhitespace }
-            guard let data = Data(base64Encoded: cleaned) else {
-                print("[CodeownersService] Base64 decode failed at \(path)")
-                return nil
-            }
-            guard let text = String(data: data, encoding: .utf8) else {
-                print("[CodeownersService] UTF-8 decode failed at \(path)")
-                return nil
-            }
-            let ruleCount = text.components(separatedBy: .newlines).filter { !$0.isEmpty && !$0.hasPrefix("#") }.count
-            print("[CodeownersService] Loaded \(path) — \(ruleCount) rule(s), raw:\n\(text)")
+            guard let data = Data(base64Encoded: cleaned),
+                  let text = String(data: data, encoding: .utf8) else { return nil }
             return text
         } catch {
-            print("[CodeownersService] Fetch failed at \(path): \(error)")
             return nil
         }
     }
@@ -81,8 +67,21 @@ struct CodeownersService: Sendable {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty, !trimmed.hasPrefix("#") else { continue }
             let parts = trimmed.components(separatedBy: .whitespaces)
-            guard let pattern = parts.first else { continue }
-            for handle in parts.dropFirst() where handle.hasPrefix("@") {
+            guard let first = parts.first else { continue }
+
+            // If the first token is a handle (starts with @), there is no explicit
+            // path pattern — treat it as a global catch-all ("*").
+            let pattern: String
+            let handleTokens: ArraySlice<String>
+            if first.hasPrefix("@") {
+                pattern = "*"
+                handleTokens = parts[...]
+            } else {
+                pattern = first
+                handleTokens = parts.dropFirst()
+            }
+
+            for handle in handleTokens where handle.hasPrefix("@") {
                 result.append((pattern, handle))
             }
         }
