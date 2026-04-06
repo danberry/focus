@@ -50,6 +50,9 @@ struct ContentView: View {
                     ),
                     codeownersService: CodeownersService(
                         rest: RESTClient(tokenProvider: authService.tokenProvider)
+                    ),
+                    velocityService: VelocityService(
+                        graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
                     )
                 )
             }
