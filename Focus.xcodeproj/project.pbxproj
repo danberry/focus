@@ -72,6 +72,11 @@
 		40825500000000000000B04D /* MemberDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04E /* MemberDetailView.swift */; };
 		40825500000000000000B04E /* BackgroundSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04F /* BackgroundSyncManagerTests.swift */; };
 		40825500000000000000B04F /* LockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A050 /* LockView.swift */; };
+		40825500000000000000B050 /* JobTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A051 /* JobTitle.swift */; };
+		40825500000000000000B051 /* JobTitlesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A052 /* JobTitlesView.swift */; };
+		40825500000000000000B052 /* AddJobTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A053 /* AddJobTitleView.swift */; };
+		40825500000000000000B053 /* JobTitleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A054 /* JobTitleDetailView.swift */; };
+		40825500000000000000B054 /* JobTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A055 /* JobTitleTests.swift */; };
 		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
@@ -154,6 +159,11 @@
 		40825500000000000000A04E /* MemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDetailView.swift; sourceTree = "<group>"; };
 		40825500000000000000A04F /* BackgroundSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncManagerTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A050 /* LockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockView.swift; sourceTree = "<group>"; };
+		40825500000000000000A051 /* JobTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitle.swift; sourceTree = "<group>"; };
+		40825500000000000000A052 /* JobTitlesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitlesView.swift; sourceTree = "<group>"; };
+		40825500000000000000A053 /* AddJobTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddJobTitleView.swift; sourceTree = "<group>"; };
+		40825500000000000000A054 /* JobTitleDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitleDetailView.swift; sourceTree = "<group>"; };
+		40825500000000000000A055 /* JobTitleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitleTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -199,6 +209,7 @@
 				40825500000000000000A044 /* Member.swift */,
 				40825500000000000000A048 /* MemberContribution.swift */,
 				40825500000000000000A04D /* DailyContribution.swift */,
+				40825500000000000000A051 /* JobTitle.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -257,6 +268,9 @@
 				40825500000000000000A04C /* MemberAvatarView.swift */,
 				40825500000000000000A04E /* MemberDetailView.swift */,
 				40825500000000000000A050 /* LockView.swift */,
+				40825500000000000000A052 /* JobTitlesView.swift */,
+				40825500000000000000A053 /* AddJobTitleView.swift */,
+				40825500000000000000A054 /* JobTitleDetailView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -319,6 +333,7 @@
 				40825500000000000000A029 /* SavedRepositoryTests.swift */,
 				40825500000000000000A043 /* TeamTests.swift */,
 				40825500000000000000A047 /* MemberTests.swift */,
+				40825500000000000000A055 /* JobTitleTests.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -512,6 +527,10 @@
 				40825500000000000000B04C /* DailyContribution.swift in Sources */,
 				40825500000000000000B04D /* MemberDetailView.swift in Sources */,
 				40825500000000000000B04F /* LockView.swift in Sources */,
+				40825500000000000000B050 /* JobTitle.swift in Sources */,
+				40825500000000000000B051 /* JobTitlesView.swift in Sources */,
+				40825500000000000000B052 /* AddJobTitleView.swift in Sources */,
+				40825500000000000000B053 /* JobTitleDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -537,6 +556,7 @@
 				40825500000000000000B046 /* MemberTests.swift in Sources */,
 				40825500000000000000B04A /* ContributionServiceTests.swift in Sources */,
 				40825500000000000000B04E /* BackgroundSyncManagerTests.swift in Sources */,
+				40825500000000000000B054 /* JobTitleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
