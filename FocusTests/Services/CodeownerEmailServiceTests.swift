@@ -93,3 +93,89 @@ struct CodeownerEmailServiceTests {
         #expect(emails == ["alice@example.com"])
     }
 }
+
+// MARK: - ResolveLoginsTests
+
+@Suite("CodeownerEmailService resolveLogins Tests")
+@MainActor
+struct ResolveLoginsTests {
+    let mockHTTP = MockHTTPClient()
+
+    private func makeService() -> CodeownerEmailService {
+        let rest = RESTClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
+        return CodeownerEmailService(rest: rest)
+    }
+
+    @Test func individualHandleReturnsLogin() async {
+        let logins = await makeService().resolveLogins(handles: ["@alice"])
+        #expect(logins == ["alice"])
+    }
+
+    @Test func stripsAtPrefix() async {
+        let logins = await makeService().resolveLogins(handles: ["alice"])
+        #expect(logins == ["alice"])
+    }
+
+    @Test func multipleIndividualHandles() async {
+        let logins = await makeService().resolveLogins(handles: ["@alice", "@bob"])
+        #expect(logins == ["alice", "bob"])
+    }
+
+    @Test func deduplicatesLogins() async {
+        let logins = await makeService().resolveLogins(handles: ["@alice", "@alice"])
+        #expect(logins == ["alice"])
+    }
+
+    @Test func emptyHandlesReturnsEmpty() async {
+        let logins = await makeService().resolveLogins(handles: [])
+        #expect(logins.isEmpty)
+    }
+
+    @Test func teamHandleCallsTeamMembersEndpoint() async {
+        mockHTTP.setSuccess(json: "[]")
+        _ = await makeService().resolveLogins(handles: ["@acme/engineers"])
+        let path = mockHTTP.lastRequest?.url?.path ?? ""
+        #expect(path == "/orgs/acme/teams/engineers/members")
+    }
+
+    @Test func teamHandleExpandsToMemberLogins() async {
+        mockHTTP.setSuccess(json: #"""
+            [{"login":"alice","id":1},{"login":"bob","id":2}]
+        """#)
+        let logins = await makeService().resolveLogins(handles: ["@acme/engineers"])
+        #expect(logins == ["alice", "bob"])
+    }
+
+    @Test func teamHandleNetworkErrorReturnsEmpty() async {
+        mockHTTP.setSuccess(json: "{}", statusCode: 403)
+        let logins = await makeService().resolveLogins(handles: ["@acme/engineers"])
+        #expect(logins.isEmpty)
+    }
+
+    @Test func mixedHandlesExpandsBoth() async {
+        // Individual @carol + team @acme/engineers with members alice, bob
+        mockHTTP.setSuccess(json: #"""
+            [{"login":"alice","id":1},{"login":"bob","id":2}]
+        """#)
+        // Note: mockHTTP returns the same JSON for all requests.
+        // @carol is an individual handle — it does NOT make a network call, it just uses the login directly.
+        // Only the team handle triggers the mock.
+        let logins = await makeService().resolveLogins(handles: ["@carol", "@acme/engineers"])
+        #expect(Set(logins) == Set(["carol", "alice", "bob"]))
+    }
+
+    @Test func deduplicatesAcrossIndividualAndTeam() async {
+        // alice is listed individually AND is a member of the team
+        mockHTTP.setSuccess(json: #"""
+            [{"login":"alice","id":1},{"login":"bob","id":2}]
+        """#)
+        let logins = await makeService().resolveLogins(handles: ["@alice", "@acme/engineers"])
+        #expect(Set(logins) == Set(["alice", "bob"]))
+    }
+
+    @Test func malformedTeamHandleReturnsEmpty() async {
+        // "@/broken" → strips "@" → "/broken" → split omits empty → only one part → guard fails → []
+        let logins = await makeService().resolveLogins(handles: ["@/broken"])
+        #expect(logins.isEmpty)
+    }
+}

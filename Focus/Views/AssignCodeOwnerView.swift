@@ -10,6 +10,8 @@ struct AssignCodeOwnerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    @State private var candidates: [String] = []
+    @State private var isLoadingCandidates = true
     @State private var selectedLogins: Set<String> = []
     @State private var saveState: SaveState = .idle
 
@@ -35,11 +37,13 @@ struct AssignCodeOwnerView: View {
             }
             .listStyle(.plain)
             .overlay {
-                if candidates.isEmpty {
+                if isLoadingCandidates {
+                    ProgressView()
+                } else if candidates.isEmpty {
                     ContentUnavailableView(
                         "No Candidates",
                         systemImage: "person.slash",
-                        description: Text("No individual code owners found for this file. Team handles cannot be assigned.")
+                        description: Text("No code owners found for this file.")
                     )
                 }
             }
@@ -70,24 +74,29 @@ struct AssignCodeOwnerView: View {
         .onAppear {
             selectedLogins = Set(alert.assignedLogins)
         }
+        .task {
+            await loadCandidates()
+        }
     }
 
     // MARK: - Candidates
 
-    /// All user (non-team) codeowner logins for this alert's manifest path,
-    /// plus any currently assigned logins not found in CODEOWNERS (e.g. set via GitHub web).
-    private var candidates: [String] {
+    /// Resolves all CODEOWNERS handles for this alert's manifest path to individual logins.
+    /// Team handles (e.g. `@org/frontend-team`) are expanded to their members via the GitHub API.
+    /// Currently assigned logins not found in CODEOWNERS are appended so they can be deselected.
+    private func loadCandidates() async {
         let resolvedHandles = CodeownerResolver.resolve(
             filePath: alert.manifestPath ?? "",
             codeowners: repository.codeowners
         )
-        let codeownerLogins = resolvedHandles
-            .filter { !$0.contains("/") }           // drop team handles (@org/team)
-            .map { $0.hasPrefix("@") ? String($0.dropFirst()) : $0 }
+        let rest = RESTClient(tokenProvider: authService.tokenProvider)
+        let service = CodeownerEmailService(rest: rest)
+        let logins = await service.resolveLogins(handles: resolvedHandles)
 
-        // Include current assignees not in the resolved list so they can be deselected.
-        let extra = alert.assignedLogins.filter { !codeownerLogins.contains($0) }
-        return (codeownerLogins + extra).sorted()
+        // Include current assignees not resolved from CODEOWNERS so they can be deselected.
+        let extra = alert.assignedLogins.filter { !logins.contains($0) }
+        candidates = (logins + extra).sorted()
+        isLoadingCandidates = false
     }
 
     // MARK: - Save
