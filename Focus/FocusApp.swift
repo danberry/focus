@@ -8,7 +8,7 @@ struct FocusApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     // Create the container once so it can be shared with BackgroundSyncManager.
-    private let modelContainer = try! ModelContainer(for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self)
+    private let modelContainer = try! ModelContainer(for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self, JobTitle.self)
 
     var body: some Scene {
         WindowGroup {
