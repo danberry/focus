@@ -1,11 +1,9 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - AddJobTitleView
+// MARK: - AddDisciplineView
 
-struct AddJobTitleView: View {
-    let discipline: Discipline
-
+struct AddDisciplineView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -19,12 +17,12 @@ struct AddJobTitleView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("e.g. Senior Engineer", text: $name)
+                    TextField("e.g. Engineering", text: $name)
                 } header: {
                     Text("Name")
                 }
             }
-            .navigationTitle("New Job Title")
+            .navigationTitle("New Discipline")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -44,8 +42,7 @@ struct AddJobTitleView: View {
 
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        let jobTitle = JobTitle(name: trimmedName)
-        discipline.jobTitles.append(jobTitle)
+        modelContext.insert(Discipline(name: trimmedName))
         dismiss()
     }
 }

@@ -13,39 +13,41 @@ struct JobTitleTests {
 
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(for: JobTitle.self, configurations: config)
+        return try ModelContainer(for: Discipline.self, JobTitle.self, configurations: config)
     }
 
     // MARK: - Tests
 
-    @Test func initializesWithAllFields() {
-        let jobTitle = JobTitle(name: "iOS Engineer", level: "Senior")
-        #expect(jobTitle.name == "iOS Engineer")
-        #expect(jobTitle.level == "Senior")
+    @Test func initializesWithName() {
+        let jobTitle = JobTitle(name: "Senior Engineer")
+        #expect(jobTitle.name == "Senior Engineer")
     }
 
     @Test func insertAndFetchFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
 
-        let jobTitle = JobTitle(name: "iOS Engineer", level: "Senior")
-        context.insert(jobTitle)
+        let discipline = Discipline(name: "Engineering")
+        context.insert(discipline)
+        let jobTitle = JobTitle(name: "Senior Engineer")
+        discipline.jobTitles.append(jobTitle)
         try context.save()
 
         let descriptor = FetchDescriptor<JobTitle>()
         let results = try context.fetch(descriptor)
 
         #expect(results.count == 1)
-        #expect(results[0].name == "iOS Engineer")
-        #expect(results[0].level == "Senior")
+        #expect(results[0].name == "Senior Engineer")
     }
 
     @Test func deleteFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
 
-        let jobTitle = JobTitle(name: "iOS Engineer", level: "Senior")
-        context.insert(jobTitle)
+        let discipline = Discipline(name: "Engineering")
+        context.insert(discipline)
+        let jobTitle = JobTitle(name: "Senior Engineer")
+        discipline.jobTitles.append(jobTitle)
         try context.save()
 
         context.delete(jobTitle)
@@ -57,37 +59,35 @@ struct JobTitleTests {
         #expect(results.isEmpty)
     }
 
-    @Test func multipleJobTitlesAreFetchedSortedByName() throws {
+    @Test func inlineEditUpdatesPersistedName() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
 
-        context.insert(JobTitle(name: "Product Manager", level: "Senior"))
-        context.insert(JobTitle(name: "Android Engineer", level: "Staff"))
-        context.insert(JobTitle(name: "iOS Engineer", level: "Senior"))
+        let discipline = Discipline(name: "Engineering")
+        context.insert(discipline)
+        let jobTitle = JobTitle(name: "Engineer I")
+        discipline.jobTitles.append(jobTitle)
         try context.save()
 
-        let descriptor = FetchDescriptor<JobTitle>(sortBy: [SortDescriptor(\JobTitle.name)])
-        let results = try context.fetch(descriptor)
-
-        #expect(results.map(\.name) == ["Android Engineer", "iOS Engineer", "Product Manager"])
-    }
-
-    @Test func inlineEditUpdatesPersistedFields() throws {
-        let container = try makeContainer()
-        let context = ModelContext(container)
-
-        let jobTitle = JobTitle(name: "iOS Engineer", level: "Senior")
-        context.insert(jobTitle)
-        try context.save()
-
-        jobTitle.name = "iOS Platform Engineer"
-        jobTitle.level = "Staff"
+        jobTitle.name = "Senior Engineer"
         try context.save()
 
         let descriptor = FetchDescriptor<JobTitle>()
         let results = try context.fetch(descriptor)
 
-        #expect(results[0].name == "iOS Platform Engineer")
-        #expect(results[0].level == "Staff")
+        #expect(results[0].name == "Senior Engineer")
+    }
+
+    @Test func jobTitleBelongsToDiscipline() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+
+        let discipline = Discipline(name: "Engineering")
+        context.insert(discipline)
+        let jobTitle = JobTitle(name: "Senior Engineer")
+        discipline.jobTitles.append(jobTitle)
+        try context.save()
+
+        #expect(jobTitle.discipline?.name == "Engineering")
     }
 }

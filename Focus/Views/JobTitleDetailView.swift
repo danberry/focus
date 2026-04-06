@@ -11,15 +11,9 @@ struct JobTitleDetailView: View {
     var body: some View {
         Form {
             Section {
-                TextField("e.g. iOS Engineer", text: $jobTitle.name)
+                TextField("e.g. Senior Engineer", text: $jobTitle.name)
             } header: {
                 Text("Name")
-            }
-
-            Section {
-                TextField("e.g. Senior", text: $jobTitle.level)
-            } header: {
-                Text("Level")
             }
 
             Section {
