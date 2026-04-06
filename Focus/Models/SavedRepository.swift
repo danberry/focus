@@ -51,6 +51,9 @@ final class SavedRepository {
     @Relationship(deleteRule: .cascade, inverse: \RepositoryVelocity.repository)
     var velocityMetrics: [RepositoryVelocity] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \OpenPullRequest.repository)
+    var openPullRequests: [OpenPullRequest] = []
+
     // MARK: - Computed
 
     var totalSecurityAlerts: Int {

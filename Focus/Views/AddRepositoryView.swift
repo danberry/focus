@@ -8,6 +8,7 @@ struct AddRepositoryView: View {
     let securityService: SecurityService
     let codeownersService: CodeownersService
     let velocityService: VelocityService
+    let pullRequestService: PullRequestService
 
     @Environment(AuthenticationService.self) private var authService
     @Environment(\.modelContext) private var modelContext
@@ -123,6 +124,7 @@ struct AddRepositoryView: View {
             await securityService.syncSecretScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await codeownersService.syncCodeowners(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await velocityService.syncVelocity(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await pullRequestService.syncOpenPullRequests(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
 
             dismiss()
         } catch let ghError as GitHubError {

@@ -104,7 +104,8 @@ final class BackgroundSyncManager {
         let syncService = SyncService(
             securityService: SecurityService(rest: rest),
             codeownersService: CodeownersService(rest: rest),
-            velocityService: VelocityService(graphQL: graphQL)
+            velocityService: VelocityService(graphQL: graphQL),
+            pullRequestService: PullRequestService(graphQL: graphQL)
         )
         await syncService.syncAll(in: context)
         lastSyncedAt = .now

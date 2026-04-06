@@ -47,6 +47,22 @@ enum RepositoryQueries {
         }
         """
 
+    static let openPullRequests = """
+        query($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                pullRequests(states: [OPEN], first: 100, orderBy: {field: CREATED_AT, direction: ASC}) {
+                    nodes {
+                        number
+                        title
+                        createdAt
+                        author { login }
+                        url
+                    }
+                }
+            }
+        }
+        """
+
     static let searchRepositories = """
         query($query: String!, $first: Int!, $after: String) {
             search(query: $query, type: REPOSITORY, first: $first, after: $after) {

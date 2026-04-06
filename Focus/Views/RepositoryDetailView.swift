@@ -50,6 +50,27 @@ struct RepositoryDetailView: View {
                 }
             }
 
+            // MARK: Open Pull Requests
+
+            let sortedPRs = repository.openPullRequests.sorted { $0.createdAt < $1.createdAt }
+            Section("Open Pull Requests (\(sortedPRs.count))") {
+                if sortedPRs.isEmpty {
+                    Text("No open pull requests")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(sortedPRs) { pr in
+                        NavigationLink(destination: PullRequestDetailView(pullRequest: pr)) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pr.title)
+                                Text(daysOpenLabel(pr.createdAt))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+
             // MARK: Codeowners
 
             Section("Code Owners") {
@@ -139,6 +160,11 @@ struct RepositoryDetailView: View {
         case .down: return .red
         case .flat: return .secondary
         }
+    }
+
+    private func daysOpenLabel(_ createdAt: Date) -> String {
+        let days = Calendar.current.dateComponents([.day], from: createdAt, to: .now).day ?? 0
+        return days == 1 ? "1 day open" : "\(days) days open"
     }
 
     private func trendLabel(_ c: VelocityComparison) -> String {
