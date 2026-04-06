@@ -83,7 +83,8 @@ struct SecurityServiceTests {
               "first_patched_version": { "identifier": "4.17.21" },
               "vulnerable_version_range": "< 4.17.21"
             },
-            "dependency": { "manifest_path": "package-lock.json" }
+            "dependency": { "manifest_path": "package-lock.json" },
+            "assignees": [{ "login": "alice" }]
           },
           {
             "number": 99,
@@ -102,7 +103,8 @@ struct SecurityServiceTests {
               "first_patched_version": null,
               "vulnerable_version_range": ">= 0.8.1, < 1.6.0"
             },
-            "dependency": { "manifest_path": null }
+            "dependency": { "manifest_path": null },
+            "assignees": []
           }
         ]
         """
@@ -131,6 +133,7 @@ struct SecurityServiceTests {
         #expect(first.cvssScore == 7.5)
         #expect(first.htmlUrl == "https://github.com/apple/swift/security/dependabot/42")
         #expect(first.manifestPath == "package-lock.json")
+        #expect(first.assignedLogins == ["alice"])
 
         let second = alerts[1]
         #expect(second.alertNumber == 99)
@@ -174,7 +177,8 @@ struct SecurityServiceTests {
               "first_patched_version": null,
               "vulnerable_version_range": ">= 1.0, < 2.0"
             },
-            "dependency": { "manifest_path": "requirements.txt" }
+            "dependency": { "manifest_path": "requirements.txt" },
+            "assignees": []
           }
         ]
         """

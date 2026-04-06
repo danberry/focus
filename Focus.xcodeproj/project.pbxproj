@@ -85,6 +85,8 @@
 		40825500000000000000C012 /* PullRequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A060 /* PullRequestService.swift */; };
 		40825500000000000000C013 /* PullRequestDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A061 /* PullRequestDetailView.swift */; };
 		40825500000000000000C014 /* PullRequestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A062 /* PullRequestServiceTests.swift */; };
+		40825500000000000000C015 /* AssignCodeOwnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A063 /* AssignCodeOwnerView.swift */; };
+		40825500000000000000C016 /* DependabotAlertAssignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */; };
 		40825500000000000000B055 /* RepositoryVelocity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A056 /* RepositoryVelocity.swift */; };
 		40825500000000000000B056 /* VelocityQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A057 /* VelocityQueries.swift */; };
 		40825500000000000000B057 /* VelocityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A058 /* VelocityService.swift */; };
@@ -184,6 +186,8 @@
 		40825500000000000000A060 /* PullRequestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestService.swift; sourceTree = "<group>"; };
 		40825500000000000000A061 /* PullRequestDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestDetailView.swift; sourceTree = "<group>"; };
 		40825500000000000000A062 /* PullRequestServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestServiceTests.swift; sourceTree = "<group>"; };
+		40825500000000000000A063 /* AssignCodeOwnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignCodeOwnerView.swift; sourceTree = "<group>"; };
+		40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlertAssignmentTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A056 /* RepositoryVelocity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryVelocity.swift; sourceTree = "<group>"; };
 		40825500000000000000A057 /* VelocityQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityQueries.swift; sourceTree = "<group>"; };
 		40825500000000000000A058 /* VelocityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityService.swift; sourceTree = "<group>"; };
@@ -304,6 +308,7 @@
 				40825500000000000000A053 /* AddJobTitleView.swift */,
 				40825500000000000000A054 /* JobTitleDetailView.swift */,
 				40825500000000000000A061 /* PullRequestDetailView.swift */,
+				40825500000000000000A063 /* AssignCodeOwnerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -370,6 +375,7 @@
 				40825500000000000000A047 /* MemberTests.swift */,
 				40825500000000000000A055 /* JobTitleTests.swift */,
 				40825500000000000000A05D /* DisciplineTests.swift */,
+				40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -576,6 +582,7 @@
 				40825500000000000000C011 /* OpenPullRequest.swift in Sources */,
 				40825500000000000000C012 /* PullRequestService.swift in Sources */,
 				40825500000000000000C013 /* PullRequestDetailView.swift in Sources */,
+				40825500000000000000C015 /* AssignCodeOwnerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -605,6 +612,7 @@
 				40825500000000000000C010 /* DisciplineTests.swift in Sources */,
 				40825500000000000000B058 /* VelocityServiceTests.swift in Sources */,
 				40825500000000000000C014 /* PullRequestServiceTests.swift in Sources */,
+				40825500000000000000C016 /* DependabotAlertAssignmentTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
