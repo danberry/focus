@@ -34,27 +34,41 @@ final class AuthenticationService {
 
     var token: String? { _token.withLock { $0 } }
 
+    /// UserDefaults key that records whether the keychain item was saved with
+    /// biometric access control. We own this flag rather than relying on
+    /// errSecInteractionNotAllowed, which the iOS Simulator does not return for
+    /// biometric-protected items (no Secure Enclave).
+    private static let protectedFlagKey = "github-pat-protected"
+
     init(keychain: KeychainHelper = KeychainHelper()) {
         self.keychain = keychain
 
-        let (value, status) = keychain.readSkippingUI(for: "github-pat")
-        switch status {
-        case errSecSuccess:
-            if let pat = value {
-                // Legacy unprotected item found — migrate it to a protected item
-                // and cache in memory so this session continues without interruption.
-                Self.migrateToProtectedItem(pat: pat, keychain: keychain, account: "github-pat")
-                _token.withLock { $0 = pat }
-                authState = .authenticated
-            } else {
+        if UserDefaults.standard.bool(forKey: Self.protectedFlagKey) {
+            // A biometric-protected PAT was previously saved.
+            // Skip readSkippingUI — it returns errSecSuccess on the Simulator
+            // even for protected items, which would incorrectly trigger migration.
+            authState = .locked
+        } else {
+            // No protected item recorded. Check for a legacy unprotected item.
+            let (value, status) = keychain.readSkippingUI(for: "github-pat")
+            switch status {
+            case errSecSuccess:
+                if let pat = value {
+                    // Legacy unprotected item found — migrate it to a protected item
+                    // and cache in memory so this session continues without interruption.
+                    let migrated = Self.migrateToProtectedItem(pat: pat, keychain: keychain, account: "github-pat")
+                    if migrated {
+                        UserDefaults.standard.set(true, forKey: Self.protectedFlagKey)
+                    }
+                    _token.withLock { $0 = pat }
+                    authState = .authenticated
+                } else {
+                    authState = .unauthenticated
+                }
+            default:
+                // errSecItemNotFound or any other error — no token saved.
                 authState = .unauthenticated
             }
-        case errSecInteractionNotAllowed:
-            // Protected item exists; biometric unlock required this session.
-            authState = .locked
-        default:
-            // errSecItemNotFound or any other error — no token saved.
-            authState = .unauthenticated
         }
     }
 
@@ -98,6 +112,12 @@ final class AuthenticationService {
             if let pat = keychain.read(for: keychainAccount, context: context) {
                 _token.withLock { $0 = pat }
                 authState = .authenticated
+            } else {
+                // Biometric succeeded but the keychain item is gone (e.g. passcode
+                // change wiped kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly items).
+                // Reset to unauthenticated so the user can re-enter their token.
+                UserDefaults.standard.removeObject(forKey: Self.protectedFlagKey)
+                authState = .unauthenticated
             }
         } catch {
             self.error = .authenticationFailed
@@ -124,6 +144,7 @@ final class AuthenticationService {
             }
 
             try keychain.save(pat, for: keychainAccount, accessControl: accessControl)
+            UserDefaults.standard.set(true, forKey: Self.protectedFlagKey)
             _token.withLock { $0 = pat }
             authState = .authenticated
         } catch let ghError as GitHubError {
@@ -139,6 +160,7 @@ final class AuthenticationService {
 
     func signOut() {
         keychain.delete(for: keychainAccount)
+        UserDefaults.standard.removeObject(forKey: Self.protectedFlagKey)
         _token.withLock { $0 = nil }
         authState = .unauthenticated
         error = nil
@@ -147,17 +169,26 @@ final class AuthenticationService {
     // MARK: - Private
 
     /// Re-saves a legacy unprotected token with biometric + passcode access control.
-    /// If the device has no passcode, the token is left unprotected (save skipped).
-    private static func migrateToProtectedItem(pat: String, keychain: KeychainHelper, account: String) {
+    /// Returns true if the migration succeeded, false if the device has no passcode
+    /// or if the save fails (in which case the original item is left intact).
+    @discardableResult
+    private static func migrateToProtectedItem(pat: String, keychain: KeychainHelper, account: String) -> Bool {
         var cfError: Unmanaged<CFError>?
         guard let accessControl = SecAccessControlCreateWithFlags(
             nil,
             kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly,
             [.biometryCurrentSet, .or, .devicePasscode],
             &cfError
-        ) else { return }
+        ) else { return false }
 
-        try? keychain.save(pat, for: account, accessControl: accessControl)
+        do {
+            try keychain.save(pat, for: account, accessControl: accessControl)
+            return true
+        } catch {
+            // Leave the existing legacy item intact — it will be migrated on
+            // a future launch once a passcode is set.
+            return false
+        }
     }
 
     private func validateToken(_ pat: String) async throws {
