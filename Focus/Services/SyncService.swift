@@ -3,15 +3,17 @@ import SwiftData
 
 // MARK: - SyncService
 
-/// Orchestrates a full sync of security alerts and codeowners for every saved repository.
+/// Orchestrates a full sync of security alerts, codeowners, and velocity metrics for every saved repository.
 @MainActor
 struct SyncService: Sendable {
     private let securityService: SecurityService
     private let codeownersService: CodeownersService
+    private let velocityService: VelocityService
 
-    init(securityService: SecurityService, codeownersService: CodeownersService) {
+    init(securityService: SecurityService, codeownersService: CodeownersService, velocityService: VelocityService) {
         self.securityService = securityService
         self.codeownersService = codeownersService
+        self.velocityService = velocityService
     }
 
     // MARK: - Sync All
@@ -44,6 +46,7 @@ struct SyncService: Sendable {
         await securityService.syncCodeScanningAlerts(owner: owner, repo: name, repository: repository, in: context)
         await securityService.syncSecretScanningAlerts(owner: owner, repo: name, repository: repository, in: context)
         await codeownersService.syncCodeowners(owner: owner, repo: name, repository: repository, in: context)
+        await velocityService.syncVelocity(owner: owner, repo: name, repository: repository, in: context)
 
         // Derive badge counts from the freshly synced relationship arrays.
         repository.dependabotAlerts = repository.dependabotAlertDetails.count
