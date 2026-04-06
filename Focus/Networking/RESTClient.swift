@@ -47,6 +47,39 @@ struct RESTClient: Sendable {
         }
     }
 
+    // MARK: - PATCH
+
+    func patch<Body: Encodable & Sendable, Response: Decodable & Sendable>(
+        path: String,
+        body: Body
+    ) async throws -> Response {
+        let url = baseURL.appendingPathComponent(path)
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+
+        if let token = tokenProvider() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            request.httpBody = try encoder.encode(body)
+        } catch {
+            throw GitHubError.decodingError(underlying: error)
+        }
+
+        let (data, httpResponse) = try await execute(request)
+        try mapHTTPErrors(httpResponse)
+
+        do {
+            return try decoder.decode(Response.self, from: data)
+        } catch {
+            throw GitHubError.decodingError(underlying: error)
+        }
+    }
+
     // MARK: - Private
 
     private let decoder: JSONDecoder = {
@@ -54,6 +87,12 @@ struct RESTClient: Sendable {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
         return decoder
+    }()
+
+    private let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        return encoder
     }()
 
     private func execute(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {

@@ -7,11 +7,31 @@ struct DependabotAlertDetailView: View {
     let repository: SavedRepository
 
     @Environment(AuthenticationService.self) private var authService
+    @Environment(\.modelContext) private var modelContext
 
     @State private var emailState: EmailState = .idle
+    @State private var showingAssignSheet = false
 
     var body: some View {
         List {
+            // MARK: Assignees
+
+            Section("Assignees") {
+                if alert.assignedLogins.isEmpty {
+                    Text("None")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(alert.assignedLogins, id: \.self) { login in
+                        Label(login, systemImage: "person")
+                    }
+                }
+                Button {
+                    showingAssignSheet = true
+                } label: {
+                    Label("Manage Assignees", systemImage: "person.badge.plus")
+                }
+            }
+
             // MARK: Overview
 
             Section("Overview") {
@@ -68,6 +88,9 @@ struct DependabotAlertDetailView: View {
         .listStyle(.plain)
         .navigationTitle(alert.packageName)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingAssignSheet) {
+            AssignCodeOwnerView(alert: alert, repository: repository)
+        }
     }
 
     // MARK: - Email Resolution

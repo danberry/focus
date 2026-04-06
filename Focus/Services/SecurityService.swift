@@ -44,6 +44,7 @@ struct SecurityService: Sendable {
                     htmlUrl: alert.htmlUrl,
                     manifestPath: alert.dependency.manifestPath
                 )
+                model.assignedLogins = alert.assignees.map(\.login)
                 model.repository = repository
                 context.insert(model)
             }
@@ -126,6 +127,22 @@ struct SecurityService: Sendable {
         }
     }
 
+    // MARK: - Update Assignees
+
+    func updateAssignees(
+        alertNumber: Int,
+        logins: [String],
+        owner: String,
+        repo: String
+    ) async throws -> [String] {
+        let body = AssigneesBody(assignees: logins)
+        let response: AssigneesResponse = try await rest.patch(
+            path: Endpoint.dependabotAlert(owner: owner, repo: repo, alertNumber: alertNumber).path,
+            body: body
+        )
+        return response.assignees.map(\.login)
+    }
+
     // MARK: - Fetch Metrics
 
     func fetchMetrics(owner: String, repo: String) async -> RepositorySecurityMetrics {
@@ -179,6 +196,11 @@ private struct DependabotAlertResponse: Decodable, Sendable {
     let securityAdvisory: SecurityAdvisory
     let securityVulnerability: SecurityVulnerability
     let dependency: Dependency
+    let assignees: [AssigneeResponse]
+
+    struct AssigneeResponse: Decodable, Sendable {
+        let login: String
+    }
 
     struct SecurityAdvisory: Decodable, Sendable {
         let ghsaId: String
@@ -210,6 +232,20 @@ private struct DependabotAlertResponse: Decodable, Sendable {
 
     struct Dependency: Decodable, Sendable {
         let manifestPath: String?
+    }
+}
+
+// MARK: - Assignees Request / Response
+
+private struct AssigneesBody: Encodable, Sendable {
+    let assignees: [String]
+}
+
+private struct AssigneesResponse: Decodable, Sendable {
+    let assignees: [AssigneeLogin]
+
+    struct AssigneeLogin: Decodable, Sendable {
+        let login: String
     }
 }
 

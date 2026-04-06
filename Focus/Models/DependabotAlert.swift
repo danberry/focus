@@ -20,6 +20,7 @@ final class DependabotAlert {
     var cvssScore: Double?
     var htmlUrl: String
     var manifestPath: String?
+    var assignedLogins: [String] = []
 
     init(
         alertNumber: Int,
