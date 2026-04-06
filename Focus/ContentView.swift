@@ -7,7 +7,7 @@ struct ContentView: View {
     @Environment(AuthenticationService.self) private var authService
     @Environment(BackgroundSyncManager.self) private var syncManager
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \SavedRepository.name) private var repositories: [SavedRepository]
+    @Query(sort: \SavedRepository.displayName) private var repositories: [SavedRepository]
 
     @State private var isAddingRepository = false
 
