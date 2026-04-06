@@ -137,7 +137,7 @@ final class AuthenticationService {
             guard let accessControl = SecAccessControlCreateWithFlags(
                 nil,
                 kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly,
-                [.biometryCurrentSet, .or, .devicePasscode],
+                .userPresence,
                 &cfError
             ) else {
                 throw GitHubError.noPasscodeSet
@@ -177,7 +177,7 @@ final class AuthenticationService {
         guard let accessControl = SecAccessControlCreateWithFlags(
             nil,
             kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly,
-            [.biometryCurrentSet, .or, .devicePasscode],
+            .userPresence,
             &cfError
         ) else { return false }
 
