@@ -9,6 +9,27 @@ struct CodeownerEmailService: Sendable {
         self.rest = rest
     }
 
+    // MARK: - Login Resolution
+
+    /// Resolves the given CODEOWNERS handles to individual user logins.
+    /// Individual handles (`@username`) → their login directly.
+    /// Team handles (`@org/team-slug`) → expand via `GET /orgs/{org}/teams/{slug}/members`.
+    /// Returns deduplicated, sorted logins. Network errors are silently ignored.
+    func resolveLogins(handles: [String]) async -> [String] {
+        var logins = Set<String>()
+        await withTaskGroup(of: [String].self) { group in
+            for handle in handles {
+                group.addTask {
+                    await self.resolveHandleToLogins(handle)
+                }
+            }
+            for await resolved in group {
+                logins.formUnion(resolved)
+            }
+        }
+        return logins.sorted()
+    }
+
     // MARK: - Email Resolution
 
     /// Resolves email addresses for the given CODEOWNERS handles.
@@ -31,6 +52,30 @@ struct CodeownerEmailService: Sendable {
     }
 
     // MARK: - Private
+
+    private func resolveHandleToLogins(_ handle: String) async -> [String] {
+        let login = handle.hasPrefix("@") ? String(handle.dropFirst()) : handle
+        if login.contains("/") {
+            return await resolveTeamToLogins(login)
+        } else {
+            return [login]
+        }
+    }
+
+    private func resolveTeamToLogins(_ orgAndSlug: String) async -> [String] {
+        let parts = orgAndSlug.split(separator: "/", maxSplits: 1)
+        guard parts.count == 2 else { return [] }
+        let org = String(parts[0])
+        let slug = String(parts[1])
+        do {
+            let members: [RESTUser] = try await rest.get(
+                path: Endpoint.teamMembers(org: org, teamSlug: slug).path
+            )
+            return members.map { $0.login }
+        } catch {
+            return []
+        }
+    }
 
     private func resolveHandle(_ handle: String, organization: String) async -> [String] {
         let login = handle.hasPrefix("@") ? String(handle.dropFirst()) : handle
