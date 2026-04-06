@@ -33,14 +33,7 @@ struct TeamDetailView: View {
                         } label: {
                             HStack(spacing: 10) {
                                 MemberAvatarView(member: member)
-                                VStack(alignment: .leading) {
-                                    Text(member.name)
-                                    if member.githubId != nil {
-                                        Text("GitHub account linked")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
+                                Text(member.name)
                             }
                             .badge(member.totalContributions)
                         }
