@@ -20,15 +20,6 @@ struct KeychainHelper: Sendable {
     func save(_ value: String, for account: String, accessControl: SecAccessControl?) throws {
         guard let data = value.data(using: .utf8) else { return }
 
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-
-        // Delete existing item first
-        SecItemDelete(query as CFDictionary)
-
         var addQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -40,9 +31,32 @@ struct KeychainHelper: Sendable {
             addQuery[kSecAttrAccessControl as String] = accessControl
         }
 
-        let status = SecItemAdd(addQuery as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            throw KeychainError.saveFailed(status)
+        // Try adding first. If the item already exists, update it in place so
+        // we never delete the existing item before confirming the write succeeds.
+        let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+        if addStatus == errSecSuccess {
+            return
+        }
+
+        guard addStatus == errSecDuplicateItem else {
+            throw KeychainError.saveFailed(addStatus)
+        }
+
+        // Item exists — update it in place.
+        let lookupQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+
+        var updateFields: [String: Any] = [kSecValueData as String: data]
+        if let accessControl {
+            updateFields[kSecAttrAccessControl as String] = accessControl
+        }
+
+        let updateStatus = SecItemUpdate(lookupQuery as CFDictionary, updateFields as CFDictionary)
+        guard updateStatus == errSecSuccess else {
+            throw KeychainError.saveFailed(updateStatus)
         }
     }
 
