@@ -1,12 +1,12 @@
 import Foundation
 import SwiftData
 
-// MARK: - JobTitle
+// MARK: - Discipline
 
 @Model
-final class JobTitle {
+final class Discipline {
     var name: String
-    var discipline: Discipline?
+    @Relationship(deleteRule: .cascade) var jobTitles: [JobTitle] = []
 
     init(name: String) {
         self.name = name
