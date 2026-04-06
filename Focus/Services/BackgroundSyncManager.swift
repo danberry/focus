@@ -98,11 +98,13 @@ final class BackgroundSyncManager {
         isSyncing = true
         defer { isSyncing = false }
 
-        // Security + codeowners — always sync on every invocation.
+        // Security + codeowners + velocity — always sync on every invocation.
         let rest = RESTClient(tokenProvider: tokenProvider)
+        let graphQL = GraphQLClient(tokenProvider: tokenProvider)
         let syncService = SyncService(
             securityService: SecurityService(rest: rest),
-            codeownersService: CodeownersService(rest: rest)
+            codeownersService: CodeownersService(rest: rest),
+            velocityService: VelocityService(graphQL: graphQL)
         )
         await syncService.syncAll(in: context)
         lastSyncedAt = .now
