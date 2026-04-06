@@ -100,3 +100,4 @@ xcodebuild clean
 - When adding new files, follow iOS project conventions (group by feature or layer)
 - When adding new files, update the `project.pbxproj` with file references, build file entries, and group membership
 - Do not commit Xcode user-specific data (`xcuserdata/`)
+- **Worktree rule**: When working in a git worktree (`.claude/worktrees/<name>/`), all file reads, edits, and writes MUST use the worktree path (e.g. `/Users/dan/Development/focus/.claude/worktrees/nervous-wozniak/Focus/Models/Foo.swift`). Never operate on files under the main repo path (`/Users/dan/Development/focus/Focus/...`). The worktree is the active working copy; the main repo path reflects a different branch and edits there will not be on the feature branch.
