@@ -14,6 +14,9 @@ struct MainTabView: View {
             Tab("Disciplines", systemImage: "briefcase") {
                 DisciplinesView()
             }
+            Tab("Reports", systemImage: "chart.bar.doc.horizontal") {
+                ReportsView()
+            }
             Tab("Settings", systemImage: "gearshape") {
                 SettingsView()
             }
