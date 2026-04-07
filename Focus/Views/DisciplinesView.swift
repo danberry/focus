@@ -10,40 +10,38 @@ struct DisciplinesView: View {
     @State private var isAddingDiscipline = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if disciplines.isEmpty {
-                    ContentUnavailableView(
-                        "No Disciplines",
-                        systemImage: "briefcase",
-                        description: Text("Add a discipline to get started.")
-                    )
-                } else {
-                    List {
-                        ForEach(disciplines) { discipline in
-                            NavigationLink(destination: DisciplineDetailView(discipline: discipline)) {
-                                Text(discipline.name)
-                                    .badge(discipline.jobTitles.count)
-                            }
+        Group {
+            if disciplines.isEmpty {
+                ContentUnavailableView(
+                    "No Disciplines",
+                    systemImage: "briefcase",
+                    description: Text("Add a discipline to get started.")
+                )
+            } else {
+                List {
+                    ForEach(disciplines) { discipline in
+                        NavigationLink(destination: DisciplineDetailView(discipline: discipline)) {
+                            Text(discipline.name)
+                                .badge(discipline.jobTitles.count)
                         }
-                        .onDelete(perform: delete)
                     }
-                    .listStyle(.plain)
+                    .onDelete(perform: delete)
+                }
+                .listStyle(.plain)
+            }
+        }
+        .navigationTitle("Disciplines")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isAddingDiscipline = true
+                } label: {
+                    Image(systemName: "plus")
                 }
             }
-            .navigationTitle("Disciplines")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isAddingDiscipline = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $isAddingDiscipline) {
-                AddDisciplineView()
-            }
+        }
+        .sheet(isPresented: $isAddingDiscipline) {
+            AddDisciplineView()
         }
     }
 
@@ -57,6 +55,8 @@ struct DisciplinesView: View {
 }
 
 #Preview {
-    DisciplinesView()
-        .modelContainer(for: [Discipline.self, JobTitle.self], inMemory: true)
+    NavigationStack {
+        DisciplinesView()
+    }
+    .modelContainer(for: [Discipline.self, JobTitle.self], inMemory: true)
 }
