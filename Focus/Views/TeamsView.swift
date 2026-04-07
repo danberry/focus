@@ -22,13 +22,14 @@ struct TeamsView: View {
                     List {
                         ForEach(teams) { team in
                             NavigationLink(destination: TeamDetailView(team: team)) {
-                                VStack(alignment: .leading) {
+                                LabeledContent {
+                                    Text("\(team.members.count)")
+                                } label: {
                                     Text(team.name)
                                     Text(team.teamDescription)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
-                                .badge(team.members.count)
                             }
                         }
                         .onDelete(perform: delete)
