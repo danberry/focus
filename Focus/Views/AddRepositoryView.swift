@@ -112,7 +112,6 @@ struct AddRepositoryView: View {
                 owner: trimmedOwner,
                 name: repo.name,
                 displayName: trimmedDisplayName,
-                repoDescription: repo.description,
                 primaryLanguage: repo.primaryLanguage?.name,
                 dependabotAlerts: metrics.dependabotAlerts ?? 0,
                 codeScanningAlerts: metrics.codeScanningAlerts ?? 0,

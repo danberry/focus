@@ -145,7 +145,6 @@ struct RepositoryDetailView: View {
         }
         .listStyle(.plain)
         .navigationTitle(repository.displayName)
-        .navigationSubtitle(repository.repoDescription ?? "")
         .navigationBarTitleDisplayMode(.inline)
     }
 
