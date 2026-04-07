@@ -9,6 +9,7 @@ final class SavedRepository {
     var owner: String
     var name: String
     var displayName: String
+    var repoDescription: String?
     var primaryLanguage: String?
     var dependabotAlerts: Int
     var codeScanningAlerts: Int
@@ -19,6 +20,7 @@ final class SavedRepository {
         owner: String,
         name: String,
         displayName: String,
+        repoDescription: String? = nil,
         primaryLanguage: String? = nil,
         dependabotAlerts: Int = 0,
         codeScanningAlerts: Int = 0,
@@ -28,6 +30,7 @@ final class SavedRepository {
         self.owner = owner
         self.name = name
         self.displayName = displayName
+        self.repoDescription = repoDescription
         self.primaryLanguage = primaryLanguage
         self.dependabotAlerts = dependabotAlerts
         self.codeScanningAlerts = codeScanningAlerts
