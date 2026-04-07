@@ -15,60 +15,41 @@ struct MemberDetailView: View {
             .sorted { $0.date < $1.date }
     }
 
-    private var maxCount: Int {
-        filteredDays.map(\.count).max() ?? 1
-    }
-
-    private var gridRows: [[DailyContribution?]] {
-        guard !filteredDays.isEmpty else { return [] }
-
-        // Build a date → contribution lookup
-        var lookup: [Date: DailyContribution] = [:]
-        for day in filteredDays {
-            lookup[Calendar.current.startOfDay(for: day.date)] = day
-        }
-
-        // Expand the full date range day-by-day
-        let start = Calendar.current.startOfDay(for: selectedRange.cutoffDate)
-        let endDay = Calendar.current.startOfDay(for: Date())
-        var current = start
-        var days: [DailyContribution?] = []
-        while current <= endDay {
-            days.append(lookup[current])
-            current = Calendar.current.date(byAdding: .day, value: 1, to: current)!
-        }
-
-        // Pad the front so the first cell lands on its correct weekday column (1=Sun…7=Sat)
-        let firstWeekday = Calendar.current.component(.weekday, from: start)
-        let leadingNils: [DailyContribution?] = Array(repeating: nil, count: firstWeekday - 1)
-        let padded = leadingNils + days
-
-        // Chunk into rows of 7
-        return stride(from: 0, to: padded.count, by: 7).map {
-            Array(padded[$0..<min($0 + 7, padded.count)])
-        }
-    }
-
     var body: some View {
+        // Compute expensive values once per render instead of once per cell
+        let days = filteredDays
+        let maxCount = days.map(\.count).max() ?? 1
+        let rows = buildGridRows(from: days)
+
+        // Single-pass summary stats instead of three separate scans
+        var total = 0
+        var activeDayCount = 0
+        var peakCount = 0
+        for day in days {
+            total += day.count
+            if day.count > 0 { activeDayCount += 1 }
+            if day.count > peakCount { peakCount = day.count }
+        }
+
         List {
             Section {
                 rangePickerView
-                if filteredDays.isEmpty {
+                if days.isEmpty {
                     Text("No contribution data available.")
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 40)
                         .listRowSeparator(.hidden)
                 } else {
-                    contributionGridView
+                    contributionGridView(rows: rows, maxCount: maxCount)
                 }
             }
 
             Section("Summary") {
-                summaryRow(label: "Total contributions", value: filteredDays.reduce(0) { $0 + $1.count })
-                summaryRow(label: "Active days", value: filteredDays.filter { $0.count > 0 }.count)
-                if let peak = filteredDays.max(by: { $0.count < $1.count }), peak.count > 0 {
-                    summaryRow(label: "Peak day", value: peak.count)
+                summaryRow(label: "Total contributions", value: total)
+                summaryRow(label: "Active days", value: activeDayCount)
+                if peakCount > 0 {
+                    summaryRow(label: "Peak day", value: peakCount)
                 }
             }
         }
@@ -89,7 +70,7 @@ struct MemberDetailView: View {
         .padding(.vertical, 4)
     }
 
-    private var contributionGridView: some View {
+    private func contributionGridView(rows: [[DailyContribution?]], maxCount: Int) -> some View {
         let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
@@ -101,14 +82,14 @@ struct MemberDetailView: View {
                 }
             }
 
-            ForEach(gridRows.indices, id: \.self) { rowIndex in
+            ForEach(rows.indices, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
                     ForEach(0..<7, id: \.self) { col in
-                        let cell: DailyContribution? = col < gridRows[rowIndex].count
-                            ? gridRows[rowIndex][col]
+                        let cell: DailyContribution? = col < rows[rowIndex].count
+                            ? rows[rowIndex][col]
                             : nil
                         Circle()
-                            .fill(contributionColor(for: cell?.count ?? 0))
+                            .fill(contributionColor(for: cell?.count ?? 0, maxCount: maxCount))
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fit)
                     }
@@ -119,7 +100,41 @@ struct MemberDetailView: View {
         .padding(.vertical, 8)
     }
 
-    private func contributionColor(for count: Int) -> Color {
+    // MARK: - Helpers
+
+    private func buildGridRows(from days: [DailyContribution]) -> [[DailyContribution?]] {
+        guard !days.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+
+        // Build a date → contribution lookup
+        var lookup: [Date: DailyContribution] = [:]
+        for day in days {
+            lookup[calendar.startOfDay(for: day.date)] = day
+        }
+
+        // Expand the full date range day-by-day
+        let start = calendar.startOfDay(for: selectedRange.cutoffDate)
+        let endDay = calendar.startOfDay(for: Date())
+        var current = start
+        var allDays: [DailyContribution?] = []
+        while current <= endDay {
+            allDays.append(lookup[current])
+            current = calendar.date(byAdding: .day, value: 1, to: current)!
+        }
+
+        // Pad the front so the first cell lands on its correct weekday column (1=Sun…7=Sat)
+        let firstWeekday = calendar.component(.weekday, from: start)
+        let leadingNils: [DailyContribution?] = Array(repeating: nil, count: firstWeekday - 1)
+        let padded = leadingNils + allDays
+
+        // Chunk into rows of 7
+        return stride(from: 0, to: padded.count, by: 7).map {
+            Array(padded[$0..<min($0 + 7, padded.count)])
+        }
+    }
+
+    private func contributionColor(for count: Int, maxCount: Int) -> Color {
         if count == 0 { return Color(.systemFill) }
         let ratio = Double(count) / Double(maxCount)
         switch ratio {
