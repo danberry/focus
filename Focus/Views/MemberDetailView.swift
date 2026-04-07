@@ -22,14 +22,7 @@ struct MemberDetailView: View {
         let rows = buildGridRows(from: days)
 
         // Single-pass summary stats instead of three separate scans
-        var total = 0
-        var activeDayCount = 0
-        var peakCount = 0
-        for day in days {
-            total += day.count
-            if day.count > 0 { activeDayCount += 1 }
-            if day.count > peakCount { peakCount = day.count }
-        }
+        let stats = summaryStats(from: days)
 
         List {
             Section {
@@ -61,10 +54,10 @@ struct MemberDetailView: View {
                         }
                     }
                 }
-                summaryRow(label: "Total contributions", value: total)
-                summaryRow(label: "Active days", value: activeDayCount)
-                if peakCount > 0 {
-                    summaryRow(label: "Peak day", value: peakCount)
+                summaryRow(label: "Total contributions", value: stats.total)
+                summaryRow(label: "Active days", value: stats.activeDays)
+                if stats.peak > 0 {
+                    summaryRow(label: "Peak day", value: stats.peak)
                 }
             }
         }
@@ -116,6 +109,18 @@ struct MemberDetailView: View {
     }
 
     // MARK: - Helpers
+
+    private func summaryStats(from days: [DailyContribution]) -> (total: Int, activeDays: Int, peak: Int) {
+        var total = 0
+        var activeDays = 0
+        var peak = 0
+        for day in days {
+            total += day.count
+            if day.count > 0 { activeDays += 1 }
+            if day.count > peak { peak = day.count }
+        }
+        return (total, activeDays, peak)
+    }
 
     private func buildGridRows(from days: [DailyContribution]) -> [[DailyContribution?]] {
         guard !days.isEmpty else { return [] }
