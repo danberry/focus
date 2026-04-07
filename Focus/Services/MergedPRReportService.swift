@@ -14,7 +14,7 @@ struct MergedPRReportService: Sendable {
     /// Fetches all PRs merged on the given date across the provided repositories.
     /// Returns a dictionary keyed by `owner/name`, with PRs sorted by mergedAt ascending.
     /// Returns an empty dictionary immediately if `repositories` is empty.
-    func fetchMergedPRs(for repositories: [SavedRepository], on date: Date) async throws -> [String: [MergedPR]] {
+    func fetchMergedPRs(for repositories: [(owner: String, name: String)], on date: Date) async throws -> [String: [MergedPR]] {
         guard !repositories.isEmpty else { return [:] }
 
         let dateStr = formattedDate(date)

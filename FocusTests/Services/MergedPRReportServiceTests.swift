@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import SwiftData
 @testable import Focus
 
 @Suite("MergedPRReportService Tests")
@@ -10,17 +9,6 @@ struct MergedPRReportServiceTests {
     private func makeService() -> MergedPRReportService {
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return MergedPRReportService(graphQL: graphQL)
-    }
-
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(for: SavedRepository.self, configurations: config)
-    }
-
-    private func makeRepo(_ owner: String, _ name: String, in context: ModelContext) -> SavedRepository {
-        let repo = SavedRepository(githubId: "\(owner)/\(name)", owner: owner, name: name, displayName: "\(owner)/\(name)")
-        context.insert(repo)
-        return repo
     }
 
     private func makeResponse(nodes: [String]) -> String {
@@ -71,10 +59,10 @@ struct MergedPRReportServiceTests {
             )
         ]))
 
-        let container = try makeContainer()
-        let repo = makeRepo("acme", "widget", in: container.mainContext)
-
-        let result = try await makeService().fetchMergedPRs(for: [repo], on: Date())
+        let result = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "widget")],
+            on: Date()
+        )
 
         let prs = try #require(result["acme/widget"])
         #expect(prs.count == 1)
@@ -104,11 +92,10 @@ struct MergedPRReportServiceTests {
             prNode(number: 3, title: "PR C", mergedAt: "2026-04-06T12:00:00Z", login: "carol", url: "https://github.com/acme/foo/pull/3", repo: "acme/foo")
         ]))
 
-        let container = try makeContainer()
-        let foo = makeRepo("acme", "foo", in: container.mainContext)
-        let bar = makeRepo("acme", "bar", in: container.mainContext)
-
-        let result = try await makeService().fetchMergedPRs(for: [foo, bar], on: Date())
+        let result = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "foo"), (owner: "acme", name: "bar")],
+            on: Date()
+        )
 
         #expect(result.count == 2)
         let fooPRs = try #require(result["acme/foo"])
@@ -124,14 +111,14 @@ struct MergedPRReportServiceTests {
 
     @Test func sortsPRsByMergedAtAscending() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: [
-            prNode(number: 10, title: "Later", mergedAt: "2026-04-06T20:00:00Z", login: "a", url: "https://github.com/acme/repo/pull/10", repo: "acme/repo"),
+            prNode(number: 10, title: "Later",   mergedAt: "2026-04-06T20:00:00Z", login: "a", url: "https://github.com/acme/repo/pull/10", repo: "acme/repo"),
             prNode(number: 1,  title: "Earlier", mergedAt: "2026-04-06T08:00:00Z", login: "b", url: "https://github.com/acme/repo/pull/1",  repo: "acme/repo")
         ]))
 
-        let container = try makeContainer()
-        let repo = makeRepo("acme", "repo", in: container.mainContext)
-
-        let result = try await makeService().fetchMergedPRs(for: [repo], on: Date())
+        let result = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "repo")],
+            on: Date()
+        )
 
         let prs = try #require(result["acme/repo"])
         #expect(prs.count == 2)
@@ -149,10 +136,10 @@ struct MergedPRReportServiceTests {
             prNode(number: 5, title: "Real PR", mergedAt: "2026-04-06T09:00:00Z", login: "dev", url: "https://github.com/acme/repo/pull/5", repo: "acme/repo")
         ]))
 
-        let container = try makeContainer()
-        let repo = makeRepo("acme", "repo", in: container.mainContext)
-
-        let result = try await makeService().fetchMergedPRs(for: [repo], on: Date())
+        let result = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "repo")],
+            on: Date()
+        )
 
         let prs = try #require(result["acme/repo"])
         #expect(prs.count == 1)
@@ -164,16 +151,15 @@ struct MergedPRReportServiceTests {
     @Test func queryContainsCorrectDateAndRepoQualifiers() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: []))
 
-        let container = try makeContainer()
-        let repo = makeRepo("acme", "widget", in: container.mainContext)
-
-        // Pass a fixed date so the "yesterday" string is deterministic.
+        // Pass a fixed date so the date string is deterministic.
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "UTC")!
-        // Using April 7 as "today" means yesterday is April 6.
-        let today = try #require(cal.date(from: DateComponents(year: 2026, month: 4, day: 7)))
+        let yesterday = try #require(cal.date(from: DateComponents(year: 2026, month: 4, day: 6)))
 
-        _ = try await makeService().fetchMergedPRs(for: [repo], on: today)
+        _ = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "widget")],
+            on: yesterday
+        )
 
         let bodyData = try #require(mockHTTP.lastRequest?.httpBody)
         let body = try JSONSerialization.jsonObject(with: bodyData) as! [String: Any]
@@ -189,11 +175,10 @@ struct MergedPRReportServiceTests {
     @Test func queryIncludesAllSavedRepos() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: []))
 
-        let container = try makeContainer()
-        let foo = makeRepo("acme", "foo", in: container.mainContext)
-        let bar = makeRepo("acme", "bar", in: container.mainContext)
-
-        _ = try await makeService().fetchMergedPRs(for: [foo, bar], on: Date())
+        _ = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "foo"), (owner: "acme", name: "bar")],
+            on: Date()
+        )
 
         let bodyData = try #require(mockHTTP.lastRequest?.httpBody)
         let body = try JSONSerialization.jsonObject(with: bodyData) as! [String: Any]
@@ -209,10 +194,10 @@ struct MergedPRReportServiceTests {
     @Test func emptyNodesReturnsEmptyDict() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: []))
 
-        let container = try makeContainer()
-        let repo = makeRepo("acme", "widget", in: container.mainContext)
-
-        let result = try await makeService().fetchMergedPRs(for: [repo], on: Date())
+        let result = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "widget")],
+            on: Date()
+        )
 
         #expect(result.isEmpty)
     }
@@ -220,22 +205,19 @@ struct MergedPRReportServiceTests {
     // MARK: - Network error propagates
 
     @Test func throwsOnNetworkError() async throws {
-        let container = try makeContainer()
-        let repo = makeRepo("acme", "widget", in: container.mainContext)
-
         mockHTTP.setFailure(URLError(.notConnectedToInternet))
 
         await #expect(throws: (any Error).self) {
-            _ = try await makeService().fetchMergedPRs(for: [repo], on: Date())
+            _ = try await makeService().fetchMergedPRs(
+                for: [(owner: "acme", name: "widget")],
+                on: Date()
+            )
         }
     }
 
     // MARK: - GraphQL errors propagate
 
     @Test func throwsOnGraphQLError() async throws {
-        let container = try makeContainer()
-        let repo = makeRepo("acme", "widget", in: container.mainContext)
-
         mockHTTP.setSuccess(json: """
             {
               "data": null,
@@ -244,7 +226,10 @@ struct MergedPRReportServiceTests {
             """)
 
         await #expect(throws: GitHubError.self) {
-            _ = try await makeService().fetchMergedPRs(for: [repo], on: Date())
+            _ = try await makeService().fetchMergedPRs(
+                for: [(owner: "acme", name: "widget")],
+                on: Date()
+            )
         }
     }
 }
