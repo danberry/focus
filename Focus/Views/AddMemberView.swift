@@ -12,8 +12,11 @@ struct AddMemberView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    @Query(sort: \JobTitle.name) private var allJobTitles: [JobTitle]
+
     @State private var name = ""
     @State private var githubLogin = ""
+    @State private var selectedJobTitle: JobTitle?
     @State private var isLoading = false
     @State private var error: GitHubError?
     @State private var showTokenEntry = false
@@ -37,6 +40,20 @@ struct AddMemberView: View {
                     TextField("e.g. Jane Smith", text: $name)
                 } header: {
                     Text("Name")
+                }
+
+                Section {
+                    Picker("Job Title", selection: $selectedJobTitle) {
+                        Text("None").tag(Optional<JobTitle>.none)
+                        ForEach(allJobTitles) { title in
+                            Text(title.name).tag(Optional(title))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                } header: {
+                    Text("Job Title")
+                } footer: {
+                    Text("Optional. Select from job titles defined in Disciplines.")
                 }
 
                 Section {
@@ -113,6 +130,7 @@ struct AddMemberView: View {
                 githubLogin: trimmedLogin.isEmpty ? nil : trimmedLogin
             )
             member.team = team
+            member.jobTitle = selectedJobTitle
             modelContext.insert(member)
 
             if !trimmedLogin.isEmpty {

@@ -33,7 +33,14 @@ struct TeamDetailView: View {
                         } label: {
                             HStack(spacing: 10) {
                                 MemberAvatarView(member: member)
-                                Text(member.name)
+                                VStack(alignment: .leading) {
+                                    Text(member.name)
+                                    if let title = member.jobTitle {
+                                        Text(title.name)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
                             }
                             .badge(member.totalContributions)
                         }
