@@ -60,6 +60,7 @@ struct MergedPRsYesterdayView: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
