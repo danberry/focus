@@ -8,6 +8,7 @@ final class Member {
     var name: String
     var githubId: Int?
     var githubLogin: String?
+    var jobTitle: JobTitle?
     var contributionCount: Int = 0
     var team: Team?
 

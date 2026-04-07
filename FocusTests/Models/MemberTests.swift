@@ -13,7 +13,7 @@ struct MemberTests {
 
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(for: Team.self, Member.self, configurations: config)
+        return try ModelContainer(for: Team.self, Member.self, Discipline.self, JobTitle.self, configurations: config)
     }
 
     // MARK: - Tests
@@ -81,6 +81,50 @@ struct MemberTests {
         let memberDescriptor = FetchDescriptor<Member>()
         let remainingMembers = try context.fetch(memberDescriptor)
         #expect(remainingMembers.isEmpty)
+    }
+
+    @Test func memberCanHaveJobTitle() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+
+        let discipline = Discipline(name: "Engineering")
+        context.insert(discipline)
+        let jobTitle = JobTitle(name: "Senior Engineer")
+        discipline.jobTitles.append(jobTitle)
+
+        let member = Member(name: "Alice")
+        member.jobTitle = jobTitle
+        context.insert(member)
+        try context.save()
+
+        let descriptor = FetchDescriptor<Member>()
+        let results = try context.fetch(descriptor)
+
+        #expect(results[0].jobTitle?.name == "Senior Engineer")
+        #expect(results[0].jobTitle?.discipline?.name == "Engineering")
+    }
+
+    @Test func deletingMemberDoesNotDeleteJobTitle() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+
+        let discipline = Discipline(name: "Engineering")
+        context.insert(discipline)
+        let jobTitle = JobTitle(name: "Senior Engineer")
+        discipline.jobTitles.append(jobTitle)
+
+        let member = Member(name: "Alice")
+        member.jobTitle = jobTitle
+        context.insert(member)
+        try context.save()
+
+        context.delete(member)
+        try context.save()
+
+        let jobTitleDescriptor = FetchDescriptor<JobTitle>()
+        let remainingTitles = try context.fetch(jobTitleDescriptor)
+        #expect(remainingTitles.count == 1)
+        #expect(remainingTitles[0].name == "Senior Engineer")
     }
 
     @Test func multipleMembersAreFetchedSortedByName() throws {

@@ -46,6 +46,21 @@ struct MemberDetailView: View {
             }
 
             Section("Summary") {
+                if let jobTitle = member.jobTitle {
+                    HStack {
+                        Text("Job title")
+                        Spacer()
+                        VStack(alignment: .trailing) {
+                            Text(jobTitle.name)
+                                .foregroundStyle(.secondary)
+                            if let discipline = jobTitle.discipline {
+                                Text(discipline.name)
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                }
                 summaryRow(label: "Total contributions", value: total)
                 summaryRow(label: "Active days", value: activeDayCount)
                 if peakCount > 0 {
