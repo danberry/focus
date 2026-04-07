@@ -61,6 +61,12 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink("Disciplines") {
+                        DisciplinesView()
+                    }
+                }
+
+                Section {
                     Button(role: .destructive) {
                         authService.signOut()
                     } label: {
