@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 import SwiftData
 
 // MARK: - MemberDetailView
@@ -16,11 +15,53 @@ struct MemberDetailView: View {
             .sorted { $0.date < $1.date }
     }
 
+    private var maxCount: Int {
+        filteredDays.map(\.count).max() ?? 1
+    }
+
+    private var gridRows: [[DailyContribution?]] {
+        guard !filteredDays.isEmpty else { return [] }
+
+        // Build a date → contribution lookup
+        var lookup: [Date: DailyContribution] = [:]
+        for day in filteredDays {
+            lookup[Calendar.current.startOfDay(for: day.date)] = day
+        }
+
+        // Expand the full date range day-by-day
+        let start = Calendar.current.startOfDay(for: selectedRange.cutoffDate)
+        let endDay = Calendar.current.startOfDay(for: Date())
+        var current = start
+        var days: [DailyContribution?] = []
+        while current <= endDay {
+            days.append(lookup[current])
+            current = Calendar.current.date(byAdding: .day, value: 1, to: current)!
+        }
+
+        // Pad the front so the first cell lands on its correct weekday column (1=Sun…7=Sat)
+        let firstWeekday = Calendar.current.component(.weekday, from: start)
+        let leadingNils: [DailyContribution?] = Array(repeating: nil, count: firstWeekday - 1)
+        let padded = leadingNils + days
+
+        // Chunk into rows of 7
+        return stride(from: 0, to: padded.count, by: 7).map {
+            Array(padded[$0..<min($0 + 7, padded.count)])
+        }
+    }
+
     var body: some View {
         List {
             Section {
                 rangePickerView
-                chartView
+                if filteredDays.isEmpty {
+                    Text("No contribution data available.")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 40)
+                        .listRowSeparator(.hidden)
+                } else {
+                    contributionGridView
+                }
             }
 
             Section("Summary") {
@@ -48,39 +89,44 @@ struct MemberDetailView: View {
         .padding(.vertical, 4)
     }
 
-    @ViewBuilder
-    private var chartView: some View {
-        if filteredDays.isEmpty {
-            Text("No contribution data available.")
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, 40)
-                .listRowSeparator(.hidden)
-        } else {
-            Chart(filteredDays) { day in
-                LineMark(
-                    x: .value("Date", day.date),
-                    y: .value("Contributions", day.count)
-                )
-                .interpolationMethod(.catmullRom)
-                .foregroundStyle(Color.accentColor)
-            }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: selectedRange.xAxisStride)) { _ in
-                    AxisGridLine()
-                    AxisTick()
-                    AxisValueLabel(format: selectedRange.xAxisLabelFormat)
+    private var contributionGridView: some View {
+        let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                ForEach(dayLabels.indices, id: \.self) { i in
+                    Text(dayLabels[i])
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
                 }
             }
-            .chartYAxis {
-                AxisMarks { value in
-                    AxisGridLine()
-                    AxisValueLabel()
+
+            ForEach(gridRows.indices, id: \.self) { rowIndex in
+                HStack(spacing: 4) {
+                    ForEach(0..<7, id: \.self) { col in
+                        let cell: DailyContribution? = col < gridRows[rowIndex].count
+                            ? gridRows[rowIndex][col]
+                            : nil
+                        Circle()
+                            .fill(contributionColor(for: cell?.count ?? 0))
+                            .frame(maxWidth: .infinity)
+                            .aspectRatio(1, contentMode: .fit)
+                    }
                 }
             }
-            .frame(height: 200)
-            .listRowSeparator(.hidden)
-            .padding(.vertical, 8)
+        }
+        .listRowSeparator(.hidden)
+        .padding(.vertical, 8)
+    }
+
+    private func contributionColor(for count: Int) -> Color {
+        if count == 0 { return Color(.systemFill) }
+        let ratio = Double(count) / Double(maxCount)
+        switch ratio {
+        case ..<0.25: return Color.accentColor.opacity(0.25)
+        case ..<0.50: return Color.accentColor.opacity(0.45)
+        case ..<0.75: return Color.accentColor.opacity(0.65)
+        default:      return Color.accentColor.opacity(0.90)
         }
     }
 
@@ -113,21 +159,5 @@ private enum TimeRange: String, CaseIterable, Identifiable {
         case .oneYear: days = -365
         }
         return Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
-    }
-
-    var xAxisStride: Calendar.Component {
-        switch self {
-        case .thirtyDays: return .weekOfYear
-        case .ninetyDays: return .month
-        case .oneYear: return .month
-        }
-    }
-
-    var xAxisLabelFormat: Date.FormatStyle {
-        switch self {
-        case .thirtyDays: return .dateTime.month().day()
-        case .ninetyDays: return .dateTime.month()
-        case .oneYear: return .dateTime.month()
-        }
     }
 }
