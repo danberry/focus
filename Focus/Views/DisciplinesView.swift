@@ -23,8 +23,8 @@ struct DisciplinesView: View {
                         ForEach(disciplines) { discipline in
                             NavigationLink(destination: DisciplineDetailView(discipline: discipline)) {
                                 Text(discipline.name)
+                                    .badge(discipline.jobTitles.count)
                             }
-                            .badge(discipline.jobTitles.count)
                         }
                         .onDelete(perform: delete)
                     }
