@@ -17,11 +17,6 @@ struct TeamDetailView: View {
 
     var body: some View {
         List {
-            Section {
-                Text(team.teamDescription)
-                    .foregroundStyle(.secondary)
-            }
-
             Section("Members") {
                 if sortedMembers.isEmpty {
                     Text("No members yet.")
@@ -51,6 +46,7 @@ struct TeamDetailView: View {
         }
         .listStyle(.plain)
         .navigationTitle(team.name)
+        .navigationSubtitle(team.teamDescription)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
