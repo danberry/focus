@@ -79,20 +79,20 @@ struct MemberDetailView: View {
     }
 
     private func contributionGridView(rows: [[DailyContribution?]], maxCount: Int) -> some View {
-        let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        let fromLabel = formatter.string(from: selectedRange.cutoffDate)
+        let toLabel = formatter.string(from: Date())
+
         return VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                ForEach(dayLabels.indices, id: \.self) { i in
-                    Text(dayLabels[i])
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-            }
+            Text("\(fromLabel) – \(toLabel)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             ForEach(rows.indices, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
-                    ForEach(0..<7, id: \.self) { col in
+                    ForEach(0..<15, id: \.self) { col in
                         let cell: DailyContribution? = col < rows[rowIndex].count
                             ? rows[rowIndex][col]
                             : nil
@@ -143,14 +143,9 @@ struct MemberDetailView: View {
             current = calendar.date(byAdding: .day, value: 1, to: current)!
         }
 
-        // Pad the front so the first cell lands on its correct weekday column (1=Sun…7=Sat)
-        let firstWeekday = calendar.component(.weekday, from: start)
-        let leadingNils: [DailyContribution?] = Array(repeating: nil, count: firstWeekday - 1)
-        let padded = leadingNils + allDays
-
-        // Chunk into rows of 7
-        return stride(from: 0, to: padded.count, by: 7).map {
-            Array(padded[$0..<min($0 + 7, padded.count)])
+        // Chunk into rows of 15
+        return stride(from: 0, to: allDays.count, by: 15).map {
+            Array(allDays[$0..<min($0 + 15, allDays.count)])
         }
     }
 
