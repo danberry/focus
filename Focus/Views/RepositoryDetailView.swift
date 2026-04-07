@@ -11,8 +11,6 @@ struct RepositoryDetailView: View {
         List {
             // MARK: Info
 
-            // MARK: Info
-
             Section("Info") {
                 LabeledContent("Owner", value: repository.owner)
                 LabeledContent("Name", value: repository.name)
