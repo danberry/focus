@@ -10,7 +10,7 @@ struct MergedPRsYesterdayView: View {
 
     @State private var isLoading = false
     @State private var error: GitHubError?
-    @State private var sections: [(repoName: String, prs: [MergedPR])] = []
+    @State private var sections: [(repoName: String, displayName: String, prs: [MergedPR])] = []
 
     private var yesterday: Date {
         var cal = Calendar(identifier: .gregorian)
@@ -45,7 +45,7 @@ struct MergedPRsYesterdayView: View {
             } else {
                 List {
                     ForEach(sections, id: \.repoName) { section in
-                        Section(section.repoName) {
+                        Section(section.displayName) {
                             ForEach(section.prs) { pr in
                                 Button {
                                     if let url = URL(string: pr.url) {
@@ -93,10 +93,13 @@ struct MergedPRsYesterdayView: View {
 
         do {
             let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
+            let displayNames = Dictionary(
+                uniqueKeysWithValues: savedRepositories.map { ("\($0.owner)/\($0.name)", $0.displayName) }
+            )
             let prsByRepo = try await service.fetchMergedPRs(for: repos, on: yesterday)
             sections = prsByRepo
-                .map { (repoName: $0.key, prs: $0.value) }
-                .sorted { $0.repoName < $1.repoName }
+                .map { (repoName: $0.key, displayName: displayNames[$0.key] ?? $0.key, prs: $0.value) }
+                .sorted { $0.displayName < $1.displayName }
         } catch let ghError as GitHubError {
             error = ghError
         } catch {
