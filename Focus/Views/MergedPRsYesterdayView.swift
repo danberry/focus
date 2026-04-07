@@ -92,7 +92,8 @@ struct MergedPRsYesterdayView: View {
         )
 
         do {
-            let prsByRepo = try await service.fetchMergedPRs(for: savedRepositories, on: yesterday)
+            let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
+            let prsByRepo = try await service.fetchMergedPRs(for: repos, on: yesterday)
             sections = prsByRepo
                 .map { (repoName: $0.key, prs: $0.value) }
                 .sorted { $0.repoName < $1.repoName }

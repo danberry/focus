@@ -1,6 +1,7 @@
 import Foundation
 import LocalAuthentication
 import Observation
+import os
 import Security
 
 // MARK: - AuthState
