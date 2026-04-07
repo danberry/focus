@@ -29,6 +29,7 @@ struct TeamsView: View {
                                         .foregroundStyle(.secondary)
                                 }
                             }
+                            .badge(team.members.count)
                         }
                         .onDelete(perform: delete)
                     }
