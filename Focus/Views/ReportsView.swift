@@ -17,6 +17,7 @@ struct ReportsView: View {
                     }
                 }
             }
+            .listStyle(.plain)
             .navigationTitle("Reports")
         }
     }
