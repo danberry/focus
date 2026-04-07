@@ -54,12 +54,13 @@ struct MergedPRsYesterdayView: View {
                                 } label: {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(pr.title)
-                                            .foregroundStyle(.primary)
+                                            .foregroundStyle(Color.primary)
                                         Text("by @\(pr.authorLogin) • #\(pr.number)")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(Color.secondary)
                                     }
                                 }
+
                             }
                         }
                     }
