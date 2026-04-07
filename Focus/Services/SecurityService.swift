@@ -251,7 +251,7 @@ private struct AssigneesResponse: Decodable, Sendable {
 
 // MARK: - CodeScanningAlertResponse
 
-struct CodeScanningAlertResponse: Decodable, Sendable {
+private struct CodeScanningAlertResponse: Decodable, Sendable {
     let number: Int
     let createdAt: Date
     let rule: Rule
