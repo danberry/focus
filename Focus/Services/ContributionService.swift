@@ -86,7 +86,7 @@ struct ContributionService: Sendable {
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        dateFormatter.timeZone = .current
 
         for week in calendar.weeks {
             for day in week.contributionDays {
