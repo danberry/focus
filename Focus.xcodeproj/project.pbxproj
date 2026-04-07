@@ -88,6 +88,11 @@
 		40825500000000000000C015 /* AssignCodeOwnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A063 /* AssignCodeOwnerView.swift */; };
 		40825500000000000000C016 /* DependabotAlertAssignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */; };
 		40825500000000000000C017 /* AllPullRequestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A065 /* AllPullRequestsView.swift */; };
+		40825500000000000000C018 /* MergedPR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A066 /* MergedPR.swift */; };
+		40825500000000000000C019 /* ReportQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A067 /* ReportQueries.swift */; };
+		40825500000000000000C01A /* MergedPRReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A068 /* MergedPRReportService.swift */; };
+		40825500000000000000C01B /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A069 /* ReportsView.swift */; };
+		40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06A /* MergedPRsYesterdayView.swift */; };
 		40825500000000000000B055 /* RepositoryVelocity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A056 /* RepositoryVelocity.swift */; };
 		40825500000000000000B056 /* VelocityQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A057 /* VelocityQueries.swift */; };
 		40825500000000000000B057 /* VelocityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A058 /* VelocityService.swift */; };
@@ -190,6 +195,11 @@
 		40825500000000000000A063 /* AssignCodeOwnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignCodeOwnerView.swift; sourceTree = "<group>"; };
 		40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlertAssignmentTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A065 /* AllPullRequestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllPullRequestsView.swift; sourceTree = "<group>"; };
+		40825500000000000000A066 /* MergedPR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPR.swift; sourceTree = "<group>"; };
+		40825500000000000000A067 /* ReportQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportQueries.swift; sourceTree = "<group>"; };
+		40825500000000000000A068 /* MergedPRReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRReportService.swift; sourceTree = "<group>"; };
+		40825500000000000000A069 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
+		40825500000000000000A06A /* MergedPRsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRsYesterdayView.swift; sourceTree = "<group>"; };
 		40825500000000000000A056 /* RepositoryVelocity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryVelocity.swift; sourceTree = "<group>"; };
 		40825500000000000000A057 /* VelocityQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityQueries.swift; sourceTree = "<group>"; };
 		40825500000000000000A058 /* VelocityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityService.swift; sourceTree = "<group>"; };
@@ -243,6 +253,7 @@
 				40825500000000000000A051 /* JobTitle.swift */,
 				40825500000000000000A056 /* RepositoryVelocity.swift */,
 				40825500000000000000A05F /* OpenPullRequest.swift */,
+				40825500000000000000A066 /* MergedPR.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -273,6 +284,7 @@
 				40825500000000000000A04A /* ContributionService.swift */,
 				40825500000000000000A058 /* VelocityService.swift */,
 				40825500000000000000A060 /* PullRequestService.swift */,
+				40825500000000000000A068 /* MergedPRReportService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -284,6 +296,7 @@
 				40825500000000000000A010 /* RepositoryQueries.swift */,
 				40825500000000000000A049 /* ContributionQueries.swift */,
 				40825500000000000000A057 /* VelocityQueries.swift */,
+				40825500000000000000A067 /* ReportQueries.swift */,
 			);
 			path = Queries;
 			sourceTree = "<group>";
@@ -312,6 +325,8 @@
 				40825500000000000000A061 /* PullRequestDetailView.swift */,
 				40825500000000000000A063 /* AssignCodeOwnerView.swift */,
 				40825500000000000000A065 /* AllPullRequestsView.swift */,
+				40825500000000000000A069 /* ReportsView.swift */,
+				40825500000000000000A06A /* MergedPRsYesterdayView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -587,6 +602,11 @@
 				40825500000000000000C013 /* PullRequestDetailView.swift in Sources */,
 				40825500000000000000C015 /* AssignCodeOwnerView.swift in Sources */,
 				40825500000000000000C017 /* AllPullRequestsView.swift in Sources */,
+				40825500000000000000C018 /* MergedPR.swift in Sources */,
+				40825500000000000000C019 /* ReportQueries.swift in Sources */,
+				40825500000000000000C01A /* MergedPRReportService.swift in Sources */,
+				40825500000000000000C01B /* ReportsView.swift in Sources */,
+				40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
