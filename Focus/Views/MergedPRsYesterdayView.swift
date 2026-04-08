@@ -74,6 +74,7 @@ struct MergedPRsYesterdayView: View {
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                     }
+                    .listSectionSpacing(18)
                     ForEach(teamSections, id: \.teamName) { section in
                         NavigationLink(destination: TeamMergedPRsListView(teamName: section.teamName, prs: section.prs)) {
                             LabeledContent(section.teamName) {
