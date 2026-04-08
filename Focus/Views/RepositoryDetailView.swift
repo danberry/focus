@@ -188,12 +188,9 @@ private struct VelocityHeroRow: View {
                         Button(period.rawValue) { selectedPeriod = period }
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "calendar")
-                        Text(selectedPeriod.rawValue)
-                    }
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    Image(systemName: "calendar")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
             }
         }
