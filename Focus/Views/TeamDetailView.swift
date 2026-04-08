@@ -26,8 +26,7 @@ struct TeamDetailView: View {
 
             Section("Members") {
                 if sortedMembers.isEmpty {
-                    Text("No members yet.")
-                        .foregroundStyle(.secondary)
+                    EmptyContentView("No Members", systemImage: "person.2")
                 } else {
                     ForEach(sortedMembers) { member in
                         NavigationLink {
