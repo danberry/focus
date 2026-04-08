@@ -184,8 +184,8 @@ private enum TimeRange: String, CaseIterable, Identifiable {
     var cutoffDate: Date {
         let days: Int
         switch self {
-        case .thirtyDays: days = -30
-        case .ninetyDays: days = -90
+        case .thirtyDays: days = -29
+        case .ninetyDays: days = -89
         case .oneYear: days = -365
         }
         return Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
