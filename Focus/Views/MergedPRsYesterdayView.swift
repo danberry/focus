@@ -44,6 +44,11 @@ struct MergedPRsYesterdayView: View {
                 )
             } else {
                 List {
+                    Section {
+                        MergedPRsHeroRow(totalCount: sections.reduce(0) { $0 + $1.prs.count })
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
+                    }
                     ForEach(sections, id: \.repoName) { section in
                         Section(section.displayName) {
                             ForEach(section.prs) { pr in
@@ -102,5 +107,35 @@ struct MergedPRsYesterdayView: View {
         }
 
         isLoading = false
+    }
+}
+
+// MARK: - MergedPRsHeroRow
+
+private struct MergedPRsHeroRow: View {
+    let totalCount: Int
+
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(totalCount)")
+                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .contentTransition(.numericText())
+                Text("MERGED PRS")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .tracking(1.2)
+            }
+
+            Spacer()
+
+            Image(systemName: "arrow.triangle.merge")
+                .font(.system(size: 36, weight: .semibold))
+                .foregroundStyle(.purple.opacity(0.8))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
