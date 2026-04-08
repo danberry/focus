@@ -26,7 +26,6 @@ struct MemberDetailView: View {
 
         List {
             Section {
-                rangePickerView
                 if days.isEmpty {
                     Text("No contribution data available.")
                         .foregroundStyle(.secondary)
@@ -60,17 +59,6 @@ struct MemberDetailView: View {
 
     // MARK: - Subviews
 
-    private var rangePickerView: some View {
-        Picker("Range", selection: $selectedRange) {
-            ForEach(TimeRange.allCases) { range in
-                Text(range.label).tag(range)
-            }
-        }
-        .pickerStyle(.segmented)
-        .listRowSeparator(.hidden)
-        .padding(.vertical, 4)
-    }
-
     private func contributionGridView(rows: [[GridCell]], maxCount: Int) -> some View {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -79,9 +67,21 @@ struct MemberDetailView: View {
         let toLabel = formatter.string(from: Date())
 
         return VStack(alignment: .leading, spacing: 4) {
-            Text("\(fromLabel) – \(toLabel)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text("\(fromLabel) – \(toLabel)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Menu {
+                    ForEach(TimeRange.allCases, id: \.self) { range in
+                        Button(range.label) { selectedRange = range }
+                    }
+                } label: {
+                    Image(systemName: "calendar")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             ForEach(rows.indices, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
