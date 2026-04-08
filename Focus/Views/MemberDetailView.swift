@@ -69,7 +69,6 @@ struct MemberDetailView: View {
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("\(fromLabel) – \(toLabel)")
-                    .font(.footnote)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Menu {
@@ -78,7 +77,6 @@ struct MemberDetailView: View {
                     }
                 } label: {
                     Image(systemName: "calendar")
-                        .font(.footnote.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
             }
