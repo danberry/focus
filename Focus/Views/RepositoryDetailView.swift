@@ -5,38 +5,30 @@ import SwiftData
 
 struct RepositoryDetailView: View {
     let repository: SavedRepository
-    @State private var selectedPeriod: VelocityPeriod = .thirtyDays
-
     var body: some View {
         List {
             // MARK: Velocity
 
             Section("Velocity") {
-                Picker("Period", selection: $selectedPeriod) {
-                    ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                        Text(period.rawValue).tag(period)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
-                if let record {
-                    let c = record.comparison
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(c.current) merged PRs")
-                            .font(.headline)
-                        HStack(spacing: 4) {
-                            Image(systemName: trendIcon(c.trend))
-                                .foregroundStyle(trendColor(c.trend))
-                            Text(trendLabel(c))
-                                .font(.caption)
-                                .foregroundStyle(trendColor(c.trend))
+                ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                    let record = repository.velocityMetrics.first { $0.periodType == period.rawValue }
+                    HStack {
+                        Text(period.rawValue)
+                        Spacer()
+                        if let record {
+                            let c = record.comparison
+                            HStack(spacing: 6) {
+                                Text("\(c.current) PRs")
+                                    .monospacedDigit()
+                                Image(systemName: trendIcon(c.trend))
+                                    .foregroundStyle(trendColor(c.trend))
+                            }
+                            .font(.subheadline)
+                        } else {
+                            Text("—")
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.vertical, 2)
-                } else {
-                    Text("Not yet synced")
-                        .foregroundStyle(.secondary)
                 }
             }
 
