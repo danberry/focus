@@ -38,14 +38,6 @@ struct MemberDetailView: View {
             }
 
             Section("Summary") {
-                if let jobTitle = member.jobTitle {
-                    HStack {
-                        Text("Job title")
-                        Spacer()
-                        Text(jobTitle.name)
-                            .foregroundStyle(.secondary)
-                    }
-                }
                 summaryRow(label: "Total contributions", value: stats.total)
                 summaryRow(label: "Active days", value: stats.activeDays)
                 if stats.peak > 0 {
