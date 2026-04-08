@@ -17,7 +17,7 @@ struct RepositoryDetailView: View {
                         Text(period.rawValue).tag(period)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
 
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
                 if let record {
