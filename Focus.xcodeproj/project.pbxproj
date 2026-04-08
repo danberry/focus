@@ -102,6 +102,7 @@
 		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
 		408255DA2CAFC99600000023 /* ContentViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000013 /* ContentViewTests.swift */; };
+		40825500000000000000C01E /* Color+Accent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06C /* Color+Accent.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -213,6 +214,7 @@
 		408255DA2CAFC99600000013 /* ContentViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewTests.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000030 /* Focus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Focus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		408255DA2CAFC99600000031 /* FocusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		40825500000000000000A06C /* Color+Accent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Accent.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -343,6 +345,14 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
+		40825500000000000000C01F /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				40825500000000000000A06C /* Color+Accent.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
 		40825500000000000000C007 /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
@@ -423,6 +433,7 @@
 				40825500000000000000C004 /* Queries */,
 				40825500000000000000C005 /* Views */,
 				40825500000000000000C006 /* Utilities */,
+				40825500000000000000C01F /* Extensions */,
 			);
 			path = Focus;
 			sourceTree = "<group>";
@@ -610,6 +621,7 @@
 				40825500000000000000C01A /* MergedPRReportService.swift in Sources */,
 				40825500000000000000C01B /* ReportsView.swift in Sources */,
 				40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */,
+				40825500000000000000C01E /* Color+Accent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
