@@ -24,10 +24,10 @@ struct TeamDetailView: View {
                 }
             }
 
-            Section("Members") {
-                if sortedMembers.isEmpty {
-                    EmptyContentView("No Members", systemImage: "person.2")
-                } else {
+            if sortedMembers.isEmpty {
+                EmptyContentView("No Members", systemImage: "person.2")
+            } else {
+                Section("Members") {
                     ForEach(sortedMembers) { member in
                         NavigationLink {
                             MemberDetailView(member: member)
