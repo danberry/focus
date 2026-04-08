@@ -69,7 +69,7 @@ struct MemberDetailView: View {
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("\(fromLabel) – \(toLabel)")
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Menu {
@@ -78,10 +78,11 @@ struct MemberDetailView: View {
                     }
                 } label: {
                     Image(systemName: "calendar")
-                        .font(.caption.weight(.medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
             }
+            .padding(.vertical, 6)
 
             ForEach(rows.indices, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
