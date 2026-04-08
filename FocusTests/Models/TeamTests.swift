@@ -66,7 +66,7 @@ struct TeamTests {
         context.insert(Team(name: "iOS Platform", teamDescription: "Owns the iOS app"))
         try context.save()
 
-        let descriptor = FetchDescriptor<Team>(sortBy: [SortDescriptor(\Team.name, comparator: .localizedCaseInsensitive)])
+        let descriptor = FetchDescriptor<Team>(sortBy: [SortDescriptor(\Team.name, comparator: .localizedStandard)])
         let results = try context.fetch(descriptor)
 
         #expect(results.map(\.name) == ["Android Platform", "iOS Platform", "Web Platform"])
