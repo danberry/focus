@@ -18,14 +18,14 @@ struct JobTitleDonutChartView: View {
     }
 
     private static let palette: [Color] = [
-        Color(.systemBlue),
-        Color(.systemGreen),
-        Color(.systemOrange),
-        Color(.systemPurple),
-        Color(.systemRed),
-        Color(.systemTeal),
-        Color(.systemIndigo),
-        Color(.systemYellow),
+        .accentedBlue,
+        .accentedGreen,
+        .accentedOrange,
+        .accentedPurple,
+        .accentedRed,
+        .accentedTeal,
+        .accentedIndigo,
+        .accentedYellow,
     ]
 
     var body: some View {
