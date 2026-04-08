@@ -15,6 +15,15 @@ struct ReportsView: View {
                         Text("PRs merged across your saved repos yesterday")
                     }
                 }
+                NavigationLink {
+                    MemberDisciplineReportView()
+                } label: {
+                    LabeledContent {
+                    } label: {
+                        Text("Members by Discipline")
+                        Text("Breakdown of members across each discipline")
+                    }
+                }
             }
             .listStyle(.plain)
             .navigationTitle("Reports")
