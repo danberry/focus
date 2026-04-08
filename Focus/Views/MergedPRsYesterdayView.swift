@@ -95,11 +95,11 @@ struct MergedPRsYesterdayView: View {
         do {
             let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
             let displayNames = Dictionary(
-                uniqueKeysWithValues: savedRepositories.map { ("\($0.owner)/\($0.name)", $0.displayName) }
+                uniqueKeysWithValues: savedRepositories.map { ("\($0.owner)/\($0.name)".lowercased(), $0.displayName) }
             )
             let prsByRepo = try await service.fetchMergedPRs(for: repos, on: yesterday)
             sections = prsByRepo
-                .map { (repoName: $0.key, displayName: displayNames[$0.key] ?? $0.key, prs: $0.value) }
+                .map { (repoName: $0.key, displayName: displayNames[$0.key.lowercased()] ?? $0.key, prs: $0.value) }
                 .sorted { $0.displayName < $1.displayName }
         } catch let ghError as GitHubError {
             error = ghError
