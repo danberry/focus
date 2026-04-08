@@ -187,7 +187,6 @@ private struct VelocityHeroRow: View {
                 }
             } label: {
                 Image(systemName: "calendar")
-                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 16)
