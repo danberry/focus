@@ -196,7 +196,11 @@ private struct VelocityHeroRow: View {
 
             Menu {
                 ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                    Button(period.rawValue) { selectedPeriod = period }
+                    Button {
+                        selectedPeriod = period
+                    } label: {
+                        Label(period.rawValue, systemImage: selectedPeriod == period ? "checkmark" : "")
+                    }
                 }
             } label: {
                 Image(systemName: "calendar")
