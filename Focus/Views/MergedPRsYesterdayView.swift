@@ -72,6 +72,7 @@ struct MergedPRsYesterdayView: View {
                         MergedPRsHeroRow(totalCount: allPRs.count)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
                     }
                     ForEach(teamSections, id: \.teamName) { section in
                         NavigationLink(destination: TeamMergedPRsListView(teamName: section.teamName, prs: section.prs)) {
@@ -168,5 +169,6 @@ private struct MergedPRsHeroRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 26))
     }
 }
