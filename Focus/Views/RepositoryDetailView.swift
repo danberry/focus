@@ -11,7 +11,7 @@ struct RepositoryDetailView: View {
         List {
             // MARK: Velocity
 
-            Section("Velocity") {
+            Section {
                 Picker("Period", selection: $selectedPeriod) {
                     ForEach(VelocityPeriod.allCases, id: \.self) { period in
                         Text(period.rawValue).tag(period)
@@ -21,23 +21,23 @@ struct RepositoryDetailView: View {
 
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
                 if let record {
-                    let c = record.comparison
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(c.current) merged PRs")
-                            .font(.headline)
-                        HStack(spacing: 4) {
-                            Image(systemName: trendIcon(c.trend))
-                                .foregroundStyle(trendColor(c.trend))
-                            Text(trendLabel(c))
-                                .font(.caption)
-                                .foregroundStyle(trendColor(c.trend))
-                        }
-                    }
-                    .padding(.vertical, 2)
+                    VelocityHeroRow(comparison: record.comparison)
                 } else {
-                    Text("Not yet synced")
-                        .foregroundStyle(.secondary)
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("—")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundStyle(.quaternary)
+                            Text("Not yet synced")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
                 }
+            } header: {
+                Text("Velocity")
             }
 
             // MARK: Open Pull Requests
@@ -149,13 +149,67 @@ struct RepositoryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Velocity Helpers
+    // MARK: - Helpers
+
+    private func daysOpenLabel(_ createdAt: Date) -> String {
+        let days = Calendar.current.dateComponents([.day], from: createdAt, to: .now).day ?? 0
+        return days == 1 ? "1 day open" : "\(days) days open"
+    }
+}
+
+// MARK: - VelocityHeroRow
+
+private struct VelocityHeroRow: View {
+    let comparison: VelocityComparison
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(comparison.current)")
+                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                        .contentTransition(.numericText())
+                    Text("MERGED PRS")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .tracking(1.2)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 6) {
+                    HStack(spacing: 4) {
+                        Image(systemName: trendIcon(comparison.trend))
+                            .font(.system(size: 14, weight: .bold))
+                        Text(badgeText(comparison))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .contentTransition(.numericText())
+                    }
+                    .foregroundStyle(trendColor(comparison.trend))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
+
+                }
+            }
+
+            VelocityComparisonBar(
+                current: comparison.current,
+                prior: comparison.prior,
+                trend: comparison.trend
+            )
+        }
+        .padding(.vertical, 8)
+        .animation(.easeInOut(duration: 0.25), value: comparison.current)
+    }
 
     private func trendIcon(_ trend: VelocityComparison.Trend) -> String {
         switch trend {
-        case .up:   return "arrow.up"
-        case .down: return "arrow.down"
-        case .flat: return "minus"
+        case .up:   return "arrow.up.right"
+        case .down: return "arrow.down.right"
+        case .flat: return "arrow.right"
         }
     }
 
@@ -163,27 +217,75 @@ struct RepositoryDetailView: View {
         switch trend {
         case .up:   return .green
         case .down: return .red
-        case .flat: return .secondary
+        case .flat: return .gray
         }
     }
 
-    private func daysOpenLabel(_ createdAt: Date) -> String {
-        let days = Calendar.current.dateComponents([.day], from: createdAt, to: .now).day ?? 0
-        return days == 1 ? "1 day open" : "\(days) days open"
+    private func badgeText(_ c: VelocityComparison) -> String {
+        if let pct = c.percentChange {
+            return "\(Int(abs(pct.rounded())))%"
+        }
+        let sign = c.delta >= 0 ? "+" : ""
+        return "\(sign)\(c.delta)"
+    }
+}
+
+// MARK: - VelocityComparisonBar
+
+private struct VelocityComparisonBar: View {
+    let current: Int
+    let prior: Int
+    let trend: VelocityComparison.Trend
+
+    private var maxVal: Int { max(current, prior, 1) }
+    private var currentRatio: Double { Double(current) / Double(maxVal) }
+    private var priorRatio: Double { Double(prior) / Double(maxVal) }
+
+    private var currentColor: Color {
+        switch trend {
+        case .up:   return .green
+        case .down: return .red
+        case .flat: return Color.primary
+        }
     }
 
-    private func trendLabel(_ c: VelocityComparison) -> String {
-        let priorLabel = "\(c.prior) prior year"
-        switch c.trend {
-        case .flat:
-            return "Same as \(priorLabel)"
-        case .up, .down:
-            let sign = c.delta > 0 ? "+" : ""
-            if let pct = c.percentChange {
-                return "\(sign)\(c.delta) vs \(priorLabel) (\(sign)\(Int(pct.rounded()))%)"
-            } else {
-                return "\(sign)\(c.delta) vs \(priorLabel)"
+    var body: some View {
+        VStack(spacing: 6) {
+            BarRow(label: "Now", value: current, ratio: currentRatio, color: currentColor)
+            BarRow(label: "−1yr", value: prior, ratio: priorRatio, color: Color.primary.opacity(0.3))
+        }
+    }
+}
+
+private struct BarRow: View {
+    let label: String
+    let value: Int
+    let ratio: Double
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+                .frame(width: 32, alignment: .trailing)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.primary.opacity(0.07))
+                    Capsule()
+                        .fill(color)
+                        .frame(width: max(6, proxy.size.width * ratio))
+                }
             }
+            .frame(height: 8)
+            Text("\(value)")
+                .font(.caption2.monospacedDigit())
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+                .frame(width: 28, alignment: .leading)
+                .contentTransition(.numericText())
         }
     }
 }
