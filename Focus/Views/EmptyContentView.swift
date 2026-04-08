@@ -7,13 +7,13 @@ struct EmptyContentView: View {
     private let systemImage: String
 
     private let greyGradient = LinearGradient(
-        colors: [Color("AccentGrey"), Color("AccentGrey").opacity(0.5)],
+        colors: [.accentedGray, .accentedGray.opacity(0.5)],
         startPoint: .top,
         endPoint: .bottom
     )
 
     private let redGradient = LinearGradient(
-        colors: [Color("AccentRed"), Color("AccentRed").opacity(0.5)],
+        colors: [.accentedRed, .accentedRed.opacity(0.5)],
         startPoint: .top,
         endPoint: .bottom
     )
