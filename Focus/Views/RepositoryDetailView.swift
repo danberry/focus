@@ -192,7 +192,9 @@ private struct VelocityHeroRow: View {
             .padding(.vertical, 10)
             .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
         }
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 26))
         .animation(.easeInOut(duration: 0.25), value: comparison.current)
     }
 
