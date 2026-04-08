@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - TeamsView
 
 struct TeamsView: View {
-    @Query(sort: [SortDescriptor(\Team.name, comparator: .localizedCaseInsensitive)]) private var teams: [Team]
+    @Query(sort: [SortDescriptor(\Team.name, comparator: .localizedStandard)]) private var teams: [Team]
     @Environment(\.modelContext) private var modelContext
 
     @State private var isAddingTeam = false
