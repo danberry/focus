@@ -170,7 +170,5 @@ private struct MergedPRsHeroRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .glassEffect(in: RoundedRectangle(cornerRadius: 26))
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
     }
 }
