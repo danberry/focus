@@ -93,10 +93,12 @@ struct MemberDetailView: View {
             ForEach(rows.indices, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
                     ForEach(0..<15, id: \.self) { col in
-                        let isPadding = col >= rows[rowIndex].count
-                        let cell: GridCell? = isPadding ? nil : rows[rowIndex][col]
+                        let row = rows[rowIndex]
+                        let color: Color = col < row.count
+                            ? contributionColor(for: row[col].count, date: row[col].date, maxCount: maxCount)
+                            : .clear
                         Circle()
-                            .fill(isPadding ? Color.clear : contributionColor(for: cell!.count, date: cell!.date, maxCount: maxCount))
+                            .fill(color)
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fit)
                     }
