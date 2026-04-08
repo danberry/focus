@@ -75,6 +75,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            .scrollDismissesKeyboard(.immediately)
             .navigationTitle("Settings")
         }
     }
