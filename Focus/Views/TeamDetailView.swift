@@ -17,6 +17,13 @@ struct TeamDetailView: View {
 
     var body: some View {
         List {
+            if !sortedMembers.isEmpty {
+                Section("Job Title Breakdown") {
+                    JobTitleDonutChartView(members: sortedMembers)
+                        .listRowSeparator(.hidden)
+                }
+            }
+
             Section("Members") {
                 if sortedMembers.isEmpty {
                     Text("No members yet.")
