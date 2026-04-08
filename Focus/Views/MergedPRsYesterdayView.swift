@@ -26,9 +26,14 @@ struct MergedPRsYesterdayView: View {
         return fmt.string(from: yesterday)
     }
 
+    private var displayNameByRepo: [String: String] {
+        Dictionary(uniqueKeysWithValues: savedRepositories.map { ("\($0.owner)/\($0.name)", $0.displayName) })
+    }
+
     private var repoSections: [(repoName: String, prs: [MergedPR])] {
-        prsByRepo
-            .map { (repoName: $0.key, prs: $0.value.sorted { $0.mergedAt < $1.mergedAt }) }
+        let lookup = displayNameByRepo
+        return prsByRepo
+            .map { (repoName: lookup[$0.key] ?? $0.key, prs: $0.value.sorted { $0.mergedAt < $1.mergedAt }) }
             .sorted { $0.repoName < $1.repoName }
     }
 
