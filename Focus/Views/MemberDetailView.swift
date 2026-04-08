@@ -71,7 +71,7 @@ struct MemberDetailView: View {
         .padding(.vertical, 4)
     }
 
-    private func contributionGridView(rows: [[DailyContribution?]], maxCount: Int) -> some View {
+    private func contributionGridView(rows: [[GridCell]], maxCount: Int) -> some View {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
@@ -86,10 +86,12 @@ struct MemberDetailView: View {
             ForEach(rows.indices, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
                     ForEach(0..<15, id: \.self) { col in
-                        let isPadding = col >= rows[rowIndex].count
-                        let cell: DailyContribution? = isPadding ? nil : rows[rowIndex][col]
+                        let row = rows[rowIndex]
+                        let color: Color = col < row.count
+                            ? contributionColor(for: row[col].count, date: row[col].date, maxCount: maxCount)
+                            : .clear
                         Circle()
-                            .fill(isPadding ? Color.clear : contributionColor(for: cell?.count ?? 0, maxCount: maxCount))
+                            .fill(color)
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fit)
                     }
@@ -114,7 +116,7 @@ struct MemberDetailView: View {
         return (total, activeDays, peak)
     }
 
-    private func buildGridRows(from days: [DailyContribution]) -> [[DailyContribution?]] {
+    private func buildGridRows(from days: [DailyContribution]) -> [[GridCell]] {
         guard !days.isEmpty else { return [] }
 
         let calendar = Calendar.current
@@ -125,13 +127,13 @@ struct MemberDetailView: View {
             lookup[calendar.startOfDay(for: day.date)] = day
         }
 
-        // Expand the full date range day-by-day
+        // Expand the full date range day-by-day, preserving the date for every cell
         let start = calendar.startOfDay(for: selectedRange.cutoffDate)
         let endDay = calendar.startOfDay(for: Date())
         var current = start
-        var allDays: [DailyContribution?] = []
+        var allDays: [GridCell] = []
         while current <= endDay {
-            allDays.append(lookup[current])
+            allDays.append(GridCell(date: current, count: lookup[current]?.count ?? 0))
             current = calendar.date(byAdding: .day, value: 1, to: current)!
         }
 
@@ -141,8 +143,12 @@ struct MemberDetailView: View {
         }
     }
 
-    private func contributionColor(for count: Int, maxCount: Int) -> Color {
-        if count == 0 { return Color(.systemFill) }
+    private func contributionColor(for count: Int, date: Date, maxCount: Int) -> Color {
+        if count == 0 {
+            let weekday = Calendar.current.component(.weekday, from: date)
+            let isWeekend = weekday == 1 || weekday == 7  // 1 = Sunday, 7 = Saturday
+            return isWeekend ? Color(.systemGray4) : Color(.systemFill)
+        }
         let ratio = Double(count) / Double(maxCount)
         switch ratio {
         case ..<0.25: return Color.accentColor.opacity(0.25)
@@ -160,6 +166,13 @@ struct MemberDetailView: View {
                 .foregroundStyle(.secondary)
         }
     }
+}
+
+// MARK: - GridCell
+
+private struct GridCell {
+    let date: Date
+    let count: Int
 }
 
 // MARK: - TimeRange
