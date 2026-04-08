@@ -71,7 +71,6 @@ struct MergedPRsYesterdayView: View {
                     Section {
                         MergedPRsHeroRow(totalCount: allPRs.count)
                             .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                     }
                     .listSectionSpacing(18)
