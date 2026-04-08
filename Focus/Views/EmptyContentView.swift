@@ -21,5 +21,6 @@ struct EmptyContentView: View {
                     .foregroundStyle(.accentedRed.gradient, .accentedGray.gradient)
             }
         }
+        .listRowSeparator(.hidden)
     }
 }
