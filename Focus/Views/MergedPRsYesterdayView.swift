@@ -130,10 +130,6 @@ private struct MergedPRsHeroRow: View {
             }
 
             Spacer()
-
-            Image(systemName: "arrow.triangle.merge")
-                .font(.system(size: 36, weight: .semibold))
-                .foregroundStyle(.purple.opacity(0.8))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
