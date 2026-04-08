@@ -77,6 +77,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            .scrollDismissesKeyboard(.immediately)
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
