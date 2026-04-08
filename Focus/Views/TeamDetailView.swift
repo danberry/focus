@@ -18,7 +18,7 @@ struct TeamDetailView: View {
     var body: some View {
         List {
             if !sortedMembers.isEmpty {
-                Section("Job Title Breakdown") {
+                Section {
                     JobTitleDonutChartView(members: sortedMembers)
                         .listRowSeparator(.hidden)
                 }
