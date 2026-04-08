@@ -52,6 +52,7 @@ struct RepositoryDetailView: View {
                         NavigationLink(destination: PullRequestDetailView(pullRequest: pr)) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(pr.title)
+                                    .lineLimit(1)
                                 Text(daysOpenLabel(pr.createdAt))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
