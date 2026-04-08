@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(AuthenticationService.self) private var authService
     @State private var newToken = ""
     @State private var showSuccess = false
+    @FocusState private var isTokenFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -15,6 +16,7 @@ struct SettingsView: View {
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                        .focused($isTokenFieldFocused)
                         .onChange(of: newToken) {
                             showSuccess = false
                         }
@@ -76,6 +78,14 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        isTokenFieldFocused = false
+                    }
+                }
+            }
         }
     }
 }
