@@ -91,16 +91,14 @@ private struct SavedRepositoryRow: View {
     let repository: SavedRepository
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        LabeledContent {
+            Text("\(repository.totalSecurityAlerts)")
+        } label: {
             Text(repository.displayName)
-                .font(.body)
             if let language = repository.primaryLanguage {
                 Text(language)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
-        .badge(repository.totalSecurityAlerts)
     }
 }
 
