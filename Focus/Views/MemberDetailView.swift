@@ -55,6 +55,7 @@ struct MemberDetailView: View {
         }
         .listStyle(.plain)
         .navigationTitle(member.name)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Subviews
