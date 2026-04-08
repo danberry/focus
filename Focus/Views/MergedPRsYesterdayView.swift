@@ -27,7 +27,7 @@ struct MergedPRsYesterdayView: View {
 
     var body: some View {
         Group {
-            if isLoading {
+            if isLoading && sections.isEmpty {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error {
@@ -66,18 +66,11 @@ struct MergedPRsYesterdayView: View {
                         }
                     }
                 }
+                .refreshable { await loadData() }
             }
         }
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Refresh", systemImage: "arrow.clockwise") {
-                    Task { await loadData() }
-                }
-                .disabled(isLoading)
-            }
-        }
         .task { await loadData() }
     }
 
