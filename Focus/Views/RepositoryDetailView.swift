@@ -43,13 +43,7 @@ struct RepositoryDetailView: View {
                 } else {
                     ForEach(sortedPRs.prefix(6)) { pr in
                         NavigationLink(destination: PullRequestDetailView(pullRequest: pr)) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(pr.title)
-                                    .lineLimit(1)
-                                Text(daysOpenLabel(pr.createdAt))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
+                            LabeledContent(pr.title, value: daysOpenLabel(pr.createdAt))
                         }
                     }
                     if sortedPRs.count > 6 {
