@@ -27,14 +27,6 @@ struct RepositoryDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Menu {
-                            ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                                Button(period.rawValue) { selectedPeriod = period }
-                            }
-                        } label: {
-                            Image(systemName: "calendar")
-                                .foregroundStyle(.secondary)
-                        }
                     }
                     .padding(.vertical, 8)
                     .listRowSeparator(.hidden)
