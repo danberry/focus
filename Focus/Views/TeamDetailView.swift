@@ -53,7 +53,6 @@ struct TeamDetailView: View {
         }
         .listStyle(.plain)
         .navigationTitle(team.name)
-        .navigationSubtitle(team.teamDescription)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
