@@ -14,7 +14,7 @@ struct RepositoryDetailView: View {
             Section {
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
                 if let record {
-                    VelocityHeroRow(comparison: record.comparison, selectedPeriod: $selectedPeriod)
+                    VelocityHeroRow(comparison: record.comparison)
                 } else {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -30,7 +30,19 @@ struct RepositoryDetailView: View {
                     .padding(.vertical, 8)
                 }
             } header: {
-                Text("Velocity")
+                HStack {
+                    Text("Velocity")
+                    Spacer()
+                    Menu {
+                        ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                            Button(period.rawValue) { selectedPeriod = period }
+                        }
+                    } label: {
+                        Text(selectedPeriod.rawValue)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             // MARK: Open Pull Requests
@@ -151,7 +163,6 @@ struct RepositoryDetailView: View {
 
 private struct VelocityHeroRow: View {
     let comparison: VelocityComparison
-    @Binding var selectedPeriod: VelocityPeriod
 
     var body: some View {
         HStack(alignment: .center) {
@@ -169,29 +180,17 @@ private struct VelocityHeroRow: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 10) {
-                HStack(spacing: 6) {
-                    Image(systemName: trendIcon(comparison.trend))
-                        .font(.system(size: 18, weight: .bold))
-                    Text(badgeText(comparison))
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .contentTransition(.numericText())
-                }
-                .foregroundStyle(trendColor(comparison.trend))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
-
-                Menu {
-                    ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                        Button(period.rawValue) { selectedPeriod = period }
-                    }
-                } label: {
-                    Image(systemName: "calendar")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
+            HStack(spacing: 6) {
+                Image(systemName: trendIcon(comparison.trend))
+                    .font(.system(size: 18, weight: .bold))
+                Text(badgeText(comparison))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .contentTransition(.numericText())
             }
+            .foregroundStyle(trendColor(comparison.trend))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
         }
         .padding(.vertical, 8)
         .animation(.easeInOut(duration: 0.25), value: comparison.current)
