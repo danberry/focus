@@ -27,8 +27,6 @@ struct TeamsView: View {
                                 } label: {
                                     Text(team.name)
                                     Text(team.teamDescription)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
