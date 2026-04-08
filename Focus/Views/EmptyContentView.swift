@@ -12,8 +12,14 @@ struct EmptyContentView: View {
     }
 
     var body: some View {
-        ContentUnavailableView(title, systemImage: systemImage)
-            .symbolRenderingMode(.palette)
-            .foregroundStyle(.accentedGray.gradient, .accentedRed.gradient)
+        ContentUnavailableView {
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: systemImage)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.accentedRed.gradient, .accentedGray.gradient)
+            }
+        }
     }
 }
