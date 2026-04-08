@@ -155,12 +155,11 @@ private struct MergedPRsHeroRow: View {
     let totalCount: Int
 
     var body: some View {
-        LabeledContent {
+        LabeledContent {} label: {
             Text("\(totalCount)")
                 .font(.system(size: 52, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
                 .contentTransition(.numericText())
-        } label: {
             Text("MERGED PRS")
                 .font(.caption2)
                 .fontWeight(.semibold)
