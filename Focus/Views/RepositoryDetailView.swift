@@ -22,22 +22,19 @@ struct RepositoryDetailView: View {
                             Text("—")
                                 .font(.system(size: 48, weight: .bold, design: .rounded))
                                 .foregroundStyle(.quaternary)
-                            HStack(spacing: 4) {
-                                Text("Not yet synced")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Menu {
-                                    ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                                        Button(period.rawValue) { selectedPeriod = period }
-                                    }
-                                } label: {
-                                    Image(systemName: "calendar")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
+                            Text("Not yet synced")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
+                        Menu {
+                            ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                                Button(period.rawValue) { selectedPeriod = period }
+                            }
+                        } label: {
+                            Image(systemName: "calendar")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .padding(.vertical, 8)
                     .listRowSeparator(.hidden)
@@ -171,22 +168,11 @@ private struct VelocityHeroRow: View {
                     .font(.system(size: 52, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
-                HStack(spacing: 4) {
-                    Text("MERGED PRS")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-                        .tracking(1.2)
-                    Menu {
-                        ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                            Button(period.rawValue) { selectedPeriod = period }
-                        }
-                    } label: {
-                        Image(systemName: "calendar")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text("MERGED PRS")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .tracking(1.2)
             }
 
             Spacer()
@@ -202,6 +188,15 @@ private struct VelocityHeroRow: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
+
+            Menu {
+                ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                    Button(period.rawValue) { selectedPeriod = period }
+                }
+            } label: {
+                Image(systemName: "calendar")
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
