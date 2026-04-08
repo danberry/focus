@@ -75,23 +75,30 @@ struct RepositoryDetailView: View {
             // MARK: Security Alerts
 
             Section("Dependabot Alerts") {
-                if repository.dependabotAlertDetails.isEmpty {
+                let sortedDependabot = repository.dependabotAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                if sortedDependabot.isEmpty {
                     EmptyContentView("No Dependabot Alerts", systemImage: "shield.slash")
                 } else {
-                    ForEach(repository.dependabotAlertDetails.sorted { $0.createdAt < $1.createdAt }) { alert in
+                    ForEach(sortedDependabot.prefix(6)) { alert in
                         NavigationLink(destination: DependabotAlertDetailView(alert: alert, repository: repository)) {
                             LabeledContent(alert.packageName, value: alert.severity)
                         }
+                    }
+                    if sortedDependabot.count > 6 {
+                        NavigationLink("Show all \(sortedDependabot.count) dependabot alerts") {
+                            AllDependabotAlertsView(alerts: sortedDependabot, repository: repository)
+                        }
+                        .foregroundStyle(.tint)
                     }
                 }
             }
 
             Section("Code Scanning Alerts") {
-                let sorted = repository.codeScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
-                if sorted.isEmpty {
+                let sortedCodeScanning = repository.codeScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                if sortedCodeScanning.isEmpty {
                     EmptyContentView("No Code Scanning Alerts", systemImage: "shield.slash")
                 } else {
-                    ForEach(sorted) { alert in
+                    ForEach(sortedCodeScanning.prefix(6)) { alert in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(alert.ruleName)
                             if let severity = alert.securitySeverityLevel {
@@ -101,21 +108,33 @@ struct RepositoryDetailView: View {
                             }
                         }
                     }
+                    if sortedCodeScanning.count > 6 {
+                        NavigationLink("Show all \(sortedCodeScanning.count) code scanning alerts") {
+                            AllCodeScanningAlertsView(alerts: sortedCodeScanning)
+                        }
+                        .foregroundStyle(.tint)
+                    }
                 }
             }
 
             Section("Secret Scanning Alerts") {
-                let sorted = repository.secretScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
-                if sorted.isEmpty {
+                let sortedSecretScanning = repository.secretScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                if sortedSecretScanning.isEmpty {
                     EmptyContentView("No Secret Scanning Alerts", systemImage: "key.slash")
                 } else {
-                    ForEach(sorted) { alert in
+                    ForEach(sortedSecretScanning.prefix(6)) { alert in
                         HStack {
                             Text(alert.secretTypeDisplayName)
                             Spacer()
                             Text(alert.validity)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    if sortedSecretScanning.count > 6 {
+                        NavigationLink("Show all \(sortedSecretScanning.count) secret scanning alerts") {
+                            AllSecretScanningAlertsView(alerts: sortedSecretScanning)
+                        }
+                        .foregroundStyle(.tint)
                     }
                 }
             }
