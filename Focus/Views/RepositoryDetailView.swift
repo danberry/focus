@@ -12,16 +12,9 @@ struct RepositoryDetailView: View {
             // MARK: Velocity
 
             Section {
-                Picker("Period", selection: $selectedPeriod) {
-                    ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                        Text(period.rawValue).tag(period)
-                    }
-                }
-                .pickerStyle(.menu)
-
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
                 if let record {
-                    VelocityHeroRow(comparison: record.comparison)
+                    VelocityHeroRow(comparison: record.comparison, selectedPeriod: $selectedPeriod)
                 } else {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -159,45 +152,50 @@ struct RepositoryDetailView: View {
 
 private struct VelocityHeroRow: View {
     let comparison: VelocityComparison
+    @Binding var selectedPeriod: VelocityPeriod
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .bottom) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(comparison.current)")
-                        .font(.system(size: 52, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
-                        .contentTransition(.numericText())
-                    Text("MERGED PRS")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-                        .tracking(1.2)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 6) {
-                    HStack(spacing: 4) {
-                        Image(systemName: trendIcon(comparison.trend))
-                            .font(.system(size: 14, weight: .bold))
-                        Text(badgeText(comparison))
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .contentTransition(.numericText())
-                    }
-                    .foregroundStyle(trendColor(comparison.trend))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
-
-                }
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(comparison.current)")
+                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .contentTransition(.numericText())
+                Text("MERGED PRS")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .tracking(1.2)
             }
 
-            VelocityComparisonBar(
-                current: comparison.current,
-                prior: comparison.prior,
-                trend: comparison.trend
-            )
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: trendIcon(comparison.trend))
+                        .font(.system(size: 18, weight: .bold))
+                    Text(badgeText(comparison))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
+                }
+                .foregroundStyle(trendColor(comparison.trend))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
+
+                Menu {
+                    ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                        Button(period.rawValue) { selectedPeriod = period }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                        Text(selectedPeriod.rawValue)
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding(.vertical, 8)
         .animation(.easeInOut(duration: 0.25), value: comparison.current)
@@ -225,65 +223,5 @@ private struct VelocityHeroRow: View {
         }
         let sign = c.delta >= 0 ? "+" : ""
         return "\(sign)\(c.delta)"
-    }
-}
-
-// MARK: - VelocityComparisonBar
-
-private struct VelocityComparisonBar: View {
-    let current: Int
-    let prior: Int
-    let trend: VelocityComparison.Trend
-
-    private var maxVal: Int { max(current, prior, 1) }
-    private var currentRatio: Double { Double(current) / Double(maxVal) }
-    private var priorRatio: Double { Double(prior) / Double(maxVal) }
-
-    private var currentColor: Color {
-        switch trend {
-        case .up:   return .green
-        case .down: return .red
-        case .flat: return Color.primary
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 6) {
-            BarRow(label: "Now", value: current, ratio: currentRatio, color: currentColor)
-            BarRow(label: "−1yr", value: prior, ratio: priorRatio, color: Color.primary.opacity(0.3))
-        }
-    }
-}
-
-private struct BarRow: View {
-    let label: String
-    let value: Int
-    let ratio: Double
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text(label)
-                .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-                .frame(width: 32, alignment: .trailing)
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color.primary.opacity(0.07))
-                    Capsule()
-                        .fill(color)
-                        .frame(width: max(6, proxy.size.width * ratio))
-                }
-            }
-            .frame(height: 8)
-            Text("\(value)")
-                .font(.caption2.monospacedDigit())
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-                .frame(width: 28, alignment: .leading)
-                .contentTransition(.numericText())
-        }
     }
 }
