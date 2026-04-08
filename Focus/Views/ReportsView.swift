@@ -7,6 +7,15 @@ struct ReportsView: View {
         NavigationStack {
             List {
                 NavigationLink {
+                    MergedPRsTodayView()
+                } label: {
+                    LabeledContent {
+                    } label: {
+                        Text("Merged PRs Today")
+                        Text("PRs merged across your saved repos today")
+                    }
+                }
+                NavigationLink {
                     MergedPRsYesterdayView()
                 } label: {
                     LabeledContent {
