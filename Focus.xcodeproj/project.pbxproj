@@ -97,6 +97,9 @@
 		40825500000000000000C020 /* EmptyContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06D /* EmptyContentView.swift */; };
 		40825500000000000000C021 /* JobTitleDonutChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06E /* JobTitleDonutChartView.swift */; };
 		40825500000000000000C022 /* MemberDisciplineReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06F /* MemberDisciplineReportView.swift */; };
+		40825500000000000000C023 /* AllDependabotAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A070 /* AllDependabotAlertsView.swift */; };
+		40825500000000000000C024 /* AllCodeScanningAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A071 /* AllCodeScanningAlertsView.swift */; };
+		40825500000000000000C025 /* AllSecretScanningAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A072 /* AllSecretScanningAlertsView.swift */; };
 		40825500000000000000B055 /* RepositoryVelocity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A056 /* RepositoryVelocity.swift */; };
 		40825500000000000000B056 /* VelocityQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A057 /* VelocityQueries.swift */; };
 		40825500000000000000B057 /* VelocityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A058 /* VelocityService.swift */; };
@@ -209,6 +212,9 @@
 		40825500000000000000A06D /* EmptyContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyContentView.swift; sourceTree = "<group>"; };
 		40825500000000000000A06E /* JobTitleDonutChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitleDonutChartView.swift; sourceTree = "<group>"; };
 		40825500000000000000A06F /* MemberDisciplineReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDisciplineReportView.swift; sourceTree = "<group>"; };
+		40825500000000000000A070 /* AllDependabotAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllDependabotAlertsView.swift; sourceTree = "<group>"; };
+		40825500000000000000A071 /* AllCodeScanningAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCodeScanningAlertsView.swift; sourceTree = "<group>"; };
+		40825500000000000000A072 /* AllSecretScanningAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllSecretScanningAlertsView.swift; sourceTree = "<group>"; };
 		40825500000000000000A056 /* RepositoryVelocity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryVelocity.swift; sourceTree = "<group>"; };
 		40825500000000000000A057 /* VelocityQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityQueries.swift; sourceTree = "<group>"; };
 		40825500000000000000A058 /* VelocityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityService.swift; sourceTree = "<group>"; };
@@ -336,6 +342,9 @@
 				40825500000000000000A061 /* PullRequestDetailView.swift */,
 				40825500000000000000A063 /* AssignCodeOwnerView.swift */,
 				40825500000000000000A065 /* AllPullRequestsView.swift */,
+				40825500000000000000A070 /* AllDependabotAlertsView.swift */,
+				40825500000000000000A071 /* AllCodeScanningAlertsView.swift */,
+				40825500000000000000A072 /* AllSecretScanningAlertsView.swift */,
 				40825500000000000000A069 /* ReportsView.swift */,
 				40825500000000000000A06A /* MergedPRsYesterdayView.swift */,
 				40825500000000000000A06E /* JobTitleDonutChartView.swift */,
@@ -634,6 +643,9 @@
 				40825500000000000000C020 /* EmptyContentView.swift in Sources */,
 				40825500000000000000C021 /* JobTitleDonutChartView.swift in Sources */,
 				40825500000000000000C022 /* MemberDisciplineReportView.swift in Sources */,
+				40825500000000000000C023 /* AllDependabotAlertsView.swift in Sources */,
+				40825500000000000000C024 /* AllCodeScanningAlertsView.swift in Sources */,
+				40825500000000000000C025 /* AllSecretScanningAlertsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
