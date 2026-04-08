@@ -193,9 +193,6 @@ private struct VelocityHeroRow: View {
                     .padding(.vertical, 8)
                     .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
 
-                    Text("vs \(comparison.prior) last year")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
 
