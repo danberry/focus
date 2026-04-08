@@ -18,11 +18,11 @@ struct MergedPRsYesterdayView: View {
         return cal.date(byAdding: .day, value: -1, to: Date())!
     }
 
-    private var navigationTitle: String {
+    private var navigationSubtitle: String {
         let fmt = DateFormatter()
         fmt.dateStyle = .long
         fmt.timeStyle = .none
-        return "Merged PRs — \(fmt.string(from: yesterday))"
+        return fmt.string(from: yesterday)
     }
 
     var body: some View {
@@ -74,7 +74,8 @@ struct MergedPRsYesterdayView: View {
                 .refreshable { await loadData() }
             }
         }
-        .navigationTitle(navigationTitle)
+        .navigationTitle("Merged PRs")
+        .navigationSubtitle(navigationSubtitle)
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadData() }
     }
