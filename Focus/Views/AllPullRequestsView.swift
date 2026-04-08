@@ -9,7 +9,11 @@ struct AllPullRequestsView: View {
         List {
             ForEach(pullRequests) { pr in
                 NavigationLink(destination: PullRequestDetailView(pullRequest: pr)) {
-                    LabeledContent(pr.title, value: daysOpenLabel(pr.createdAt))
+                    LabeledContent {
+                    } label: {
+                        Text(pr.title)
+                        Text(daysOpenLabel(pr.createdAt))
+                    }
                 }
             }
         }
