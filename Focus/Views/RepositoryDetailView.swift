@@ -30,16 +30,13 @@ struct RepositoryDetailView: View {
                     .padding(.vertical, 8)
                 }
             } header: {
-                HStack {
-                    Text("Velocity")
-                    Spacer()
+                LabeledContent("Velocity") {
                     Menu {
                         ForEach(VelocityPeriod.allCases, id: \.self) { period in
                             Button(period.rawValue) { selectedPeriod = period }
                         }
                     } label: {
-                        Text(selectedPeriod.rawValue)
-                            .font(.footnote)
+                        Image(systemName: "calendar")
                             .foregroundStyle(.secondary)
                     }
                 }
