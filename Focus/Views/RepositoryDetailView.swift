@@ -37,7 +37,6 @@ struct RepositoryDetailView: View {
                         }
                     } label: {
                         Image(systemName: "calendar")
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
