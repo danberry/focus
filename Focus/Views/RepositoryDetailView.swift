@@ -9,14 +9,6 @@ struct RepositoryDetailView: View {
 
     var body: some View {
         List {
-            // MARK: Info
-
-            Section("Info") {
-                LabeledContent("Owner", value: repository.owner)
-                LabeledContent("Name", value: repository.name)
-                LabeledContent("Language", value: repository.primaryLanguage ?? "None")
-            }
-
             // MARK: Velocity
 
             Section("Velocity") {
@@ -141,6 +133,14 @@ struct RepositoryDetailView: View {
                         }
                     }
                 }
+            }
+
+            // MARK: Info
+
+            Section("Info") {
+                LabeledContent("Owner", value: repository.owner)
+                LabeledContent("Name", value: repository.name)
+                LabeledContent("Language", value: repository.primaryLanguage ?? "None")
             }
         }
         .listStyle(.plain)
