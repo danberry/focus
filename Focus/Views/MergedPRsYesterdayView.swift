@@ -54,6 +54,7 @@ struct MergedPRsYesterdayView: View {
                                 } label: {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(pr.title)
+                                            .lineLimit(1)
                                             .foregroundStyle(Color.primary)
                                         Text("by @\(pr.authorLogin) • #\(pr.number)")
                                             .font(.caption)
