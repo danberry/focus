@@ -30,7 +30,6 @@ struct DisciplineDetailView: View {
                     }
                     .onDelete(perform: delete)
                 }
-                .listStyle(.plain)
             }
         }
         .navigationTitle(discipline.name)
