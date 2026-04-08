@@ -49,7 +49,7 @@ struct RepositoryDetailView: View {
                     Text("No open pull requests")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(sortedPRs.prefix(10)) { pr in
+                    ForEach(sortedPRs.prefix(6)) { pr in
                         NavigationLink(destination: PullRequestDetailView(pullRequest: pr)) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(pr.title)
@@ -60,7 +60,7 @@ struct RepositoryDetailView: View {
                             }
                         }
                     }
-                    if sortedPRs.count > 10 {
+                    if sortedPRs.count > 6 {
                         NavigationLink("Show all \(sortedPRs.count) pull requests") {
                             AllPullRequestsView(pullRequests: sortedPRs)
                         }
