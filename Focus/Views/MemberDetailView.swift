@@ -150,7 +150,7 @@ struct MemberDetailView: View {
             return isWeekend ? Color(.systemGray3) : Color(.systemFill)
         }
         let ratio = Double(count) / Double(maxCount)
-        let baseColor: Color = isWeekend ? Color("AccentedRed") : .accentColor
+        let baseColor: Color = isWeekend ? .accentedRed : .accentColor
         switch ratio {
         case ..<0.25: return baseColor.opacity(0.25)
         case ..<0.50: return baseColor.opacity(0.45)
