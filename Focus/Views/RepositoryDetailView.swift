@@ -15,6 +15,7 @@ struct RepositoryDetailView: View {
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
                 if let record {
                     VelocityHeroRow(comparison: record.comparison)
+                        .listRowSeparator(.hidden)
                 } else {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
@@ -28,6 +29,7 @@ struct RepositoryDetailView: View {
                         Spacer()
                     }
                     .padding(.vertical, 8)
+                    .listRowSeparator(.hidden)
                 }
             } header: {
                 LabeledContent("Velocity") {
