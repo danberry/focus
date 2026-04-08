@@ -93,6 +93,7 @@
 		40825500000000000000C01A /* MergedPRReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A068 /* MergedPRReportService.swift */; };
 		40825500000000000000C01B /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A069 /* ReportsView.swift */; };
 		40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06A /* MergedPRsYesterdayView.swift */; };
+		40825500000000000000C026 /* MergedPRsTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A073 /* MergedPRsTodayView.swift */; };
 		40825500000000000000C01D /* MergedPRReportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06B /* MergedPRReportServiceTests.swift */; };
 		40825500000000000000C020 /* EmptyContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06D /* EmptyContentView.swift */; };
 		40825500000000000000C021 /* JobTitleDonutChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06E /* JobTitleDonutChartView.swift */; };
@@ -208,6 +209,7 @@
 		40825500000000000000A068 /* MergedPRReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRReportService.swift; sourceTree = "<group>"; };
 		40825500000000000000A069 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		40825500000000000000A06A /* MergedPRsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRsYesterdayView.swift; sourceTree = "<group>"; };
+		40825500000000000000A073 /* MergedPRsTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRsTodayView.swift; sourceTree = "<group>"; };
 		40825500000000000000A06B /* MergedPRReportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRReportServiceTests.swift; sourceTree = "<group>"; };
 		40825500000000000000A06D /* EmptyContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyContentView.swift; sourceTree = "<group>"; };
 		40825500000000000000A06E /* JobTitleDonutChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitleDonutChartView.swift; sourceTree = "<group>"; };
@@ -347,6 +349,7 @@
 				40825500000000000000A072 /* AllSecretScanningAlertsView.swift */,
 				40825500000000000000A069 /* ReportsView.swift */,
 				40825500000000000000A06A /* MergedPRsYesterdayView.swift */,
+				40825500000000000000A073 /* MergedPRsTodayView.swift */,
 				40825500000000000000A06E /* JobTitleDonutChartView.swift */,
 				40825500000000000000A06F /* MemberDisciplineReportView.swift */,
 			);
@@ -639,6 +642,7 @@
 				40825500000000000000C01A /* MergedPRReportService.swift in Sources */,
 				40825500000000000000C01B /* ReportsView.swift in Sources */,
 				40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */,
+				40825500000000000000C026 /* MergedPRsTodayView.swift in Sources */,
 				40825500000000000000C01E /* Color+Accent.swift in Sources */,
 				40825500000000000000C020 /* EmptyContentView.swift in Sources */,
 				40825500000000000000C021 /* JobTitleDonutChartView.swift in Sources */,
