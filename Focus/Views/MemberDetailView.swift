@@ -43,15 +43,8 @@ struct MemberDetailView: View {
                     HStack {
                         Text("Job title")
                         Spacer()
-                        VStack(alignment: .trailing) {
-                            Text(jobTitle.name)
-                                .foregroundStyle(.secondary)
-                            if let discipline = jobTitle.discipline {
-                                Text(discipline.name)
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
+                        Text(jobTitle.name)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 summaryRow(label: "Total contributions", value: stats.total)
