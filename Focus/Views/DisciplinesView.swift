@@ -27,7 +27,7 @@ struct DisciplinesView: View {
                     }
                     .onDelete(perform: delete)
                 }
-                .listStyle(.plain)
+                .listStyle(.insetGrouped)
             }
         }
         .navigationTitle("Disciplines")
