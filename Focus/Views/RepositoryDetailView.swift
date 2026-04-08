@@ -14,7 +14,7 @@ struct RepositoryDetailView: View {
             Section {
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
                 if let record {
-                    VelocityHeroRow(comparison: record.comparison)
+                    VelocityHeroRow(comparison: record.comparison, selectedPeriod: $selectedPeriod)
                         .listRowSeparator(.hidden)
                 } else {
                     HStack {
@@ -22,24 +22,25 @@ struct RepositoryDetailView: View {
                             Text("—")
                                 .font(.system(size: 48, weight: .bold, design: .rounded))
                                 .foregroundStyle(.quaternary)
-                            Text("Not yet synced")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text("Not yet synced")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                Menu {
+                                    ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                                        Button(period.rawValue) { selectedPeriod = period }
+                                    }
+                                } label: {
+                                    Image(systemName: "calendar")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
                         Spacer()
                     }
                     .padding(.vertical, 8)
                     .listRowSeparator(.hidden)
-                }
-            } header: {
-                LabeledContent("Velocity") {
-                    Menu {
-                        ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                            Button(period.rawValue) { selectedPeriod = period }
-                        }
-                    } label: {
-                        Image(systemName: "calendar")
-                    }
                 }
             }
 
@@ -161,6 +162,7 @@ struct RepositoryDetailView: View {
 
 private struct VelocityHeroRow: View {
     let comparison: VelocityComparison
+    @Binding var selectedPeriod: VelocityPeriod
 
     var body: some View {
         HStack(alignment: .center) {
@@ -169,11 +171,22 @@ private struct VelocityHeroRow: View {
                     .font(.system(size: 52, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
-                Text("MERGED PRS")
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .tracking(1.2)
+                HStack(spacing: 4) {
+                    Text("MERGED PRS")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .tracking(1.2)
+                    Menu {
+                        ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                            Button(period.rawValue) { selectedPeriod = period }
+                        }
+                    } label: {
+                        Image(systemName: "calendar")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Spacer()
