@@ -44,7 +44,7 @@ struct RepositoryDetailView: View {
             // MARK: Open Pull Requests
 
             let sortedPRs = repository.openPullRequests.sorted { $0.createdAt < $1.createdAt }
-            Section("Open Pull Requests (\(sortedPRs.count))") {
+            Section("Open Pull Requests") {
                 if sortedPRs.isEmpty {
                     Text("No open pull requests")
                         .foregroundStyle(.secondary)
