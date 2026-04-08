@@ -9,11 +9,10 @@ struct ReportsView: View {
                 NavigationLink {
                     MergedPRsYesterdayView()
                 } label: {
-                    VStack(alignment: .leading, spacing: 2) {
+                    LabeledContent {
+                    } label: {
                         Text("Merged PRs Yesterday")
                         Text("PRs merged across your saved repos yesterday")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
