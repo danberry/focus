@@ -14,7 +14,7 @@ struct RepositoryDetailView: View {
             Section {
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
                 if let record {
-                    VelocityHeroRow(comparison: record.comparison)
+                    VelocityHeroRow(comparison: record.comparison, selectedPeriod: $selectedPeriod)
                         .listRowSeparator(.hidden)
                 } else {
                     HStack {
@@ -30,16 +30,6 @@ struct RepositoryDetailView: View {
                     }
                     .padding(.vertical, 8)
                     .listRowSeparator(.hidden)
-                }
-            } header: {
-                LabeledContent("Velocity") {
-                    Menu {
-                        ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                            Button(period.rawValue) { selectedPeriod = period }
-                        }
-                    } label: {
-                        Image(systemName: "calendar")
-                    }
                 }
             }
 
@@ -161,6 +151,7 @@ struct RepositoryDetailView: View {
 
 private struct VelocityHeroRow: View {
     let comparison: VelocityComparison
+    @Binding var selectedPeriod: VelocityPeriod
 
     var body: some View {
         HStack(alignment: .center) {
@@ -189,6 +180,14 @@ private struct VelocityHeroRow: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
+
+            Menu {
+                ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                    Button(period.rawValue) { selectedPeriod = period }
+                }
+            } label: {
+                Image(systemName: "calendar")
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
