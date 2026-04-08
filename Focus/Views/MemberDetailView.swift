@@ -144,17 +144,18 @@ struct MemberDetailView: View {
     }
 
     private func contributionColor(for count: Int, date: Date, maxCount: Int) -> Color {
+        let weekday = Calendar.current.component(.weekday, from: date)
+        let isWeekend = weekday == 1 || weekday == 7  // 1 = Sunday, 7 = Saturday
         if count == 0 {
-            let weekday = Calendar.current.component(.weekday, from: date)
-            let isWeekend = weekday == 1 || weekday == 7  // 1 = Sunday, 7 = Saturday
-            return isWeekend ? Color(.systemGray4) : Color(.systemFill)
+            return isWeekend ? Color(.systemGray3) : Color(.systemFill)
         }
         let ratio = Double(count) / Double(maxCount)
+        let baseColor: Color = isWeekend ? .accentedRed : .accentColor
         switch ratio {
-        case ..<0.25: return Color.accentColor.opacity(0.25)
-        case ..<0.50: return Color.accentColor.opacity(0.45)
-        case ..<0.75: return Color.accentColor.opacity(0.65)
-        default:      return Color.accentColor.opacity(0.90)
+        case ..<0.25: return baseColor.opacity(0.25)
+        case ..<0.50: return baseColor.opacity(0.45)
+        case ..<0.75: return baseColor.opacity(0.65)
+        default:      return baseColor.opacity(0.90)
         }
     }
 
