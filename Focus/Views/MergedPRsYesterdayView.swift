@@ -83,6 +83,7 @@ struct MergedPRsYesterdayView: View {
                         }
                     }
                 }
+                .listStyle(.plain)
                 .refreshable { await loadData() }
             }
         }
