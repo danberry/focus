@@ -94,6 +94,7 @@
 		40825500000000000000C01B /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A069 /* ReportsView.swift */; };
 		40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06A /* MergedPRsYesterdayView.swift */; };
 		40825500000000000000C01D /* MergedPRReportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06B /* MergedPRReportServiceTests.swift */; };
+		40825500000000000000C020 /* EmptyContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06D /* EmptyContentView.swift */; };
 		40825500000000000000B055 /* RepositoryVelocity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A056 /* RepositoryVelocity.swift */; };
 		40825500000000000000B056 /* VelocityQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A057 /* VelocityQueries.swift */; };
 		40825500000000000000B057 /* VelocityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A058 /* VelocityService.swift */; };
@@ -203,6 +204,7 @@
 		40825500000000000000A069 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
 		40825500000000000000A06A /* MergedPRsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRsYesterdayView.swift; sourceTree = "<group>"; };
 		40825500000000000000A06B /* MergedPRReportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRReportServiceTests.swift; sourceTree = "<group>"; };
+		40825500000000000000A06D /* EmptyContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyContentView.swift; sourceTree = "<group>"; };
 		40825500000000000000A056 /* RepositoryVelocity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryVelocity.swift; sourceTree = "<group>"; };
 		40825500000000000000A057 /* VelocityQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityQueries.swift; sourceTree = "<group>"; };
 		40825500000000000000A058 /* VelocityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityService.swift; sourceTree = "<group>"; };
@@ -313,6 +315,7 @@
 				40825500000000000000A02D /* RepositoryDetailView.swift */,
 				40825500000000000000A02E /* MainTabView.swift */,
 				40825500000000000000A032 /* DependabotAlertDetailView.swift */,
+				40825500000000000000A06D /* EmptyContentView.swift */,
 				40825500000000000000A033 /* SettingsView.swift */,
 				40825500000000000000A041 /* TeamsView.swift */,
 				40825500000000000000A042 /* AddTeamView.swift */,
@@ -622,6 +625,7 @@
 				40825500000000000000C01B /* ReportsView.swift in Sources */,
 				40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */,
 				40825500000000000000C01E /* Color+Accent.swift in Sources */,
+				40825500000000000000C020 /* EmptyContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -82,8 +82,7 @@ struct RepositoryDetailView: View {
 
             Section("Dependabot Alerts") {
                 if repository.dependabotAlertDetails.isEmpty {
-                    Text("No open alerts")
-                        .foregroundStyle(.secondary)
+                    EmptyContentView("No Dependabot Alerts", systemImage: "shield.slash")
                 } else {
                     ForEach(repository.dependabotAlertDetails.sorted { $0.createdAt < $1.createdAt }) { alert in
                         NavigationLink(destination: DependabotAlertDetailView(alert: alert, repository: repository)) {
