@@ -155,20 +155,16 @@ private struct MergedPRsHeroRow: View {
     let totalCount: Int
 
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(totalCount)")
-                    .font(.system(size: 52, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .contentTransition(.numericText())
-                Text("MERGED PRS")
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .tracking(1.2)
-            }
-
-            Spacer()
+        LabeledContent {} label: {
+            Text("\(totalCount)")
+                .font(.system(size: 52, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
+            Text("MERGED PRS")
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+                .tracking(1.2)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
