@@ -6,11 +6,12 @@ import SwiftData
 struct MergedPRsYesterdayView: View {
     @Environment(AuthenticationService.self) private var authService
     @Query(sort: \SavedRepository.displayName) private var savedRepositories: [SavedRepository]
-    @Query(sort: \Member.name) private var members: [Member]
 
     @State private var isLoading = false
     @State private var error: GitHubError?
-    @State private var allPRs: [MergedPR] = []
+    @State private var prsByRepo: [String: [MergedPR]] = [:]
+
+    private var allPRs: [MergedPR] { prsByRepo.values.flatMap { $0 } }
 
     private var yesterday: Date {
         var cal = Calendar(identifier: .gregorian)
@@ -25,28 +26,10 @@ struct MergedPRsYesterdayView: View {
         return fmt.string(from: yesterday)
     }
 
-    private var loginToTeamName: [String: String] {
-        Dictionary(
-            uniqueKeysWithValues: members.compactMap { member in
-                guard let login = member.githubLogin, let team = member.team else { return nil }
-                return (login.lowercased(), team.name)
-            }
-        )
-    }
-
-    private var teamSections: [(teamName: String, prs: [MergedPR])] {
-        var grouped: [String: [MergedPR]] = [:]
-        for pr in allPRs {
-            let teamName = loginToTeamName[pr.authorLogin.lowercased()] ?? "No Team"
-            grouped[teamName, default: []].append(pr)
-        }
-        return grouped
-            .map { (teamName: $0.key, prs: $0.value.sorted { $0.mergedAt < $1.mergedAt }) }
-            .sorted {
-                if $0.teamName == "No Team" { return false }
-                if $1.teamName == "No Team" { return true }
-                return $0.teamName < $1.teamName
-            }
+    private var repoSections: [(repoName: String, prs: [MergedPR])] {
+        prsByRepo
+            .map { (repoName: $0.key, prs: $0.value.sorted { $0.mergedAt < $1.mergedAt }) }
+            .sorted { $0.repoName < $1.repoName }
     }
 
     var body: some View {
@@ -74,9 +57,9 @@ struct MergedPRsYesterdayView: View {
                             .listRowSeparator(.hidden)
                     }
                     .listSectionSpacing(18)
-                    ForEach(teamSections, id: \.teamName) { section in
-                        NavigationLink(destination: TeamMergedPRsListView(teamName: section.teamName, prs: section.prs)) {
-                            LabeledContent(section.teamName) {
+                    ForEach(repoSections, id: \.repoName) { section in
+                        NavigationLink(destination: RepoMergedPRsListView(repoName: section.repoName, prs: section.prs)) {
+                            LabeledContent(section.repoName) {
                                 Text("\(section.prs.count)")
                                     .foregroundStyle(.secondary)
                                     .monospacedDigit()
@@ -108,8 +91,7 @@ struct MergedPRsYesterdayView: View {
 
         do {
             let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
-            let prsByRepo = try await service.fetchMergedPRs(for: repos, on: yesterday)
-            allPRs = prsByRepo.values.flatMap { $0 }
+            prsByRepo = try await service.fetchMergedPRs(for: repos, on: yesterday)
         } catch let ghError as GitHubError {
             error = ghError
         } catch {
@@ -120,12 +102,12 @@ struct MergedPRsYesterdayView: View {
     }
 }
 
-// MARK: - TeamMergedPRsListView
+// MARK: - RepoMergedPRsListView
 
-private struct TeamMergedPRsListView: View {
+private struct RepoMergedPRsListView: View {
     @Environment(\.openURL) private var openURL
 
-    let teamName: String
+    let repoName: String
     let prs: [MergedPR]
 
     var body: some View {
@@ -145,7 +127,7 @@ private struct TeamMergedPRsListView: View {
                 }
             }
         }
-        .navigationTitle(teamName)
+        .navigationTitle(repoName)
         .navigationBarTitleDisplayMode(.inline)
     }
 }
