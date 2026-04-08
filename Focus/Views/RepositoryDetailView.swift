@@ -64,10 +64,10 @@ struct RepositoryDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(uniqueHandles, id: \.self) { handle in
-                        Label(
-                            handle,
-                            systemImage: handle.contains("/") ? "person.2" : "person"
-                        )
+                        let isTeam = handle.contains("/")
+                        let raw = handle.trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+                        let displayHandle = isTeam ? (raw.split(separator: "/").last.map(String.init) ?? raw) : raw
+                        LabeledContent(isTeam ? "Team" : "User", value: displayHandle)
                     }
                 }
             }
