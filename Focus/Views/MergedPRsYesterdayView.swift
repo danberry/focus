@@ -5,12 +5,12 @@ import SwiftData
 
 struct MergedPRsYesterdayView: View {
     @Environment(AuthenticationService.self) private var authService
-    @Environment(\.openURL) private var openURL
     @Query(sort: \SavedRepository.displayName) private var savedRepositories: [SavedRepository]
+    @Query(sort: \Member.name) private var members: [Member]
 
     @State private var isLoading = false
     @State private var error: GitHubError?
-    @State private var sections: [(repoName: String, displayName: String, prs: [MergedPR])] = []
+    @State private var allPRs: [MergedPR] = []
 
     private var yesterday: Date {
         var cal = Calendar(identifier: .gregorian)
@@ -25,9 +25,33 @@ struct MergedPRsYesterdayView: View {
         return "Merged PRs — \(fmt.string(from: yesterday))"
     }
 
+    private var loginToTeamName: [String: String] {
+        Dictionary(
+            uniqueKeysWithValues: members.compactMap { member in
+                guard let login = member.githubLogin, let team = member.team else { return nil }
+                return (login.lowercased(), team.name)
+            }
+        )
+    }
+
+    private var teamSections: [(teamName: String, prs: [MergedPR])] {
+        var grouped: [String: [MergedPR]] = [:]
+        for pr in allPRs {
+            let teamName = loginToTeamName[pr.authorLogin.lowercased()] ?? "No Team"
+            grouped[teamName, default: []].append(pr)
+        }
+        return grouped
+            .map { (teamName: $0.key, prs: $0.value.sorted { $0.mergedAt < $1.mergedAt }) }
+            .sorted {
+                if $0.teamName == "No Team" { return false }
+                if $1.teamName == "No Team" { return true }
+                return $0.teamName < $1.teamName
+            }
+    }
+
     var body: some View {
         Group {
-            if isLoading && sections.isEmpty {
+            if isLoading && allPRs.isEmpty {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error {
@@ -36,7 +60,7 @@ struct MergedPRsYesterdayView: View {
                     systemImage: "exclamationmark.triangle",
                     description: Text(error.localizedDescription)
                 )
-            } else if sections.isEmpty {
+            } else if allPRs.isEmpty {
                 ContentUnavailableView(
                     "No Merged PRs",
                     systemImage: "checkmark.circle",
@@ -45,28 +69,16 @@ struct MergedPRsYesterdayView: View {
             } else {
                 List {
                     Section {
-                        MergedPRsHeroRow(totalCount: sections.reduce(0) { $0 + $1.prs.count })
+                        MergedPRsHeroRow(totalCount: allPRs.count)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets())
                     }
-                    ForEach(sections, id: \.repoName) { section in
-                        Section(section.displayName) {
-                            ForEach(section.prs) { pr in
-                                Button {
-                                    if let url = URL(string: pr.url) {
-                                        openURL(url)
-                                    }
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(pr.title)
-                                            .lineLimit(1)
-                                            .foregroundStyle(Color.primary)
-                                        Text("by @\(pr.authorLogin) • #\(pr.number)")
-                                            .font(.caption)
-                                            .foregroundStyle(Color.secondary)
-                                    }
-                                }
-
+                    ForEach(teamSections, id: \.teamName) { section in
+                        NavigationLink(destination: TeamMergedPRsListView(teamName: section.teamName, prs: section.prs)) {
+                            LabeledContent(section.teamName) {
+                                Text("\(section.prs.count)")
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
                             }
                         }
                     }
@@ -93,13 +105,8 @@ struct MergedPRsYesterdayView: View {
 
         do {
             let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
-            let displayNames = Dictionary(
-                uniqueKeysWithValues: savedRepositories.map { ("\($0.owner)/\($0.name)".lowercased(), $0.displayName) }
-            )
             let prsByRepo = try await service.fetchMergedPRs(for: repos, on: yesterday)
-            sections = prsByRepo
-                .map { (repoName: $0.key, displayName: displayNames[$0.key.lowercased()] ?? $0.key, prs: $0.value) }
-                .sorted { $0.displayName < $1.displayName }
+            allPRs = prsByRepo.values.flatMap { $0 }
         } catch let ghError as GitHubError {
             error = ghError
         } catch {
@@ -107,6 +114,36 @@ struct MergedPRsYesterdayView: View {
         }
 
         isLoading = false
+    }
+}
+
+// MARK: - TeamMergedPRsListView
+
+private struct TeamMergedPRsListView: View {
+    @Environment(\.openURL) private var openURL
+
+    let teamName: String
+    let prs: [MergedPR]
+
+    var body: some View {
+        List(prs) { pr in
+            Button {
+                if let url = URL(string: pr.url) {
+                    openURL(url)
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pr.title)
+                        .lineLimit(1)
+                        .foregroundStyle(Color.primary)
+                    Text("by @\(pr.authorLogin) • #\(pr.number)")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                }
+            }
+        }
+        .navigationTitle(teamName)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
