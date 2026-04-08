@@ -95,7 +95,7 @@ struct RepositoryDetailView: View {
             Section("Code Scanning Alerts") {
                 let sorted = repository.codeScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
                 if sorted.isEmpty {
-                    ContentUnavailableView("No Code Scanning Alerts", systemImage: "shield.slash")
+                    EmptyContentView("No Code Scanning Alerts", systemImage: "shield.slash")
                 } else {
                     ForEach(sorted) { alert in
                         VStack(alignment: .leading, spacing: 2) {
@@ -113,7 +113,7 @@ struct RepositoryDetailView: View {
             Section("Secret Scanning Alerts") {
                 let sorted = repository.secretScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
                 if sorted.isEmpty {
-                    ContentUnavailableView("No Secret Scanning Alerts", systemImage: "key.slash")
+                    EmptyContentView("No Secret Scanning Alerts", systemImage: "key.slash")
                 } else {
                     ForEach(sorted) { alert in
                         HStack {
