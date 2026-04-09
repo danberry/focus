@@ -47,8 +47,8 @@ struct RepositoryDetailView: View {
                         Image(systemName: "calendar")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundStyle(Color.accentColor)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 6)
                             .background(Color.accentColor.opacity(0.12), in: Capsule())
                     }
                 }
