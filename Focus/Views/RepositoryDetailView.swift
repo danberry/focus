@@ -5,7 +5,7 @@ import SwiftData
 
 struct RepositoryDetailView: View {
     let repository: SavedRepository
-    @State private var selectedPeriod: VelocityPeriod = .thirtyDays
+    @State private var selectedPeriod: VelocityPeriod = .yearToDate
 
     var body: some View {
         List {
