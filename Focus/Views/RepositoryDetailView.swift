@@ -13,8 +13,9 @@ struct RepositoryDetailView: View {
 
             Section {
                 let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
+
                 if let record {
-                    VelocityHeroRow(comparison: record.comparison, selectedPeriod: $selectedPeriod)
+                    VelocityHeroRow(comparison: record.comparison)
                         .listRowSeparator(.hidden)
                 } else {
                     HStack {
@@ -30,6 +31,25 @@ struct RepositoryDetailView: View {
                     }
                     .padding(.vertical, 8)
                     .listRowSeparator(.hidden)
+                }
+            } header: {
+                HStack {
+                    Text("Velocity")
+                    Menu {
+                        ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                            Button {
+                                selectedPeriod = period
+                            } label: {
+                                Label(period.rawValue, systemImage: selectedPeriod == period ? "checkmark" : "")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 6)
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    }
                 }
             }
 
@@ -155,6 +175,7 @@ struct RepositoryDetailView: View {
             }
         }
         .listStyle(.plain)
+        .headerProminence(.increased)
         .navigationTitle(repository.displayName)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -171,7 +192,6 @@ struct RepositoryDetailView: View {
 
 private struct VelocityHeroRow: View {
     let comparison: VelocityComparison
-    @Binding var selectedPeriod: VelocityPeriod
 
     var body: some View {
         HStack(alignment: .center) {
@@ -200,23 +220,6 @@ private struct VelocityHeroRow: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
-
-            Menu {
-                ForEach(VelocityPeriod.allCases, id: \.self) { period in
-                    Button {
-                        selectedPeriod = period
-                    } label: {
-                        Label(period.rawValue, systemImage: selectedPeriod == period ? "checkmark" : "")
-                    }
-                }
-            } label: {
-                Image(systemName: "calendar")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.accentColor.opacity(0.12), in: Capsule())
-            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
