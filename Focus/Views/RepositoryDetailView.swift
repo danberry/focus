@@ -213,7 +213,6 @@ private struct VelocityHeroRow: View {
                 Image(systemName: trendIcon(comparison.trend))
                     .font(.system(size: 18, weight: .bold))
                     .symbolEffect(.bounce, value: comparison.trend)
-                    .symbolRenderingMode(.hierarchical)
                 Text(badgeText(comparison))
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .contentTransition(.numericText())
