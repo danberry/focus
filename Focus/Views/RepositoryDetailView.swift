@@ -207,7 +207,16 @@ private struct VelocityHeroRow: View {
                     }
                 }
             } label: {
-                Image(systemName: "calendar")
+                HStack(spacing: 6) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 18, weight: .bold))
+                    Text(selectedPeriod.rawValue)
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                }
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
         }
         .padding(.horizontal, 16)
