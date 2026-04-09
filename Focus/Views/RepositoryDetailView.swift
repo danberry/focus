@@ -104,12 +104,14 @@ struct RepositoryDetailView: View {
                     EmptyContentView("No Code Scanning Alerts", systemImage: "shield.slash")
                 } else {
                     ForEach(sortedCodeScanning.prefix(6)) { alert in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(alert.ruleName)
-                            if let severity = alert.securitySeverityLevel {
-                                Text(severity)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        NavigationLink(destination: CodeScanningAlertDetailView(alert: alert)) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(alert.ruleName)
+                                if let severity = alert.securitySeverityLevel {
+                                    Text(severity)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
