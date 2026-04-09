@@ -1,6 +1,24 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - SecurityAlertFilter
+
+private enum SecurityAlertFilter: String, CaseIterable, Identifiable {
+    case dependabot = "Dependabot"
+    case secrets = "Secrets"
+    case codeScanning = "Code Scanning"
+
+    var id: Self { self }
+
+    var systemImage: String {
+        switch self {
+        case .dependabot: return "ant.fill"
+        case .secrets: return "key.fill"
+        case .codeScanning: return "magnifyingglass"
+        }
+    }
+}
+
 // MARK: - ContentView
 
 struct ContentView: View {
@@ -11,19 +29,38 @@ struct ContentView: View {
 
     @State private var isAddingRepository = false
     @State private var searchText = ""
+    @State private var activeFilters: Set<SecurityAlertFilter> = []
 
     private var filteredRepositories: [SavedRepository] {
-        guard !searchText.isEmpty else { return repositories }
-        let query = searchText.lowercased()
-        return repositories.filter { repo in
-            repo.displayName.lowercased().contains(query) ||
-            (repo.primaryLanguage?.lowercased().contains(query) ?? false)
+        var result = Array(repositories)
+        if !searchText.isEmpty {
+            let query = searchText.lowercased()
+            result = result.filter { repo in
+                repo.displayName.lowercased().contains(query) ||
+                (repo.primaryLanguage?.lowercased().contains(query) ?? false)
+            }
         }
+        if !activeFilters.isEmpty {
+            result = result.filter { repo in
+                activeFilters.contains { filter in
+                    switch filter {
+                    case .dependabot: return repo.dependabotAlerts > 0
+                    case .secrets: return repo.secretScanningAlerts > 0
+                    case .codeScanning: return repo.codeScanningAlerts > 0
+                    }
+                }
+            }
+        }
+        return result
     }
 
     var body: some View {
         NavigationStack {
             List {
+                SecurityAlertFilterBar(activeFilters: $activeFilters)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                 ForEach(filteredRepositories) { repo in
                     NavigationLink(destination: RepositoryDetailView(repository: repo)) {
                         SavedRepositoryRow(repository: repo)
@@ -50,7 +87,15 @@ struct ContentView: View {
                         description: Text("Tap + to add a repository.")
                     )
                 } else if filteredRepositories.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
+                    if searchText.isEmpty {
+                        ContentUnavailableView(
+                            "No Matching Repositories",
+                            systemImage: "line.3.horizontal.decrease.circle",
+                            description: Text("No repositories have the selected alert types.")
+                        )
+                    } else {
+                        ContentUnavailableView.search(text: searchText)
+                    }
                 }
             }
             .sheet(isPresented: $isAddingRepository) {
@@ -95,6 +140,56 @@ struct ContentView: View {
         for index in offsets {
             modelContext.delete(filteredRepositories[index])
         }
+    }
+}
+
+// MARK: - SecurityAlertFilterBar
+
+private struct SecurityAlertFilterBar: View {
+    @Binding var activeFilters: Set<SecurityAlertFilter>
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(SecurityAlertFilter.allCases) { filter in
+                    FilterChip(
+                        title: filter.rawValue,
+                        systemImage: filter.systemImage,
+                        isActive: activeFilters.contains(filter)
+                    ) {
+                        if activeFilters.contains(filter) {
+                            activeFilters.remove(filter)
+                        } else {
+                            activeFilters.insert(filter)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+// MARK: - FilterChip
+
+private struct FilterChip: View {
+    let title: String
+    let systemImage: String
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isActive ? Color.accentColor : Color(.systemFill))
+                .foregroundStyle(isActive ? Color.white : Color.primary)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 
