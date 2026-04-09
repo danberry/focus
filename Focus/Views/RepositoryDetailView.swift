@@ -46,6 +46,7 @@ struct RepositoryDetailView: View {
                             LabeledContent {
                             } label: {
                                 Text(pr.title)
+                                    .lineLimit(1)
                                 Text(daysOpenLabel(pr.createdAt))
                             }
                         }
