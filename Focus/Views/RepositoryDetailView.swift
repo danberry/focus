@@ -175,7 +175,7 @@ struct RepositoryDetailView: View {
             }
         }
         .listStyle(.plain)
-        .environment(\.headerProminence, .increased)
+        .headerProminence(.increased)
         .navigationTitle(repository.displayName)
         .navigationBarTitleDisplayMode(.inline)
     }
