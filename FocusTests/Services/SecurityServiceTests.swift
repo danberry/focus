@@ -222,6 +222,7 @@ struct SecurityServiceTests {
           {
             "number": 42,
             "created_at": "2024-01-15T10:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/42",
             "rule": {
               "name": "java/sql-injection",
               "security_severity_level": "high"
@@ -230,6 +231,7 @@ struct SecurityServiceTests {
           {
             "number": 7,
             "created_at": "2024-02-20T08:30:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/7",
             "rule": {
               "name": "js/xss",
               "security_severity_level": null
@@ -262,11 +264,13 @@ struct SecurityServiceTests {
           {
             "number": 1,
             "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/1",
             "rule": { "name": "old-rule", "security_severity_level": "low" }
           },
           {
             "number": 2,
             "created_at": "2024-01-02T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/2",
             "rule": { "name": "another-old-rule", "security_severity_level": "medium" }
           }
         ]
@@ -280,6 +284,7 @@ struct SecurityServiceTests {
           {
             "number": 99,
             "created_at": "2024-03-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/99",
             "rule": { "name": "new-rule", "security_severity_level": "critical" }
           }
         ]
@@ -327,6 +332,7 @@ struct SecurityServiceTests {
           {
             "number": 5,
             "created_at": "2024-06-01T12:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/5",
             "rule": { "name": "some-rule", "security_severity_level": "medium" }
           }
         ]
