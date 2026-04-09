@@ -125,14 +125,19 @@ final class BackgroundSyncManager {
 
     private func syncAllContributions(using service: ContributionService, in context: ModelContext) async {
         let members: [Member]
+        let organizations: [SavedOrganization]
         do {
             members = try context.fetch(FetchDescriptor<Member>())
+            organizations = try context.fetch(FetchDescriptor<SavedOrganization>())
         } catch {
             return
         }
+
+        let organizationIDs = organizations.map(\.githubId)
+
         for member in members {
             guard let login = member.githubLogin else { continue }
-            await service.syncContributions(login: login, member: member, in: context)
+            await service.syncContributions(login: login, member: member, organizationIDs: organizationIDs, in: context)
         }
     }
 
