@@ -62,6 +62,57 @@ struct MergedPRReportService: Sendable {
         return result
     }
 
+    /// Fetches all PRs merged within the given date range (inclusive) across the provided repositories.
+    /// Returns a dictionary keyed by `owner/name`, with PRs sorted by mergedAt ascending.
+    /// Returns an empty dictionary immediately if `repositories` is empty.
+    func fetchMergedPRs(for repositories: [(owner: String, name: String)], from startDate: Date, to endDate: Date) async throws -> [String: [MergedPR]] {
+        guard !repositories.isEmpty else { return [:] }
+
+        let startStr = formattedDate(startDate)
+        let endStr = formattedDate(endDate)
+        let repoQualifiers = repositories
+            .map { "repo:\($0.owner)/\($0.name)" }
+            .joined(separator: " ")
+        let q = "is:pr is:merged merged:\(startStr)..\(endStr) \(repoQualifiers)"
+
+        let variables: [String: any Sendable] = ["q": q]
+        let response: SearchResponse = try await graphQL.execute(
+            query: ReportQueries.mergedPullRequests,
+            variables: variables,
+            responseType: SearchResponse.self
+        )
+
+        let iso = ISO8601DateFormatter()
+        var result: [String: [MergedPR]] = [:]
+
+        for node in response.search.nodes {
+            guard
+                let number = node.number,
+                let title = node.title,
+                let mergedAtStr = node.mergedAt,
+                let mergedAt = iso.date(from: mergedAtStr),
+                let url = node.url,
+                let repoName = node.repository?.nameWithOwner
+            else { continue }
+
+            let pr = MergedPR(
+                number: number,
+                title: title,
+                mergedAt: mergedAt,
+                authorLogin: node.author?.login ?? "",
+                url: url,
+                repoNameWithOwner: repoName
+            )
+            result[repoName, default: []].append(pr)
+        }
+
+        for key in result.keys {
+            result[key]?.sort { $0.mergedAt < $1.mergedAt }
+        }
+
+        return result
+    }
+
     // MARK: - Private
 
     private func formattedDate(_ date: Date) -> String {

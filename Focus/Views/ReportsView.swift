@@ -25,6 +25,15 @@ struct ReportsView: View {
                     }
                 }
                 NavigationLink {
+                    MergedPRsThisWeekView()
+                } label: {
+                    LabeledContent {
+                    } label: {
+                        Text("Merged PRs This Week")
+                        Text("PRs merged across your saved repos this week")
+                    }
+                }
+                NavigationLink {
                     MemberDisciplineReportView()
                 } label: {
                     LabeledContent {
