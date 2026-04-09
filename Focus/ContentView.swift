@@ -10,11 +10,21 @@ struct ContentView: View {
     @Query(sort: [SortDescriptor(\SavedRepository.displayName, comparator: .localizedStandard)]) private var repositories: [SavedRepository]
 
     @State private var isAddingRepository = false
+    @State private var searchText = ""
+
+    private var filteredRepositories: [SavedRepository] {
+        guard !searchText.isEmpty else { return repositories }
+        let query = searchText.lowercased()
+        return repositories.filter { repo in
+            repo.displayName.lowercased().contains(query) ||
+            (repo.primaryLanguage?.lowercased().contains(query) ?? false)
+        }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(repositories) { repo in
+                ForEach(filteredRepositories) { repo in
                     NavigationLink(destination: RepositoryDetailView(repository: repo)) {
                         SavedRepositoryRow(repository: repo)
                     }
@@ -22,6 +32,7 @@ struct ContentView: View {
                 .onDelete(perform: delete)
             }
             .listStyle(.plain)
+            .searchable(text: $searchText, prompt: "Search by name or language")
             .navigationTitle("Repositories")
             .navigationSubtitle(syncSubtitle)
             .toolbar {
@@ -38,6 +49,8 @@ struct ContentView: View {
                         systemImage: "bookmark.slash",
                         description: Text("Tap + to add a repository.")
                     )
+                } else if filteredRepositories.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
                 }
             }
             .sheet(isPresented: $isAddingRepository) {
@@ -80,7 +93,7 @@ struct ContentView: View {
 
     private func delete(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(repositories[index])
+            modelContext.delete(filteredRepositories[index])
         }
     }
 }
