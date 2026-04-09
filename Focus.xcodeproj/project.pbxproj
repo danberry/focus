@@ -110,6 +110,10 @@
 		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
 		408255DA2CAFC99600000023 /* ContentViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000013 /* ContentViewTests.swift */; };
 		40825500000000000000C01E /* Color+Accent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06C /* Color+Accent.swift */; };
+		40825500000000000000C027 /* SavedOrganization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A074 /* SavedOrganization.swift */; };
+		40825500000000000000C028 /* OrganizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A075 /* OrganizationService.swift */; };
+		40825500000000000000C029 /* OrganizationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A076 /* OrganizationsView.swift */; };
+		40825500000000000000C02A /* AddOrganizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A077 /* AddOrganizationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -229,6 +233,10 @@
 		408255DA2CAFC99600000030 /* Focus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Focus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		408255DA2CAFC99600000031 /* FocusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		40825500000000000000A06C /* Color+Accent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Accent.swift"; sourceTree = "<group>"; };
+		40825500000000000000A074 /* SavedOrganization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedOrganization.swift; sourceTree = "<group>"; };
+		40825500000000000000A075 /* OrganizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationService.swift; sourceTree = "<group>"; };
+		40825500000000000000A076 /* OrganizationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationsView.swift; sourceTree = "<group>"; };
+		40825500000000000000A077 /* AddOrganizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrganizationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -272,6 +280,7 @@
 				40825500000000000000A056 /* RepositoryVelocity.swift */,
 				40825500000000000000A05F /* OpenPullRequest.swift */,
 				40825500000000000000A066 /* MergedPR.swift */,
+				40825500000000000000A074 /* SavedOrganization.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -303,6 +312,7 @@
 				40825500000000000000A058 /* VelocityService.swift */,
 				40825500000000000000A060 /* PullRequestService.swift */,
 				40825500000000000000A068 /* MergedPRReportService.swift */,
+				40825500000000000000A075 /* OrganizationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -352,6 +362,8 @@
 				40825500000000000000A073 /* MergedPRsTodayView.swift */,
 				40825500000000000000A06E /* JobTitleDonutChartView.swift */,
 				40825500000000000000A06F /* MemberDisciplineReportView.swift */,
+				40825500000000000000A076 /* OrganizationsView.swift */,
+				40825500000000000000A077 /* AddOrganizationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -650,6 +662,10 @@
 				40825500000000000000C023 /* AllDependabotAlertsView.swift in Sources */,
 				40825500000000000000C024 /* AllCodeScanningAlertsView.swift in Sources */,
 				40825500000000000000C025 /* AllSecretScanningAlertsView.swift in Sources */,
+				40825500000000000000C027 /* SavedOrganization.swift in Sources */,
+				40825500000000000000C028 /* OrganizationService.swift in Sources */,
+				40825500000000000000C029 /* OrganizationsView.swift in Sources */,
+				40825500000000000000C02A /* AddOrganizationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
