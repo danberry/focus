@@ -71,6 +71,7 @@ struct AddOrganizationView: View {
         do {
             let org = try await organizationService.fetchOrganization(login: trimmedLogin)
             let saved = SavedOrganization(
+                githubId: org.id,
                 login: org.login,
                 name: org.name,
                 avatarUrl: org.avatarUrl,
