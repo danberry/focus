@@ -23,6 +23,7 @@ struct MergedPRsTodayView: View {
         let fmt = DateFormatter()
         fmt.dateStyle = .long
         fmt.timeStyle = .none
+        fmt.timeZone = TimeZone(identifier: "UTC")
         return fmt.string(from: today)
     }
 
