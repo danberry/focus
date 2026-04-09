@@ -104,7 +104,8 @@ struct ModelDecodingTests {
     @Test func decodesGitHubOrganization() throws {
         let json = """
             {
-                "id": "MDEyOk9yZ2FuaXphdGlvbjE=",
+                "id": 9919,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjE=",
                 "login": "github",
                 "name": "GitHub",
                 "avatar_url": "https://github.com/images/github.png",
@@ -113,6 +114,7 @@ struct ModelDecodingTests {
             """
         let org = try decoder.decode(GitHubOrganization.self, from: json.data(using: .utf8)!)
 
+        #expect(org.id == "MDEyOk9yZ2FuaXphdGlvbjE=")
         #expect(org.login == "github")
         #expect(org.name == "GitHub")
     }
