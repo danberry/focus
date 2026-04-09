@@ -12,6 +12,7 @@ enum Endpoint {
     case repoContents(owner: String, repo: String, path: String)
     case dependabotAlert(owner: String, repo: String, alertNumber: Int)
     case userProfile(login: String)
+    case organization(login: String)
 
     var path: String {
         switch self {
@@ -33,6 +34,8 @@ enum Endpoint {
             "/repos/\(owner)/\(repo)/dependabot/alerts/\(alertNumber)"
         case .userProfile(let login):
             "/users/\(login)"
+        case .organization(let login):
+            "/orgs/\(login)"
         }
     }
 }
