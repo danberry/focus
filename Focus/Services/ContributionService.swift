@@ -12,8 +12,21 @@ struct ContributionService: Sendable {
 
     // MARK: - Sync
 
+    /// Syncs contributions for a single member.
+    ///
+    /// When `organizationIDs` is non-empty the query is issued once per organization (using each
+    /// org's GitHub global node ID) and the results are aggregated. This scopes contributions to
+    /// only the repositories owned by the tracked organizations.
+    ///
+    /// When `organizationIDs` is empty the global query is used, returning contributions across
+    /// all repositories the member has contributed to.
     @MainActor
-    func syncContributions(login: String, member: Member, in context: ModelContext) async {
+    func syncContributions(
+        login: String,
+        member: Member,
+        organizationIDs: [String] = [],
+        in context: ModelContext
+    ) async {
         let now = Date()
         guard let oneYearAgo = Calendar.current.date(byAdding: .day, value: -365, to: now) else { return }
 
@@ -22,17 +35,54 @@ struct ContributionService: Sendable {
         let toString = formatter.string(from: now)
 
         do {
-            let response: ContributionsResponse = try await graphQL.execute(
-                query: ContributionQueries.contributions,
-                variables: [
-                    "login": login,
-                    "from": fromString,
-                    "to": toString
-                ],
-                responseType: ContributionsResponse.self
-            )
+            var totalCommits = 0
+            var totalPRs = 0
+            var totalReviews = 0
+            var totalIssues = 0
+            // Keyed by date string ("yyyy-MM-dd") so counts from multiple orgs on the same day merge.
+            var dailyCounts: [String: Int] = [:]
 
-            guard let collection = response.user?.contributionsCollection else { return }
+            if organizationIDs.isEmpty {
+                // Global query — contributions across all repositories.
+                let response: ContributionsResponse = try await graphQL.execute(
+                    query: ContributionQueries.contributions,
+                    variables: [
+                        "login": login,
+                        "from": fromString,
+                        "to": toString
+                    ],
+                    responseType: ContributionsResponse.self
+                )
+                guard let collection = response.user?.contributionsCollection else { return }
+                totalCommits = collection.totalCommitContributions
+                totalPRs = collection.totalPullRequestContributions
+                totalReviews = collection.totalPullRequestReviewContributions
+                totalIssues = collection.totalIssueContributions
+                accumulateDailyCounts(from: collection.contributionCalendar, into: &dailyCounts)
+            } else {
+                // Per-organization queries — one pass per org, aggregate results.
+                var receivedAnyData = false
+                for orgID in organizationIDs {
+                    let response: ContributionsResponse = try await graphQL.execute(
+                        query: ContributionQueries.contributionsInOrganization,
+                        variables: [
+                            "login": login,
+                            "from": fromString,
+                            "to": toString,
+                            "organizationID": orgID
+                        ],
+                        responseType: ContributionsResponse.self
+                    )
+                    guard let collection = response.user?.contributionsCollection else { continue }
+                    totalCommits += collection.totalCommitContributions
+                    totalPRs += collection.totalPullRequestContributions
+                    totalReviews += collection.totalPullRequestReviewContributions
+                    totalIssues += collection.totalIssueContributions
+                    accumulateDailyCounts(from: collection.contributionCalendar, into: &dailyCounts)
+                    receivedAnyData = true
+                }
+                guard receivedAnyData else { return }
+            }
 
             // Full-replace sync: remove any existing contribution record for this member.
             for existing in member.contributions {
@@ -41,10 +91,10 @@ struct ContributionService: Sendable {
             }
 
             let contribution = MemberContribution(
-                commits: collection.totalCommitContributions,
-                pullRequests: collection.totalPullRequestContributions,
-                reviews: collection.totalPullRequestReviewContributions,
-                issues: collection.totalIssueContributions,
+                commits: totalCommits,
+                pullRequests: totalPRs,
+                reviews: totalReviews,
+                issues: totalIssues,
                 periodStart: oneYearAgo,
                 periodEnd: now,
                 fetchedAt: now
@@ -52,17 +102,9 @@ struct ContributionService: Sendable {
             contribution.member = member
             context.insert(contribution)
 
-            member.contributionCount = collection.totalCommitContributions
-                + collection.totalPullRequestContributions
-                + collection.totalPullRequestReviewContributions
-                + collection.totalIssueContributions
+            member.contributionCount = totalCommits + totalPRs + totalReviews + totalIssues
 
-            // Sync daily contributions from the contribution calendar.
-            syncDailyContributions(
-                from: collection.contributionCalendar,
-                member: member,
-                in: context
-            )
+            syncDailyContributions(from: dailyCounts, member: member, in: context)
 
             try? context.save()
         } catch {
@@ -72,9 +114,20 @@ struct ContributionService: Sendable {
 
     // MARK: - Private
 
+    private func accumulateDailyCounts(
+        from calendar: ContributionsResponse.ContributionCalendar,
+        into dailyCounts: inout [String: Int]
+    ) {
+        for week in calendar.weeks {
+            for day in week.contributionDays {
+                dailyCounts[day.date, default: 0] += day.contributionCount
+            }
+        }
+    }
+
     @MainActor
     private func syncDailyContributions(
-        from calendar: ContributionsResponse.ContributionCalendar,
+        from dailyCounts: [String: Int],
         member: Member,
         in context: ModelContext
     ) {
@@ -88,13 +141,11 @@ struct ContributionService: Sendable {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         dateFormatter.timeZone = .current
 
-        for week in calendar.weeks {
-            for day in week.contributionDays {
-                guard let date = dateFormatter.date(from: day.date) else { continue }
-                let record = DailyContribution(date: date, count: day.contributionCount)
-                record.member = member
-                context.insert(record)
-            }
+        for (dateString, count) in dailyCounts {
+            guard let date = dateFormatter.date(from: dateString) else { continue }
+            let record = DailyContribution(date: date, count: count)
+            record.member = member
+            context.insert(record)
         }
     }
 }

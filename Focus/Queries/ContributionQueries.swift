@@ -25,4 +25,27 @@ enum ContributionQueries {
             }
         }
         """
+
+    // Fetches contributions scoped to a single organization (by its GitHub global node ID).
+    // Use this when one or more organizations have been added; call once per organization and aggregate results.
+    static let contributionsInOrganization = """
+        query($login: String!, $from: DateTime!, $to: DateTime!, $organizationID: ID!) {
+            user(login: $login) {
+                contributionsCollection(from: $from, to: $to, organizationID: $organizationID) {
+                    totalCommitContributions
+                    totalPullRequestContributions
+                    totalPullRequestReviewContributions
+                    totalIssueContributions
+                    contributionCalendar {
+                        weeks {
+                            contributionDays {
+                                date
+                                contributionCount
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
 }

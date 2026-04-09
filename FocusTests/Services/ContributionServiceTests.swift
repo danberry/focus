@@ -322,4 +322,158 @@ struct ContributionServiceTests {
         #expect(record.reviews == 0)
         #expect(record.issues == 0)
     }
+
+    // MARK: - Single organization ID
+
+    @Test func syncContributionsWithOneOrgUsesOrgQuery() async throws {
+        mockHTTP.setSuccess(json: makeResponse(commits: 4, prs: 1, reviews: 0, issues: 1))
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let member = Member(name: "Ivy", githubLogin: "ivy")
+        context.insert(member)
+
+        await makeService().syncContributions(
+            login: "ivy", member: member, organizationIDs: ["ORG_NODE_ID_1"], in: context
+        )
+
+        let record = try #require(member.contributions.first)
+        #expect(record.commits == 4)
+        #expect(record.pullRequests == 1)
+        #expect(record.reviews == 0)
+        #expect(record.issues == 1)
+        #expect(member.contributionCount == 6)
+    }
+
+    // MARK: - Multiple organization IDs (aggregation)
+
+    @Test func syncContributionsAggregatesAcrossOrganizations() async throws {
+        // Two orgs: first returns commits=5, prs=2; second returns commits=3, issues=1.
+        mockHTTP.enqueueSuccess(json: makeResponse(commits: 5, prs: 2, reviews: 0, issues: 0))
+        mockHTTP.enqueueSuccess(json: makeResponse(commits: 3, prs: 0, reviews: 0, issues: 1))
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let member = Member(name: "Jack", githubLogin: "jack")
+        context.insert(member)
+
+        await makeService().syncContributions(
+            login: "jack", member: member, organizationIDs: ["ORG_1", "ORG_2"], in: context
+        )
+
+        #expect(member.contributions.count == 1)
+        let record = try #require(member.contributions.first)
+        #expect(record.commits == 8)
+        #expect(record.pullRequests == 2)
+        #expect(record.reviews == 0)
+        #expect(record.issues == 1)
+        #expect(member.contributionCount == 11)
+    }
+
+    @Test func syncContributionsAggregatesDailyCountsAcrossOrganizations() async throws {
+        // Two orgs both have activity on 2025-04-05 — their daily counts should be summed.
+        let org1Response = """
+        {
+          "data": {
+            "user": {
+              "contributionsCollection": {
+                "totalCommitContributions": 3,
+                "totalPullRequestContributions": 0,
+                "totalPullRequestReviewContributions": 0,
+                "totalIssueContributions": 0,
+                "contributionCalendar": {
+                  "weeks": [
+                    { "contributionDays": [{ "date": "2025-04-05", "contributionCount": 3 }] }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """
+        let org2Response = """
+        {
+          "data": {
+            "user": {
+              "contributionsCollection": {
+                "totalCommitContributions": 2,
+                "totalPullRequestContributions": 0,
+                "totalPullRequestReviewContributions": 0,
+                "totalIssueContributions": 0,
+                "contributionCalendar": {
+                  "weeks": [
+                    { "contributionDays": [{ "date": "2025-04-05", "contributionCount": 2 }] }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """
+        mockHTTP.enqueueSuccess(json: org1Response)
+        mockHTTP.enqueueSuccess(json: org2Response)
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let member = Member(name: "Kim", githubLogin: "kim")
+        context.insert(member)
+
+        await makeService().syncContributions(
+            login: "kim", member: member, organizationIDs: ["ORG_1", "ORG_2"], in: context
+        )
+
+        // The single day "2025-04-05" should have a merged count of 3 + 2 = 5.
+        #expect(member.dailyContributions.count == 1)
+        let day = try #require(member.dailyContributions.first)
+        #expect(day.count == 5)
+    }
+
+    @Test func syncContributionsSkipsOrgWithNullUser() async throws {
+        // First org returns null user; second org has real data — only second counts.
+        let nullUserResponse = """
+        { "data": { "user": null } }
+        """
+        mockHTTP.enqueueSuccess(json: nullUserResponse)
+        mockHTTP.enqueueSuccess(json: makeResponse(commits: 7, prs: 1, reviews: 0, issues: 0))
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let member = Member(name: "Lee", githubLogin: "lee")
+        context.insert(member)
+
+        await makeService().syncContributions(
+            login: "lee", member: member, organizationIDs: ["ORG_NULL", "ORG_REAL"], in: context
+        )
+
+        let record = try #require(member.contributions.first)
+        #expect(record.commits == 7)
+        #expect(record.pullRequests == 1)
+        #expect(member.contributionCount == 8)
+    }
+
+    @Test func syncContributionsKeepsExistingWhenAllOrgsReturnNullUser() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let member = Member(name: "Mo", githubLogin: "mo")
+        context.insert(member)
+
+        let existing = MemberContribution(
+            commits: 5, pullRequests: 1, reviews: 0, issues: 0,
+            periodStart: Date(), periodEnd: Date(), fetchedAt: Date()
+        )
+        existing.member = member
+        context.insert(existing)
+        member.contributionCount = 6
+
+        mockHTTP.enqueueSuccess(json: "{ \"data\": { \"user\": null } }")
+        mockHTTP.enqueueSuccess(json: "{ \"data\": { \"user\": null } }")
+
+        await makeService().syncContributions(
+            login: "mo", member: member, organizationIDs: ["ORG_1", "ORG_2"], in: context
+        )
+
+        // All orgs returned null — existing data must be preserved.
+        #expect(member.contributions.count == 1)
+        #expect(member.contributionCount == 6)
+    }
 }
