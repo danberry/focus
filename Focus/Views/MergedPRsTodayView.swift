@@ -19,7 +19,7 @@ struct MergedPRsTodayView: View {
         return cal.startOfDay(for: Date())
     }
 
-    private var navigationSubtitle: String {
+    private var dateSubtitle: String {
         let fmt = DateFormatter()
         fmt.dateStyle = .long
         fmt.timeStyle = .none
@@ -58,7 +58,7 @@ struct MergedPRsTodayView: View {
             } else {
                 List {
                     Section {
-                        MergedPRsHeroRow(totalCount: allPRs.count)
+                        MergedPRsHeroRow(totalCount: allPRs.count, subtitle: dateSubtitle)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                     }
@@ -78,7 +78,6 @@ struct MergedPRsTodayView: View {
             }
         }
         .navigationTitle("Merged PRs")
-        .navigationSubtitle(navigationSubtitle)
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadData() }
     }
@@ -142,6 +141,7 @@ private struct RepoMergedPRsListView: View {
 
 private struct MergedPRsHeroRow: View {
     let totalCount: Int
+    let subtitle: String
 
     var body: some View {
         LabeledContent {} label: {
@@ -154,6 +154,9 @@ private struct MergedPRsHeroRow: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
                 .tracking(1.2)
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
