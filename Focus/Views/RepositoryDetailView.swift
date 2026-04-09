@@ -45,7 +45,6 @@ struct RepositoryDetailView: View {
                         }
                     } label: {
                         Image(systemName: "calendar")
-                            .font(.system(size: 18, weight: .bold))
                             .foregroundStyle(Color.accentColor)
                             .padding(.horizontal, 9)
                             .padding(.vertical, 6)
