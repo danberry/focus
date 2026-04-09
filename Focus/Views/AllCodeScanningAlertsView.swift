@@ -8,12 +8,14 @@ struct AllCodeScanningAlertsView: View {
     var body: some View {
         List {
             ForEach(alerts) { alert in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(alert.ruleName)
-                    if let severity = alert.securitySeverityLevel {
-                        Text(severity)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                NavigationLink(destination: CodeScanningAlertDetailView(alert: alert)) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(alert.ruleName)
+                        if let severity = alert.securitySeverityLevel {
+                            Text(severity)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }

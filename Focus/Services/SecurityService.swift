@@ -83,7 +83,8 @@ struct SecurityService: Sendable {
                 alertNumber: response.number,
                 ruleName: response.rule.name,
                 securitySeverityLevel: response.rule.securitySeverityLevel,
-                createdAt: response.createdAt
+                createdAt: response.createdAt,
+                htmlUrl: response.htmlUrl
             )
             alert.repository = repository
             context.insert(alert)
@@ -254,6 +255,7 @@ private struct AssigneesResponse: Decodable, Sendable {
 private struct CodeScanningAlertResponse: Decodable, Sendable {
     let number: Int
     let createdAt: Date
+    let htmlUrl: String
     let rule: Rule
 
     struct Rule: Decodable, Sendable {
