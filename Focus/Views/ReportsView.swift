@@ -42,6 +42,15 @@ struct ReportsView: View {
                         Text("Breakdown of members across each discipline")
                     }
                 }
+                NavigationLink {
+                    SecurityIssuesReportView()
+                } label: {
+                    LabeledContent {
+                    } label: {
+                        Text("Security Issues")
+                        Text("Total alerts by category across your saved repos")
+                    }
+                }
             }
             .listStyle(.plain)
             .navigationTitle("Reports")
