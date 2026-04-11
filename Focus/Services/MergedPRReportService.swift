@@ -23,43 +23,8 @@ struct MergedPRReportService: Sendable {
             .joined(separator: " ")
         let q = "is:pr is:merged merged:\(dateStr) \(repoQualifiers)"
 
-        let variables: [String: any Sendable] = ["q": q]
-        let response: SearchResponse = try await graphQL.execute(
-            query: ReportQueries.mergedPullRequests,
-            variables: variables,
-            responseType: SearchResponse.self
-        )
-
-        let iso = ISO8601DateFormatter()
-        var result: [String: [MergedPR]] = [:]
-
-        for node in response.search.nodes {
-            guard
-                let number = node.number,
-                let title = node.title,
-                let mergedAtStr = node.mergedAt,
-                let mergedAt = iso.date(from: mergedAtStr),
-                let url = node.url,
-                let repoName = node.repository?.nameWithOwner
-            else { continue }
-
-            let pr = MergedPR(
-                number: number,
-                title: title,
-                mergedAt: mergedAt,
-                authorLogin: node.author?.login ?? "",
-                url: url,
-                repoNameWithOwner: repoName
-            )
-            result[repoName, default: []].append(pr)
-        }
-
-        // Sort PRs within each repo by mergedAt ascending.
-        for key in result.keys {
-            result[key]?.sort { $0.mergedAt < $1.mergedAt }
-        }
-
-        return result
+        let nodes = try await fetchAllNodes(q: q)
+        return collectPRs(from: nodes)
     }
 
     /// Fetches all PRs merged within the given date range (inclusive) across the provided repositories.
@@ -75,17 +40,42 @@ struct MergedPRReportService: Sendable {
             .joined(separator: " ")
         let q = "is:pr is:merged merged:\(startStr)..\(endStr) \(repoQualifiers)"
 
-        let variables: [String: any Sendable] = ["q": q]
-        let response: SearchResponse = try await graphQL.execute(
-            query: ReportQueries.mergedPullRequests,
-            variables: variables,
-            responseType: SearchResponse.self
-        )
+        let nodes = try await fetchAllNodes(q: q)
+        return collectPRs(from: nodes)
+    }
 
+    // MARK: - Private
+
+    /// Pages through all results for the given search query, returning every node.
+    private func fetchAllNodes(q: String) async throws -> [SearchResponse.SearchNode] {
+        var allNodes: [SearchResponse.SearchNode] = []
+        var after: String? = nil
+        var hasNextPage = true
+
+        while hasNextPage {
+            var variables: [String: any Sendable] = ["q": q, "first": 100]
+            if let after { variables["after"] = after }
+
+            let response: SearchResponse = try await graphQL.execute(
+                query: ReportQueries.mergedPullRequests,
+                variables: variables,
+                responseType: SearchResponse.self
+            )
+
+            allNodes.append(contentsOf: response.search.nodes)
+            after = response.search.pageInfo.endCursor
+            hasNextPage = response.search.pageInfo.hasNextPage
+        }
+
+        return allNodes
+    }
+
+    /// Converts raw search nodes into a dictionary keyed by repo, sorted by mergedAt ascending.
+    private func collectPRs(from nodes: [SearchResponse.SearchNode]) -> [String: [MergedPR]] {
         let iso = ISO8601DateFormatter()
         var result: [String: [MergedPR]] = [:]
 
-        for node in response.search.nodes {
+        for node in nodes {
             guard
                 let number = node.number,
                 let title = node.title,
@@ -112,8 +102,6 @@ struct MergedPRReportService: Sendable {
 
         return result
     }
-
-    // MARK: - Private
 
     private func formattedDate(_ date: Date) -> String {
         let fmt = DateFormatter()
@@ -130,6 +118,12 @@ private struct SearchResponse: Decodable, Sendable {
 
     struct SearchConnection: Decodable, Sendable {
         let nodes: [SearchNode]
+        let pageInfo: PageInfo
+    }
+
+    struct PageInfo: Decodable, Sendable {
+        let endCursor: String?
+        let hasNextPage: Bool
     }
 
     // All fields are optional: the `... on PullRequest` inline fragment returns

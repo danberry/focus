@@ -11,11 +11,16 @@ struct MergedPRReportServiceTests {
         return MergedPRReportService(graphQL: graphQL)
     }
 
-    private func makeResponse(nodes: [String]) -> String {
-        """
+    private func makeResponse(nodes: [String], hasNextPage: Bool = false, endCursor: String? = nil) -> String {
+        let cursor = endCursor.map { "\"\($0)\"" } ?? "null"
+        return """
         {
           "data": {
             "search": {
+              "pageInfo": {
+                "endCursor": \(cursor),
+                "hasNextPage": \(hasNextPage)
+              },
               "nodes": [\(nodes.joined(separator: ",\n"))]
             }
           }
@@ -231,5 +236,56 @@ struct MergedPRReportServiceTests {
                 on: Date()
             )
         }
+    }
+
+    // MARK: - Paging
+
+    @Test func fetchesAllPagesUntilHasNextPageIsFalse() async throws {
+        // Page 1: two PRs, more pages available.
+        mockHTTP.enqueueSuccess(json: makeResponse(
+            nodes: [
+                prNode(number: 1, title: "PR 1", mergedAt: "2026-04-06T08:00:00Z", login: "alice", url: "https://github.com/acme/repo/pull/1", repo: "acme/repo"),
+                prNode(number: 2, title: "PR 2", mergedAt: "2026-04-06T09:00:00Z", login: "bob",   url: "https://github.com/acme/repo/pull/2", repo: "acme/repo")
+            ],
+            hasNextPage: true,
+            endCursor: "cursor-page-2"
+        ))
+        // Page 2: one PR, no more pages.
+        mockHTTP.enqueueSuccess(json: makeResponse(
+            nodes: [
+                prNode(number: 3, title: "PR 3", mergedAt: "2026-04-06T10:00:00Z", login: "carol", url: "https://github.com/acme/repo/pull/3", repo: "acme/repo")
+            ],
+            hasNextPage: false
+        ))
+
+        let result = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "repo")],
+            on: Date()
+        )
+
+        let prs = try #require(result["acme/repo"])
+        #expect(prs.count == 3)
+        #expect(prs.map(\.number) == [1, 2, 3])
+    }
+
+    @Test func secondPageRequestIncludesAfterCursor() async throws {
+        mockHTTP.enqueueSuccess(json: makeResponse(
+            nodes: [prNode(number: 1, title: "PR 1", mergedAt: "2026-04-06T08:00:00Z", login: "alice", url: "https://github.com/acme/repo/pull/1", repo: "acme/repo")],
+            hasNextPage: true,
+            endCursor: "abc123"
+        ))
+        mockHTTP.enqueueSuccess(json: makeResponse(nodes: [], hasNextPage: false))
+
+        _ = try await makeService().fetchMergedPRs(
+            for: [(owner: "acme", name: "repo")],
+            on: Date()
+        )
+
+        // lastRequest is the second page request — it must include the cursor.
+        let bodyData = try #require(mockHTTP.lastRequest?.httpBody)
+        let body = try JSONSerialization.jsonObject(with: bodyData) as! [String: Any]
+        let variables = try #require(body["variables"] as? [String: Any])
+        let after = try #require(variables["after"] as? String)
+        #expect(after == "abc123")
     }
 }
