@@ -49,19 +49,23 @@ struct MergedPRsYesterdayView: View {
                     description: Text(error.localizedDescription)
                 )
             } else if allPRs.isEmpty {
-                ContentUnavailableView(
+                EmptyContentView(
                     "No Merged PRs",
-                    systemImage: "checkmark.circle",
-                    description: Text("No pull requests were merged yesterday across your saved repositories.")
+                    named: "custom.point.topright.arrow.triangle.backward.to.point.bottomleft.filled.scurvepath.slash"
                 )
             } else {
                 List {
-                    Section {
-                        MergedPRsHeroRow(totalCount: allPRs.count, subtitle: dateSubtitle)
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                    CardRow {
+                        LabeledContent {} label: {
+                            Text(allPRs.count, format: .number)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .fontDesign(.rounded)
+                            Text(dateSubtitle)
+                                .textCase(.uppercase)
+                        }
                     }
-                    .listSectionSpacing(18)
+                    
                     ForEach(repoSections, id: \.repoName) { section in
                         NavigationLink(destination: RepoMergedPRsListView(repoName: section.repoName, prs: section.prs)) {
                             LabeledContent(section.repoName) {
@@ -77,6 +81,7 @@ struct MergedPRsYesterdayView: View {
             }
         }
         .navigationTitle("Merged PRs")
+        .navigationSubtitle("Yesterday")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadData() }
     }
@@ -133,29 +138,5 @@ private struct RepoMergedPRsListView: View {
         }
         .navigationTitle(repoName)
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// MARK: - MergedPRsHeroRow
-
-private struct MergedPRsHeroRow: View {
-    let totalCount: Int
-    let subtitle: String
-
-    var body: some View {
-        LabeledContent {} label: {
-            Text("\(totalCount)")
-                .font(.system(size: 52, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
-                .contentTransition(.numericText())
-            Text(subtitle)
-                .font(.caption2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-                .tracking(1.2)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 26))
     }
 }
