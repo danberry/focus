@@ -12,25 +12,25 @@ struct SecurityIssuesReportView: View {
             SecurityCategory(
                 name: "Dependabot",
                 count: repositories.reduce(0) { $0 + $1.dependabotAlerts },
-                color: .accentedOrange,
                 repoRows: repositories
                     .filter { $0.dependabotAlerts > 0 }
+                    .sorted(by: { $0.dependabotAlerts > $1.dependabotAlerts })
                     .map { SecurityRepoRow(name: $0.displayName, count: $0.dependabotAlerts) }
             ),
             SecurityCategory(
                 name: "Code Scanning",
                 count: repositories.reduce(0) { $0 + $1.codeScanningAlerts },
-                color: .accentedBlue,
                 repoRows: repositories
                     .filter { $0.codeScanningAlerts > 0 }
+                    .sorted(by: { $0.codeScanningAlerts > $1.codeScanningAlerts })
                     .map { SecurityRepoRow(name: $0.displayName, count: $0.codeScanningAlerts) }
             ),
             SecurityCategory(
                 name: "Secret Scanning",
                 count: repositories.reduce(0) { $0 + $1.secretScanningAlerts },
-                color: .accentedRed,
                 repoRows: repositories
                     .filter { $0.secretScanningAlerts > 0 }
+                    .sorted(by: { $0.secretScanningAlerts > $1.secretScanningAlerts })
                     .map { SecurityRepoRow(name: $0.displayName, count: $0.secretScanningAlerts) }
             ),
         ].filter { $0.count > 0 }
@@ -38,6 +38,10 @@ struct SecurityIssuesReportView: View {
 
     private var totalCount: Int {
         repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
+    }
+    
+    private var reposWithAlerts: Int {
+        repositories.count(where: { $0.totalSecurityAlerts > 0 })
     }
 
     var body: some View {
@@ -56,32 +60,24 @@ struct SecurityIssuesReportView: View {
                 )
             } else {
                 List {
-                    Section {
-                        SecurityHeroRow(totalCount: totalCount)
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                    CardRow {
+                        LabeledContent {} label: {
+                            Text(totalCount, format: .number)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .fontDesign(.rounded)
+                            Text(totalCount == 1 ? "issue" : "issues")
+                                .textCase(.uppercase)
+                        }
                     }
-                    .listSectionSpacing(18)
-                    Section {
-                        SecurityBreakdownChartView(categories: categories)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets())
-                    }
+                    
                     ForEach(categories) { category in
-                        Section {
+                        Section(category.name) {
                             ForEach(category.repoRows) { row in
                                 LabeledContent(row.name) {
-                                    Text("\(row.count)")
-                                        .foregroundStyle(.secondary)
+                                    Text(row.count, format: .number)
                                         .monospacedDigit()
                                 }
-                            }
-                        } header: {
-                            HStack {
-                                Text(category.name)
-                                Spacer()
-                                Text("\(category.count)")
-                                    .monospacedDigit()
                             }
                         }
                     }
@@ -90,6 +86,7 @@ struct SecurityIssuesReportView: View {
             }
         }
         .navigationTitle("Security Issues")
+        .navigationSubtitle("^[\(reposWithAlerts) repo](inflect: true)")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -100,7 +97,6 @@ private struct SecurityCategory: Identifiable {
     let id = UUID()
     let name: String
     let count: Int
-    let color: Color
     let repoRows: [SecurityRepoRow]
 }
 
@@ -108,84 +104,4 @@ private struct SecurityRepoRow: Identifiable {
     let id = UUID()
     let name: String
     let count: Int
-}
-
-// MARK: - SecurityHeroRow
-
-private struct SecurityHeroRow: View {
-    let totalCount: Int
-
-    var body: some View {
-        LabeledContent {} label: {
-            Text("\(totalCount)")
-                .font(.system(size: 52, weight: .bold, design: .rounded))
-                .foregroundStyle(.primary)
-                .contentTransition(.numericText())
-            Text(totalCount == 1 ? "open security alert" : "open security alerts")
-                .font(.caption2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-                .tracking(1.2)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 26))
-    }
-}
-
-// MARK: - SecurityBreakdownChartView
-
-private struct SecurityBreakdownChartView: View {
-    let categories: [SecurityCategory]
-
-    private var total: Int { categories.reduce(0) { $0 + $1.count } }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ZStack {
-                Chart(categories) { category in
-                    SectorMark(
-                        angle: .value("Issues", category.count),
-                        innerRadius: .ratio(0.55),
-                        angularInset: 2
-                    )
-                    .foregroundStyle(by: .value("Category", category.name))
-                    .cornerRadius(4)
-                }
-                .chartForegroundStyleScale(
-                    domain: categories.map(\.name),
-                    range: categories.map(\.color)
-                )
-                .chartLegend(.hidden)
-                .frame(height: 180)
-
-                VStack(spacing: 2) {
-                    Text("\(total)")
-                        .font(.title2.bold())
-                    Text(total == 1 ? "alert" : "alerts")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            // Legend
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(categories) { category in
-                    HStack(spacing: 8) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(category.color)
-                            .frame(width: 12, height: 12)
-                        Text(category.name)
-                            .font(.caption)
-                        Spacer()
-                        Text("\(category.count)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 16)
-    }
 }
