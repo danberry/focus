@@ -14,6 +14,7 @@ struct SecurityIssuesReportView: View {
                 count: repositories.reduce(0) { $0 + $1.dependabotAlerts },
                 repoRows: repositories
                     .filter { $0.dependabotAlerts > 0 }
+                    .sorted(by: { $0.dependabotAlerts > $1.dependabotAlerts })
                     .map { SecurityRepoRow(name: $0.displayName, count: $0.dependabotAlerts) }
             ),
             SecurityCategory(
@@ -21,6 +22,7 @@ struct SecurityIssuesReportView: View {
                 count: repositories.reduce(0) { $0 + $1.codeScanningAlerts },
                 repoRows: repositories
                     .filter { $0.codeScanningAlerts > 0 }
+                    .sorted(by: { $0.codeScanningAlerts > $1.codeScanningAlerts })
                     .map { SecurityRepoRow(name: $0.displayName, count: $0.codeScanningAlerts) }
             ),
             SecurityCategory(
@@ -28,6 +30,7 @@ struct SecurityIssuesReportView: View {
                 count: repositories.reduce(0) { $0 + $1.secretScanningAlerts },
                 repoRows: repositories
                     .filter { $0.secretScanningAlerts > 0 }
+                    .sorted(by: { $0.secretScanningAlerts > $1.secretScanningAlerts })
                     .map { SecurityRepoRow(name: $0.displayName, count: $0.secretScanningAlerts) }
             ),
         ].filter { $0.count > 0 }
