@@ -33,19 +33,54 @@ struct MemberDetailView: View {
                         .padding(.vertical, 40)
                         .listRowSeparator(.hidden)
                 } else {
-                    contributionGridView(rows: rows, maxCount: maxCount)
+                    LabeledContent {} label: {
+                        Text(stats.total, format: .number)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .fontDesign(.rounded)
+                            .contentTransition(.numericText())
+                        Text("total")
+                            .textCase(.uppercase)
+                    }
+                    .glassCardEffect()
+                }
+            } header: {
+                HStack() {
+                    Text("Contributions")
+                    Menu {
+                        ForEach(TimeRange.allCases, id: \.self) { range in
+                            Button {
+                                withAnimation {
+                                    selectedRange = range
+                                }
+                            } label: {
+                                Label(
+                                    range.rawValue,
+                                    systemImage: selectedRange == range ? "checkmark" : ""
+                                )
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 6)
+                            .background(
+                                Color.accentColor.tertiary,
+                                in: .capsule
+                            )
+                    }
                 }
             }
-
-            Section("Summary") {
-                summaryRow(label: "Total contributions", value: stats.total)
-                summaryRow(label: "Active days", value: stats.activeDays)
-                if stats.peak > 0 {
-                    summaryRow(label: "Peak day", value: stats.peak)
-                }
+            .listRowSeparator(.hidden)
+            .listSectionSpacing(18)
+            
+            Section {
+                contributionGridView(rows: rows, maxCount: maxCount)
             }
         }
         .listStyle(.plain)
+        .headerProminence(.increased)
         .navigationTitle(member.name)
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -53,36 +88,19 @@ struct MemberDetailView: View {
     // MARK: - Subviews
 
     private func contributionGridView(rows: [[GridCell]], maxCount: Int) -> some View {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        let fromLabel = formatter.string(from: selectedRange.cutoffDate)
-        let toLabel = formatter.string(from: Date())
-
         return VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("\(fromLabel) – \(toLabel)")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Menu {
-                    ForEach(TimeRange.allCases, id: \.self) { range in
-                        Button(range.label) { selectedRange = range }
-                    }
-                } label: {
-                    Image(systemName: "calendar")
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.vertical, 6)
-
             ForEach(rows.indices, id: \.self) { rowIndex in
                 HStack(spacing: 4) {
-                    ForEach(0..<15, id: \.self) { col in
+                    ForEach(0..<10, id: \.self) { col in
                         let row = rows[rowIndex]
                         let color: Color = col < row.count
                             ? contributionColor(for: row[col].count, date: row[col].date, maxCount: maxCount)
                             : .clear
+                        let border: Color = col < row.count && row[col].count == 0
+                        ? color.mix(with: .primary, by: 0.15)
+                        : .clear
                         Circle()
+                            .stroke(border, lineWidth: 2)
                             .fill(color)
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fit)
@@ -91,7 +109,9 @@ struct MemberDetailView: View {
             }
         }
         .listRowSeparator(.hidden)
-        .padding(.vertical, 8)
+        .transaction { transaction in
+            transaction.animation = nil
+        }
     }
 
     // MARK: - Helpers
@@ -130,25 +150,41 @@ struct MemberDetailView: View {
         }
 
         // Chunk into rows of 15
-        return stride(from: 0, to: allDays.count, by: 15).map {
-            Array(allDays[$0..<min($0 + 15, allDays.count)])
+        return stride(from: 0, to: allDays.count, by: 10).map {
+            Array(allDays[$0..<min($0 + 10, allDays.count)])
         }
     }
 
     private func contributionColor(for count: Int, date: Date, maxCount: Int) -> Color {
         let weekday = Calendar.current.component(.weekday, from: date)
-        let isWeekend = weekday == 1 || weekday == 7  // 1 = Sunday, 7 = Saturday
-        if count == 0 {
-            return isWeekend ? Color(.systemGray3) : Color(.systemFill)
+        let isWeekend = weekday == 1 || weekday == 7
+        let baseColor: Color
+        
+        if isWeekend && count > 0 {
+            baseColor = .accentedRed
         }
+        else {
+            baseColor = .accentedGreen
+        }
+        
+        let mixAmount: CGFloat
         let ratio = Double(count) / Double(maxCount)
-        let baseColor: Color = isWeekend ? .accentedRed : .accentColor
         switch ratio {
-        case ..<0.25: return baseColor.opacity(0.25)
-        case ..<0.50: return baseColor.opacity(0.45)
-        case ..<0.75: return baseColor.opacity(0.65)
-        default:      return baseColor.opacity(0.90)
+        case 0:
+            mixAmount = 0.8
+        case ..<0.25:
+            mixAmount = 0.65
+        case ..<0.50:
+            mixAmount = 0.55
+        case ..<0.75:
+            mixAmount = 0.4
+        case ..<0.95:
+            mixAmount = 0.2
+        default:
+            mixAmount = 0
         }
+        
+        return baseColor.mix(with: Color(.systemBackground), by: mixAmount)
     }
 
     private func summaryRow(label: String, value: Int) -> some View {

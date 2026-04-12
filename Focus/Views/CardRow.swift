@@ -14,12 +14,21 @@ struct CardRow<Content: View>: View {
     var body: some View {
         Section {
             content
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 26))
+                .glassCardEffect()
         }
         .listRowSeparator(.hidden)
         .listSectionSpacing(18)
+    }
+    
+}
+
+extension View {
+    
+    func glassCardEffect() -> some View {
+        self
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .glassEffect(in: RoundedRectangle(cornerRadius: 26))
     }
     
 }
