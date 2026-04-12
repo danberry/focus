@@ -3,122 +3,8 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 70;
 	objects = {
-
-/* Begin PBXBuildFile section */
-		37540D3C2F8AF56D00A7BC0F /* CardRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37540D3B2F8AF56D00A7BC0F /* CardRow.swift */; };
-		40825500000000000000B001 /* GitHubError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A001 /* GitHubError.swift */; };
-		40825500000000000000B002 /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A002 /* HTTPClient.swift */; };
-		40825500000000000000B003 /* GraphQLClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A003 /* GraphQLClient.swift */; };
-		40825500000000000000B004 /* RESTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A004 /* RESTClient.swift */; };
-		40825500000000000000B005 /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A005 /* Endpoint.swift */; };
-		40825500000000000000B006 /* GitHubUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A006 /* GitHubUser.swift */; };
-		40825500000000000000B007 /* GitHubRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A007 /* GitHubRepository.swift */; };
-		40825500000000000000B008 /* GitHubTeam.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A008 /* GitHubTeam.swift */; };
-		40825500000000000000B009 /* GitHubOrganization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A009 /* GitHubOrganization.swift */; };
-		40825500000000000000B00A /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A00A /* KeychainHelper.swift */; };
-		40825500000000000000B00B /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A00B /* AuthenticationService.swift */; };
-		40825500000000000000B00C /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A00C /* UserService.swift */; };
-		40825500000000000000B00D /* RepositoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A00D /* RepositoryService.swift */; };
-		40825500000000000000B00E /* TeamService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A00E /* TeamService.swift */; };
-		40825500000000000000B00F /* UserQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A00F /* UserQueries.swift */; };
-		40825500000000000000B010 /* RepositoryQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A010 /* RepositoryQueries.swift */; };
-		40825500000000000000B011 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A011 /* LoginView.swift */; };
-		40825500000000000000B020 /* MockHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A020 /* MockHTTPClient.swift */; };
-		40825500000000000000B021 /* GraphQLClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A021 /* GraphQLClientTests.swift */; };
-		40825500000000000000B022 /* RESTClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A022 /* RESTClientTests.swift */; };
-		40825500000000000000B023 /* UserServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A023 /* UserServiceTests.swift */; };
-		40825500000000000000B024 /* RepositoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A024 /* RepositoryServiceTests.swift */; };
-		40825500000000000000B025 /* TeamServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A025 /* TeamServiceTests.swift */; };
-		40825500000000000000B026 /* ModelDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A026 /* ModelDecodingTests.swift */; };
-		40825500000000000000B027 /* SavedRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A027 /* SavedRepository.swift */; };
-		40825500000000000000B028 /* AddRepositoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A028 /* AddRepositoryView.swift */; };
-		40825500000000000000B029 /* SavedRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A029 /* SavedRepositoryTests.swift */; };
-		40825500000000000000B02A /* RepositorySecurityMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02A /* RepositorySecurityMetrics.swift */; };
-		40825500000000000000B02B /* SecurityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02B /* SecurityService.swift */; };
-		40825500000000000000B02C /* SecurityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02C /* SecurityServiceTests.swift */; };
-		40825500000000000000B02D /* RepositoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02D /* RepositoryDetailView.swift */; };
-		40825500000000000000B02E /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02E /* MainTabView.swift */; };
-		40825500000000000000B02F /* DependabotAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A02F /* DependabotAlert.swift */; };
-		40825500000000000000B030 /* CodeScanningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A030 /* CodeScanningAlert.swift */; };
-		40825500000000000000B031 /* SecretScanningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A031 /* SecretScanningAlert.swift */; };
-		40825500000000000000B032 /* DependabotAlertDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A032 /* DependabotAlertDetailView.swift */; };
-		40825500000000000000B033 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A033 /* SettingsView.swift */; };
-		40825500000000000000B034 /* Codeowner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A034 /* Codeowner.swift */; };
-		40825500000000000000B035 /* CodeownersService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A035 /* CodeownersService.swift */; };
-		40825500000000000000B036 /* CodeownerResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A036 /* CodeownerResolver.swift */; };
-		40825500000000000000B037 /* MailtoComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A037 /* MailtoComposer.swift */; };
-		40825500000000000000B038 /* CodeownerEmailService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A038 /* CodeownerEmailService.swift */; };
-		40825500000000000000B039 /* CodeownerResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A039 /* CodeownerResolverTests.swift */; };
-		40825500000000000000B03A /* MailtoComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03A /* MailtoComposerTests.swift */; };
-		40825500000000000000B03B /* CodeownerEmailServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03B /* CodeownerEmailServiceTests.swift */; };
-		40825500000000000000B03C /* CodeownersServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03C /* CodeownersServiceTests.swift */; };
-		40825500000000000000B03D /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03D /* SyncService.swift */; };
-		40825500000000000000B03E /* BackgroundSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A03E /* BackgroundSyncManager.swift */; };
-		40825500000000000000B03F /* Team.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A040 /* Team.swift */; };
-		40825500000000000000B040 /* TeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A041 /* TeamsView.swift */; };
-		40825500000000000000B041 /* AddTeamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A042 /* AddTeamView.swift */; };
-		40825500000000000000B042 /* TeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A043 /* TeamTests.swift */; };
-		40825500000000000000B043 /* Member.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A044 /* Member.swift */; };
-		40825500000000000000B044 /* TeamDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A045 /* TeamDetailView.swift */; };
-		40825500000000000000B045 /* AddMemberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A046 /* AddMemberView.swift */; };
-		40825500000000000000B046 /* MemberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A047 /* MemberTests.swift */; };
-		40825500000000000000B047 /* MemberContribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A048 /* MemberContribution.swift */; };
-		40825500000000000000B048 /* ContributionQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A049 /* ContributionQueries.swift */; };
-		40825500000000000000B049 /* ContributionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04A /* ContributionService.swift */; };
-		40825500000000000000B04A /* ContributionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04B /* ContributionServiceTests.swift */; };
-		40825500000000000000B04B /* MemberAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04C /* MemberAvatarView.swift */; };
-		40825500000000000000B04C /* DailyContribution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04D /* DailyContribution.swift */; };
-		40825500000000000000B04D /* MemberDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04E /* MemberDetailView.swift */; };
-		40825500000000000000B04E /* BackgroundSyncManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A04F /* BackgroundSyncManagerTests.swift */; };
-		40825500000000000000B04F /* LockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A050 /* LockView.swift */; };
-		40825500000000000000B050 /* JobTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A051 /* JobTitle.swift */; };
-		40825500000000000000B052 /* AddJobTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A053 /* AddJobTitleView.swift */; };
-		40825500000000000000B053 /* JobTitleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A054 /* JobTitleDetailView.swift */; };
-		40825500000000000000B054 /* JobTitleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A055 /* JobTitleTests.swift */; };
-		40825500000000000000B055 /* RepositoryVelocity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A056 /* RepositoryVelocity.swift */; };
-		40825500000000000000B056 /* VelocityQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A057 /* VelocityQueries.swift */; };
-		40825500000000000000B057 /* VelocityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A058 /* VelocityService.swift */; };
-		40825500000000000000B058 /* VelocityServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A059 /* VelocityServiceTests.swift */; };
-		40825500000000000000C00C /* Discipline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A05E /* Discipline.swift */; };
-		40825500000000000000C00D /* DisciplinesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A05A /* DisciplinesView.swift */; };
-		40825500000000000000C00E /* AddDisciplineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A05B /* AddDisciplineView.swift */; };
-		40825500000000000000C00F /* DisciplineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A05C /* DisciplineDetailView.swift */; };
-		40825500000000000000C010 /* DisciplineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A05D /* DisciplineTests.swift */; };
-		40825500000000000000C011 /* OpenPullRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A05F /* OpenPullRequest.swift */; };
-		40825500000000000000C012 /* PullRequestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A060 /* PullRequestService.swift */; };
-		40825500000000000000C013 /* PullRequestDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A061 /* PullRequestDetailView.swift */; };
-		40825500000000000000C014 /* PullRequestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A062 /* PullRequestServiceTests.swift */; };
-		40825500000000000000C015 /* AssignCodeOwnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A063 /* AssignCodeOwnerView.swift */; };
-		40825500000000000000C016 /* DependabotAlertAssignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */; };
-		40825500000000000000C017 /* AllPullRequestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A065 /* AllPullRequestsView.swift */; };
-		40825500000000000000C018 /* MergedPR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A066 /* MergedPR.swift */; };
-		40825500000000000000C019 /* ReportQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A067 /* ReportQueries.swift */; };
-		40825500000000000000C01A /* MergedPRReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A068 /* MergedPRReportService.swift */; };
-		40825500000000000000C01B /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A069 /* ReportsView.swift */; };
-		40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06A /* MergedPRsYesterdayView.swift */; };
-		40825500000000000000C01D /* MergedPRReportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06B /* MergedPRReportServiceTests.swift */; };
-		40825500000000000000C01E /* Color+Accent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06C /* Color+Accent.swift */; };
-		40825500000000000000C020 /* EmptyContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06D /* EmptyContentView.swift */; };
-		40825500000000000000C021 /* JobTitleDonutChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06E /* JobTitleDonutChartView.swift */; };
-		40825500000000000000C022 /* MemberDisciplineReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A06F /* MemberDisciplineReportView.swift */; };
-		40825500000000000000C023 /* AllDependabotAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A070 /* AllDependabotAlertsView.swift */; };
-		40825500000000000000C024 /* AllCodeScanningAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A071 /* AllCodeScanningAlertsView.swift */; };
-		40825500000000000000C025 /* AllSecretScanningAlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A072 /* AllSecretScanningAlertsView.swift */; };
-		40825500000000000000C026 /* MergedPRsTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A073 /* MergedPRsTodayView.swift */; };
-		40825500000000000000C027 /* SavedOrganization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A074 /* SavedOrganization.swift */; };
-		40825500000000000000C028 /* OrganizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A075 /* OrganizationService.swift */; };
-		40825500000000000000C029 /* OrganizationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A076 /* OrganizationsView.swift */; };
-		40825500000000000000C02A /* AddOrganizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A077 /* AddOrganizationView.swift */; };
-		40825500000000000000C02B /* CodeScanningAlertDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A078 /* CodeScanningAlertDetailView.swift */; };
-		40825500000000000000C02C /* SecurityIssuesReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A079 /* SecurityIssuesReportView.swift */; };
-		40825500000000000000C02D /* MergedPRsThisWeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40825500000000000000A07A /* MergedPRsThisWeekView.swift */; };
-		408255DA2CAFC99600000020 /* FocusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000010 /* FocusApp.swift */; };
-		408255DA2CAFC99600000021 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000011 /* ContentView.swift */; };
-		408255DA2CAFC99600000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000012 /* Assets.xcassets */; };
-		408255DA2CAFC99600000023 /* ContentViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408255DA2CAFC99600000013 /* ContentViewTests.swift */; };
-/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		408255DA2CAFC99600000081 /* PBXContainerItemProxy */ = {
@@ -131,121 +17,24 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		37540D3B2F8AF56D00A7BC0F /* CardRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRow.swift; sourceTree = "<group>"; };
-		40825500000000000000A001 /* GitHubError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubError.swift; sourceTree = "<group>"; };
-		40825500000000000000A002 /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
-		40825500000000000000A003 /* GraphQLClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphQLClient.swift; sourceTree = "<group>"; };
-		40825500000000000000A004 /* RESTClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTClient.swift; sourceTree = "<group>"; };
-		40825500000000000000A005 /* Endpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
-		40825500000000000000A006 /* GitHubUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubUser.swift; sourceTree = "<group>"; };
-		40825500000000000000A007 /* GitHubRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRepository.swift; sourceTree = "<group>"; };
-		40825500000000000000A008 /* GitHubTeam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubTeam.swift; sourceTree = "<group>"; };
-		40825500000000000000A009 /* GitHubOrganization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubOrganization.swift; sourceTree = "<group>"; };
-		40825500000000000000A00A /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-		40825500000000000000A00B /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
-		40825500000000000000A00C /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
-		40825500000000000000A00D /* RepositoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryService.swift; sourceTree = "<group>"; };
-		40825500000000000000A00E /* TeamService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamService.swift; sourceTree = "<group>"; };
-		40825500000000000000A00F /* UserQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserQueries.swift; sourceTree = "<group>"; };
-		40825500000000000000A010 /* RepositoryQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryQueries.swift; sourceTree = "<group>"; };
-		40825500000000000000A011 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		40825500000000000000A020 /* MockHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHTTPClient.swift; sourceTree = "<group>"; };
-		40825500000000000000A021 /* GraphQLClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphQLClientTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A022 /* RESTClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTClientTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A023 /* UserServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A024 /* RepositoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A025 /* TeamServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A026 /* ModelDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDecodingTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A027 /* SavedRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRepository.swift; sourceTree = "<group>"; };
-		40825500000000000000A028 /* AddRepositoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddRepositoryView.swift; sourceTree = "<group>"; };
-		40825500000000000000A029 /* SavedRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRepositoryTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A02A /* RepositorySecurityMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositorySecurityMetrics.swift; sourceTree = "<group>"; };
-		40825500000000000000A02B /* SecurityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityService.swift; sourceTree = "<group>"; };
-		40825500000000000000A02C /* SecurityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A02D /* RepositoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A02E /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
-		40825500000000000000A02F /* DependabotAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlert.swift; sourceTree = "<group>"; };
-		40825500000000000000A030 /* CodeScanningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeScanningAlert.swift; sourceTree = "<group>"; };
-		40825500000000000000A031 /* SecretScanningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretScanningAlert.swift; sourceTree = "<group>"; };
-		40825500000000000000A032 /* DependabotAlertDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlertDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A033 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A034 /* Codeowner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Codeowner.swift; sourceTree = "<group>"; };
-		40825500000000000000A035 /* CodeownersService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownersService.swift; sourceTree = "<group>"; };
-		40825500000000000000A036 /* CodeownerResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownerResolver.swift; sourceTree = "<group>"; };
-		40825500000000000000A037 /* MailtoComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailtoComposer.swift; sourceTree = "<group>"; };
-		40825500000000000000A038 /* CodeownerEmailService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownerEmailService.swift; sourceTree = "<group>"; };
-		40825500000000000000A039 /* CodeownerResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownerResolverTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A03A /* MailtoComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailtoComposerTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A03B /* CodeownerEmailServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownerEmailServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A03C /* CodeownersServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeownersServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A03D /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
-		40825500000000000000A03E /* BackgroundSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncManager.swift; sourceTree = "<group>"; };
-		40825500000000000000A03F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		40825500000000000000A040 /* Team.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Team.swift; sourceTree = "<group>"; };
-		40825500000000000000A041 /* TeamsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A042 /* AddTeamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTeamView.swift; sourceTree = "<group>"; };
-		40825500000000000000A043 /* TeamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A044 /* Member.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Member.swift; sourceTree = "<group>"; };
-		40825500000000000000A045 /* TeamDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A046 /* AddMemberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMemberView.swift; sourceTree = "<group>"; };
-		40825500000000000000A047 /* MemberTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A048 /* MemberContribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberContribution.swift; sourceTree = "<group>"; };
-		40825500000000000000A049 /* ContributionQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionQueries.swift; sourceTree = "<group>"; };
-		40825500000000000000A04A /* ContributionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionService.swift; sourceTree = "<group>"; };
-		40825500000000000000A04B /* ContributionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributionServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A04C /* MemberAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberAvatarView.swift; sourceTree = "<group>"; };
-		40825500000000000000A04D /* DailyContribution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyContribution.swift; sourceTree = "<group>"; };
-		40825500000000000000A04E /* MemberDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A04F /* BackgroundSyncManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSyncManagerTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A050 /* LockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockView.swift; sourceTree = "<group>"; };
-		40825500000000000000A051 /* JobTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitle.swift; sourceTree = "<group>"; };
-		40825500000000000000A053 /* AddJobTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddJobTitleView.swift; sourceTree = "<group>"; };
-		40825500000000000000A054 /* JobTitleDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitleDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A055 /* JobTitleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitleTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A056 /* RepositoryVelocity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryVelocity.swift; sourceTree = "<group>"; };
-		40825500000000000000A057 /* VelocityQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityQueries.swift; sourceTree = "<group>"; };
-		40825500000000000000A058 /* VelocityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityService.swift; sourceTree = "<group>"; };
-		40825500000000000000A059 /* VelocityServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VelocityServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A05A /* DisciplinesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisciplinesView.swift; sourceTree = "<group>"; };
-		40825500000000000000A05B /* AddDisciplineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDisciplineView.swift; sourceTree = "<group>"; };
-		40825500000000000000A05C /* DisciplineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisciplineDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A05D /* DisciplineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisciplineTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A05E /* Discipline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Discipline.swift; sourceTree = "<group>"; };
-		40825500000000000000A05F /* OpenPullRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenPullRequest.swift; sourceTree = "<group>"; };
-		40825500000000000000A060 /* PullRequestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestService.swift; sourceTree = "<group>"; };
-		40825500000000000000A061 /* PullRequestDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A062 /* PullRequestServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A063 /* AssignCodeOwnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignCodeOwnerView.swift; sourceTree = "<group>"; };
-		40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependabotAlertAssignmentTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A065 /* AllPullRequestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllPullRequestsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A066 /* MergedPR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPR.swift; sourceTree = "<group>"; };
-		40825500000000000000A067 /* ReportQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportQueries.swift; sourceTree = "<group>"; };
-		40825500000000000000A068 /* MergedPRReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRReportService.swift; sourceTree = "<group>"; };
-		40825500000000000000A069 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A06A /* MergedPRsYesterdayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRsYesterdayView.swift; sourceTree = "<group>"; };
-		40825500000000000000A06B /* MergedPRReportServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRReportServiceTests.swift; sourceTree = "<group>"; };
-		40825500000000000000A06C /* Color+Accent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Accent.swift"; sourceTree = "<group>"; };
-		40825500000000000000A06D /* EmptyContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyContentView.swift; sourceTree = "<group>"; };
-		40825500000000000000A06E /* JobTitleDonutChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTitleDonutChartView.swift; sourceTree = "<group>"; };
-		40825500000000000000A06F /* MemberDisciplineReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDisciplineReportView.swift; sourceTree = "<group>"; };
-		40825500000000000000A070 /* AllDependabotAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllDependabotAlertsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A071 /* AllCodeScanningAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllCodeScanningAlertsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A072 /* AllSecretScanningAlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllSecretScanningAlertsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A073 /* MergedPRsTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRsTodayView.swift; sourceTree = "<group>"; };
-		40825500000000000000A074 /* SavedOrganization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedOrganization.swift; sourceTree = "<group>"; };
-		40825500000000000000A075 /* OrganizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationService.swift; sourceTree = "<group>"; };
-		40825500000000000000A076 /* OrganizationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizationsView.swift; sourceTree = "<group>"; };
-		40825500000000000000A077 /* AddOrganizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrganizationView.swift; sourceTree = "<group>"; };
-		40825500000000000000A078 /* CodeScanningAlertDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeScanningAlertDetailView.swift; sourceTree = "<group>"; };
-		40825500000000000000A079 /* SecurityIssuesReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityIssuesReportView.swift; sourceTree = "<group>"; };
-		40825500000000000000A07A /* MergedPRsThisWeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MergedPRsThisWeekView.swift; sourceTree = "<group>"; };
-		408255DA2CAFC99600000010 /* FocusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusApp.swift; sourceTree = "<group>"; };
-		408255DA2CAFC99600000011 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		408255DA2CAFC99600000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		408255DA2CAFC99600000013 /* ContentViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewTests.swift; sourceTree = "<group>"; };
 		408255DA2CAFC99600000030 /* Focus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Focus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		408255DA2CAFC99600000031 /* FocusTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		37540F0D2F8C3D3B00A7BC0F /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 408255DA2CAFC99600000040 /* Focus */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		37540E3C2F8C3D3700A7BC0F /* FocusTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FocusTests; sourceTree = "<group>"; };
+		37540EB42F8C3D3B00A7BC0F /* Focus */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (37540F0D2F8C3D3B00A7BC0F /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Focus; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		408255DA2CAFC99600000071 /* Frameworks */ = {
@@ -265,235 +54,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		40825500000000000000C001 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A001 /* GitHubError.swift */,
-				40825500000000000000A006 /* GitHubUser.swift */,
-				40825500000000000000A007 /* GitHubRepository.swift */,
-				40825500000000000000A008 /* GitHubTeam.swift */,
-				40825500000000000000A009 /* GitHubOrganization.swift */,
-				40825500000000000000A027 /* SavedRepository.swift */,
-				40825500000000000000A02A /* RepositorySecurityMetrics.swift */,
-				40825500000000000000A02F /* DependabotAlert.swift */,
-				40825500000000000000A030 /* CodeScanningAlert.swift */,
-				40825500000000000000A031 /* SecretScanningAlert.swift */,
-				40825500000000000000A034 /* Codeowner.swift */,
-				40825500000000000000A040 /* Team.swift */,
-				40825500000000000000A044 /* Member.swift */,
-				40825500000000000000A048 /* MemberContribution.swift */,
-				40825500000000000000A04D /* DailyContribution.swift */,
-				40825500000000000000A05E /* Discipline.swift */,
-				40825500000000000000A051 /* JobTitle.swift */,
-				40825500000000000000A056 /* RepositoryVelocity.swift */,
-				40825500000000000000A05F /* OpenPullRequest.swift */,
-				40825500000000000000A066 /* MergedPR.swift */,
-				40825500000000000000A074 /* SavedOrganization.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C002 /* Networking */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A002 /* HTTPClient.swift */,
-				40825500000000000000A003 /* GraphQLClient.swift */,
-				40825500000000000000A004 /* RESTClient.swift */,
-				40825500000000000000A005 /* Endpoint.swift */,
-			);
-			path = Networking;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C003 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A00B /* AuthenticationService.swift */,
-				40825500000000000000A00C /* UserService.swift */,
-				40825500000000000000A00D /* RepositoryService.swift */,
-				40825500000000000000A00E /* TeamService.swift */,
-				40825500000000000000A02B /* SecurityService.swift */,
-				40825500000000000000A035 /* CodeownersService.swift */,
-				40825500000000000000A038 /* CodeownerEmailService.swift */,
-				40825500000000000000A03D /* SyncService.swift */,
-				40825500000000000000A03E /* BackgroundSyncManager.swift */,
-				40825500000000000000A04A /* ContributionService.swift */,
-				40825500000000000000A058 /* VelocityService.swift */,
-				40825500000000000000A060 /* PullRequestService.swift */,
-				40825500000000000000A068 /* MergedPRReportService.swift */,
-				40825500000000000000A075 /* OrganizationService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C004 /* Queries */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A00F /* UserQueries.swift */,
-				40825500000000000000A010 /* RepositoryQueries.swift */,
-				40825500000000000000A049 /* ContributionQueries.swift */,
-				40825500000000000000A057 /* VelocityQueries.swift */,
-				40825500000000000000A067 /* ReportQueries.swift */,
-			);
-			path = Queries;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C005 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A011 /* LoginView.swift */,
-				40825500000000000000A028 /* AddRepositoryView.swift */,
-				40825500000000000000A02D /* RepositoryDetailView.swift */,
-				40825500000000000000A02E /* MainTabView.swift */,
-				40825500000000000000A032 /* DependabotAlertDetailView.swift */,
-				40825500000000000000A06D /* EmptyContentView.swift */,
-				40825500000000000000A033 /* SettingsView.swift */,
-				40825500000000000000A041 /* TeamsView.swift */,
-				40825500000000000000A042 /* AddTeamView.swift */,
-				40825500000000000000A045 /* TeamDetailView.swift */,
-				40825500000000000000A046 /* AddMemberView.swift */,
-				40825500000000000000A04C /* MemberAvatarView.swift */,
-				40825500000000000000A04E /* MemberDetailView.swift */,
-				40825500000000000000A050 /* LockView.swift */,
-				40825500000000000000A05A /* DisciplinesView.swift */,
-				40825500000000000000A05B /* AddDisciplineView.swift */,
-				40825500000000000000A05C /* DisciplineDetailView.swift */,
-				40825500000000000000A053 /* AddJobTitleView.swift */,
-				40825500000000000000A054 /* JobTitleDetailView.swift */,
-				40825500000000000000A061 /* PullRequestDetailView.swift */,
-				40825500000000000000A063 /* AssignCodeOwnerView.swift */,
-				40825500000000000000A065 /* AllPullRequestsView.swift */,
-				40825500000000000000A070 /* AllDependabotAlertsView.swift */,
-				40825500000000000000A071 /* AllCodeScanningAlertsView.swift */,
-				40825500000000000000A078 /* CodeScanningAlertDetailView.swift */,
-				40825500000000000000A072 /* AllSecretScanningAlertsView.swift */,
-				40825500000000000000A069 /* ReportsView.swift */,
-				40825500000000000000A06A /* MergedPRsYesterdayView.swift */,
-				40825500000000000000A073 /* MergedPRsTodayView.swift */,
-				40825500000000000000A07A /* MergedPRsThisWeekView.swift */,
-				40825500000000000000A06E /* JobTitleDonutChartView.swift */,
-				40825500000000000000A06F /* MemberDisciplineReportView.swift */,
-				40825500000000000000A079 /* SecurityIssuesReportView.swift */,
-				40825500000000000000A076 /* OrganizationsView.swift */,
-				40825500000000000000A077 /* AddOrganizationView.swift */,
-				37540D3B2F8AF56D00A7BC0F /* CardRow.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C006 /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A00A /* KeychainHelper.swift */,
-				40825500000000000000A036 /* CodeownerResolver.swift */,
-				40825500000000000000A037 /* MailtoComposer.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C007 /* Mocks */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A020 /* MockHTTPClient.swift */,
-			);
-			path = Mocks;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C008 /* Networking */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A021 /* GraphQLClientTests.swift */,
-				40825500000000000000A022 /* RESTClientTests.swift */,
-			);
-			path = Networking;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C009 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A023 /* UserServiceTests.swift */,
-				40825500000000000000A024 /* RepositoryServiceTests.swift */,
-				40825500000000000000A025 /* TeamServiceTests.swift */,
-				40825500000000000000A02C /* SecurityServiceTests.swift */,
-				40825500000000000000A03B /* CodeownerEmailServiceTests.swift */,
-				40825500000000000000A03C /* CodeownersServiceTests.swift */,
-				40825500000000000000A04B /* ContributionServiceTests.swift */,
-				40825500000000000000A04F /* BackgroundSyncManagerTests.swift */,
-				40825500000000000000A059 /* VelocityServiceTests.swift */,
-				40825500000000000000A062 /* PullRequestServiceTests.swift */,
-				40825500000000000000A06B /* MergedPRReportServiceTests.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C00A /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A026 /* ModelDecodingTests.swift */,
-				40825500000000000000A029 /* SavedRepositoryTests.swift */,
-				40825500000000000000A043 /* TeamTests.swift */,
-				40825500000000000000A047 /* MemberTests.swift */,
-				40825500000000000000A055 /* JobTitleTests.swift */,
-				40825500000000000000A05D /* DisciplineTests.swift */,
-				40825500000000000000A064 /* DependabotAlertAssignmentTests.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C00B /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A039 /* CodeownerResolverTests.swift */,
-				40825500000000000000A03A /* MailtoComposerTests.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
-		40825500000000000000C01F /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				40825500000000000000A06C /* Color+Accent.swift */,
-			);
-			path = Extensions;
-			sourceTree = "<group>";
-		};
 		408255DA2CAFC99600000002 = {
 			isa = PBXGroup;
 			children = (
-				408255DA2CAFC99600000003 /* Focus */,
-				408255DA2CAFC99600000004 /* FocusTests */,
+				37540EB42F8C3D3B00A7BC0F /* Focus */,
+				37540E3C2F8C3D3700A7BC0F /* FocusTests */,
 				408255DA2CAFC99600000005 /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		408255DA2CAFC99600000003 /* Focus */ = {
-			isa = PBXGroup;
-			children = (
-				408255DA2CAFC99600000010 /* FocusApp.swift */,
-				408255DA2CAFC99600000011 /* ContentView.swift */,
-				408255DA2CAFC99600000012 /* Assets.xcassets */,
-				40825500000000000000A03F /* Info.plist */,
-				40825500000000000000C001 /* Models */,
-				40825500000000000000C002 /* Networking */,
-				40825500000000000000C003 /* Services */,
-				40825500000000000000C004 /* Queries */,
-				40825500000000000000C005 /* Views */,
-				40825500000000000000C006 /* Utilities */,
-				40825500000000000000C01F /* Extensions */,
-			);
-			path = Focus;
-			sourceTree = "<group>";
-		};
-		408255DA2CAFC99600000004 /* FocusTests */ = {
-			isa = PBXGroup;
-			children = (
-				408255DA2CAFC99600000013 /* ContentViewTests.swift */,
-				40825500000000000000C007 /* Mocks */,
-				40825500000000000000C008 /* Networking */,
-				40825500000000000000C009 /* Services */,
-				40825500000000000000C00A /* Models */,
-				40825500000000000000C00B /* Utilities */,
-			);
-			path = FocusTests;
 			sourceTree = "<group>";
 		};
 		408255DA2CAFC99600000005 /* Products */ = {
@@ -520,6 +87,9 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				37540EB42F8C3D3B00A7BC0F /* Focus */,
+			);
 			name = Focus;
 			productName = Focus;
 			productReference = 408255DA2CAFC99600000030 /* Focus.app */;
@@ -536,6 +106,9 @@
 			);
 			dependencies = (
 				408255DA2CAFC99600000080 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				37540E3C2F8C3D3700A7BC0F /* FocusTests */,
 			);
 			name = FocusTests;
 			productName = FocusTests;
@@ -585,7 +158,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				408255DA2CAFC99600000022 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -596,92 +168,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				408255DA2CAFC99600000020 /* FocusApp.swift in Sources */,
-				408255DA2CAFC99600000021 /* ContentView.swift in Sources */,
-				40825500000000000000B001 /* GitHubError.swift in Sources */,
-				40825500000000000000B002 /* HTTPClient.swift in Sources */,
-				40825500000000000000B003 /* GraphQLClient.swift in Sources */,
-				40825500000000000000B004 /* RESTClient.swift in Sources */,
-				40825500000000000000B005 /* Endpoint.swift in Sources */,
-				40825500000000000000B006 /* GitHubUser.swift in Sources */,
-				40825500000000000000B007 /* GitHubRepository.swift in Sources */,
-				40825500000000000000B008 /* GitHubTeam.swift in Sources */,
-				40825500000000000000B009 /* GitHubOrganization.swift in Sources */,
-				40825500000000000000B00A /* KeychainHelper.swift in Sources */,
-				40825500000000000000B00B /* AuthenticationService.swift in Sources */,
-				40825500000000000000B00C /* UserService.swift in Sources */,
-				40825500000000000000B00D /* RepositoryService.swift in Sources */,
-				40825500000000000000B00E /* TeamService.swift in Sources */,
-				40825500000000000000B00F /* UserQueries.swift in Sources */,
-				40825500000000000000B010 /* RepositoryQueries.swift in Sources */,
-				40825500000000000000B011 /* LoginView.swift in Sources */,
-				40825500000000000000B027 /* SavedRepository.swift in Sources */,
-				40825500000000000000B028 /* AddRepositoryView.swift in Sources */,
-				40825500000000000000B02A /* RepositorySecurityMetrics.swift in Sources */,
-				40825500000000000000B02B /* SecurityService.swift in Sources */,
-				40825500000000000000B02D /* RepositoryDetailView.swift in Sources */,
-				40825500000000000000B02E /* MainTabView.swift in Sources */,
-				40825500000000000000B02F /* DependabotAlert.swift in Sources */,
-				40825500000000000000B030 /* CodeScanningAlert.swift in Sources */,
-				40825500000000000000B031 /* SecretScanningAlert.swift in Sources */,
-				40825500000000000000B032 /* DependabotAlertDetailView.swift in Sources */,
-				40825500000000000000B033 /* SettingsView.swift in Sources */,
-				40825500000000000000B034 /* Codeowner.swift in Sources */,
-				40825500000000000000B035 /* CodeownersService.swift in Sources */,
-				40825500000000000000B036 /* CodeownerResolver.swift in Sources */,
-				40825500000000000000B037 /* MailtoComposer.swift in Sources */,
-				40825500000000000000B038 /* CodeownerEmailService.swift in Sources */,
-				40825500000000000000B03D /* SyncService.swift in Sources */,
-				40825500000000000000B03E /* BackgroundSyncManager.swift in Sources */,
-				40825500000000000000B03F /* Team.swift in Sources */,
-				40825500000000000000B040 /* TeamsView.swift in Sources */,
-				40825500000000000000B041 /* AddTeamView.swift in Sources */,
-				40825500000000000000B043 /* Member.swift in Sources */,
-				40825500000000000000B044 /* TeamDetailView.swift in Sources */,
-				40825500000000000000B045 /* AddMemberView.swift in Sources */,
-				40825500000000000000B04B /* MemberAvatarView.swift in Sources */,
-				40825500000000000000B047 /* MemberContribution.swift in Sources */,
-				40825500000000000000B048 /* ContributionQueries.swift in Sources */,
-				40825500000000000000B049 /* ContributionService.swift in Sources */,
-				40825500000000000000B04C /* DailyContribution.swift in Sources */,
-				40825500000000000000B04D /* MemberDetailView.swift in Sources */,
-				40825500000000000000B04F /* LockView.swift in Sources */,
-				40825500000000000000C00C /* Discipline.swift in Sources */,
-				40825500000000000000B050 /* JobTitle.swift in Sources */,
-				40825500000000000000C00D /* DisciplinesView.swift in Sources */,
-				40825500000000000000C00E /* AddDisciplineView.swift in Sources */,
-				40825500000000000000C00F /* DisciplineDetailView.swift in Sources */,
-				40825500000000000000B052 /* AddJobTitleView.swift in Sources */,
-				40825500000000000000B053 /* JobTitleDetailView.swift in Sources */,
-				40825500000000000000B055 /* RepositoryVelocity.swift in Sources */,
-				40825500000000000000B056 /* VelocityQueries.swift in Sources */,
-				40825500000000000000B057 /* VelocityService.swift in Sources */,
-				40825500000000000000C011 /* OpenPullRequest.swift in Sources */,
-				40825500000000000000C012 /* PullRequestService.swift in Sources */,
-				40825500000000000000C013 /* PullRequestDetailView.swift in Sources */,
-				40825500000000000000C015 /* AssignCodeOwnerView.swift in Sources */,
-				40825500000000000000C017 /* AllPullRequestsView.swift in Sources */,
-				40825500000000000000C018 /* MergedPR.swift in Sources */,
-				40825500000000000000C019 /* ReportQueries.swift in Sources */,
-				40825500000000000000C01A /* MergedPRReportService.swift in Sources */,
-				40825500000000000000C01B /* ReportsView.swift in Sources */,
-				40825500000000000000C01C /* MergedPRsYesterdayView.swift in Sources */,
-				37540D3C2F8AF56D00A7BC0F /* CardRow.swift in Sources */,
-				40825500000000000000C026 /* MergedPRsTodayView.swift in Sources */,
-				40825500000000000000C02D /* MergedPRsThisWeekView.swift in Sources */,
-				40825500000000000000C01E /* Color+Accent.swift in Sources */,
-				40825500000000000000C020 /* EmptyContentView.swift in Sources */,
-				40825500000000000000C021 /* JobTitleDonutChartView.swift in Sources */,
-				40825500000000000000C022 /* MemberDisciplineReportView.swift in Sources */,
-				40825500000000000000C02C /* SecurityIssuesReportView.swift in Sources */,
-				40825500000000000000C023 /* AllDependabotAlertsView.swift in Sources */,
-				40825500000000000000C024 /* AllCodeScanningAlertsView.swift in Sources */,
-				40825500000000000000C02B /* CodeScanningAlertDetailView.swift in Sources */,
-				40825500000000000000C025 /* AllSecretScanningAlertsView.swift in Sources */,
-				40825500000000000000C027 /* SavedOrganization.swift in Sources */,
-				40825500000000000000C028 /* OrganizationService.swift in Sources */,
-				40825500000000000000C029 /* OrganizationsView.swift in Sources */,
-				40825500000000000000C02A /* AddOrganizationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -689,30 +175,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				408255DA2CAFC99600000023 /* ContentViewTests.swift in Sources */,
-				40825500000000000000B020 /* MockHTTPClient.swift in Sources */,
-				40825500000000000000B021 /* GraphQLClientTests.swift in Sources */,
-				40825500000000000000B022 /* RESTClientTests.swift in Sources */,
-				40825500000000000000B023 /* UserServiceTests.swift in Sources */,
-				40825500000000000000B024 /* RepositoryServiceTests.swift in Sources */,
-				40825500000000000000B025 /* TeamServiceTests.swift in Sources */,
-				40825500000000000000B026 /* ModelDecodingTests.swift in Sources */,
-				40825500000000000000B029 /* SavedRepositoryTests.swift in Sources */,
-				40825500000000000000B02C /* SecurityServiceTests.swift in Sources */,
-				40825500000000000000B039 /* CodeownerResolverTests.swift in Sources */,
-				40825500000000000000B03A /* MailtoComposerTests.swift in Sources */,
-				40825500000000000000B03B /* CodeownerEmailServiceTests.swift in Sources */,
-				40825500000000000000B03C /* CodeownersServiceTests.swift in Sources */,
-				40825500000000000000B042 /* TeamTests.swift in Sources */,
-				40825500000000000000B046 /* MemberTests.swift in Sources */,
-				40825500000000000000B04A /* ContributionServiceTests.swift in Sources */,
-				40825500000000000000B04E /* BackgroundSyncManagerTests.swift in Sources */,
-				40825500000000000000B054 /* JobTitleTests.swift in Sources */,
-				40825500000000000000C010 /* DisciplineTests.swift in Sources */,
-				40825500000000000000B058 /* VelocityServiceTests.swift in Sources */,
-				40825500000000000000C014 /* PullRequestServiceTests.swift in Sources */,
-				40825500000000000000C016 /* DependabotAlertAssignmentTests.swift in Sources */,
-				40825500000000000000C01D /* MergedPRReportServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
