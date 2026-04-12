@@ -3,18 +3,20 @@ import SwiftData
 
 // MARK: - SecurityAlertFilter
 
-private enum SecurityAlertFilter: String, CaseIterable, Identifiable {
+private enum SecurityAlertFilter: String, CaseIterable, Identifiable, Hashable {
+    case all = "Repositories"
+    case codeScanning = "Code Scanning"
     case dependabot = "Dependabot"
     case secrets = "Secrets"
-    case codeScanning = "Code Scanning"
 
     var id: Self { self }
 
     var systemImage: String {
         switch self {
-        case .dependabot: return "ant.fill"
-        case .secrets: return "key.fill"
-        case .codeScanning: return "magnifyingglass"
+        case .all: "server.rack"
+        case .dependabot: "ant"
+        case .secrets: "key"
+        case .codeScanning: "eyeglasses"
         }
     }
 }
@@ -29,7 +31,16 @@ struct ContentView: View {
 
     @State private var isAddingRepository = false
     @State private var searchText = ""
-    @State private var activeFilters: Set<SecurityAlertFilter> = []
+    @State private var activeFilter: SecurityAlertFilter = .all
+    
+    private var foregroundColor: Color {
+        if activeFilter != .all {
+            Color(.systemBackground)
+        }
+        else {
+            Color.primary
+        }
+    }
 
     private var filteredRepositories: [SavedRepository] {
         var result = Array(repositories)
@@ -40,17 +51,20 @@ struct ContentView: View {
                 (repo.primaryLanguage?.lowercased().contains(query) ?? false)
             }
         }
-        if !activeFilters.isEmpty {
-            result = result.filter { repo in
-                activeFilters.contains { filter in
-                    switch filter {
-                    case .dependabot: return repo.dependabotAlerts > 0
-                    case .secrets: return repo.secretScanningAlerts > 0
-                    case .codeScanning: return repo.codeScanningAlerts > 0
-                    }
-                }
+        
+        result = result.filter { repo in
+            switch activeFilter {
+            case .all:
+                true
+            case .dependabot:
+                repo.dependabotAlerts > 0
+            case .secrets:
+                repo.secretScanningAlerts > 0
+            case .codeScanning:
+                repo.codeScanningAlerts > 0
             }
         }
+        
         return result
     }
 
@@ -70,20 +84,30 @@ struct ContentView: View {
             .navigationSubtitle(syncSubtitle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu("Filter", systemImage: activeFilters.isEmpty ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill") {
-                        ForEach(SecurityAlertFilter.allCases) { filter in
-                            Button {
-                                if activeFilters.contains(filter) {
-                                    activeFilters.remove(filter)
-                                } else {
-                                    activeFilters.insert(filter)
-                                }
-                            } label: {
-                                Label(filter.rawValue, systemImage: activeFilters.contains(filter) ? "checkmark" : filter.systemImage)
+                    Menu {
+                        Picker(selection: $activeFilter) {
+                            ForEach(SecurityAlertFilter.allCases) { filter in
+                                Label(
+                                    filter.rawValue,
+                                    systemImage: filter.systemImage
+                                )
+                                .tag(filter)
                             }
-                        }
+                        } label: {}
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .padding(6)
+                            .background(activeFilter != .all ? .accent : .clear)
+                            .clipShape(.circle)
+                            .foregroundStyle(foregroundColor)
                     }
                 }
+                
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add", systemImage: "plus") {
                         isAddingRepository = true
