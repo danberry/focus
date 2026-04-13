@@ -3,16 +3,23 @@ import SwiftData
 
 // MARK: - DisciplineDetailView
 
+/// Displays and manages the job titles belonging to a discipline.
 struct DisciplineDetailView: View {
+
+    // MARK: - Properties
+
+    /// The discipline whose job titles this view displays and edits.
     @Bindable var discipline: Discipline
+
+    /// The SwiftData model context, injected from the root `ModelContainer`.
     @Environment(\.modelContext) private var modelContext
 
+    /// Whether the add job title sheet is currently presented.
     @State private var isAddingJobTitle = false
 
-    private var sortedJobTitles: [JobTitle] {
-        discipline.jobTitles.sorted { $0.name < $1.name }
-    }
+    // MARK: - Body
 
+    /// The view's content.
     var body: some View {
         Group {
             if discipline.jobTitles.isEmpty {
@@ -50,6 +57,12 @@ struct DisciplineDetailView: View {
 
     // MARK: - Private
 
+    /// The discipline's job titles sorted alphabetically by name.
+    private var sortedJobTitles: [JobTitle] {
+        discipline.jobTitles.sorted { $0.name < $1.name }
+    }
+
+    /// Deletes job titles at the specified offsets from the sorted list.
     private func delete(at offsets: IndexSet) {
         for index in offsets {
             modelContext.delete(sortedJobTitles[index])
