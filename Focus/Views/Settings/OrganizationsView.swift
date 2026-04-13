@@ -3,13 +3,26 @@ import SwiftData
 
 // MARK: - OrganizationsView
 
+/// Displays the list of saved GitHub organizations.
 struct OrganizationsView: View {
+
+    // MARK: - Properties
+
+    /// The authentication service, used to build the `OrganizationService` when adding a new organization.
     @Environment(AuthenticationService.self) private var authService
+
+    /// The SwiftData model context, injected from the root `ModelContainer`.
     @Environment(\.modelContext) private var modelContext
+
+    /// The saved organizations, sorted alphabetically by login.
     @Query(sort: \SavedOrganization.login) private var organizations: [SavedOrganization]
 
+    /// Controls whether the add-organization sheet is presented.
     @State private var isAddingOrganization = false
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         Group {
             if organizations.isEmpty {
@@ -54,8 +67,9 @@ struct OrganizationsView: View {
         }
     }
 
-    // MARK: - Private
+    // MARK: - Helpers
 
+    /// Deletes organizations at the given offsets from the SwiftData model context.
     private func delete(at offsets: IndexSet) {
         for index in offsets {
             modelContext.delete(organizations[index])
