@@ -1,10 +1,24 @@
 import SwiftUI
 
+// MARK: - LoginView
+
+/// Presents a form for entering a GitHub personal access token to authenticate.
 struct LoginView: View {
+
+    // MARK: - Properties
+
+    /// The authentication service, injected from the environment.
     @Environment(AuthenticationService.self) private var authService
+
+    /// The dismiss action, used to close the sheet on successful sign-in or cancellation.
     @Environment(\.dismiss) private var dismiss
+
+    /// The token text entered by the user.
     @State private var tokenInput = ""
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         NavigationStack {
             Form {
