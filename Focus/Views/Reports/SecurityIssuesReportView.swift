@@ -4,9 +4,15 @@ import Charts
 
 // MARK: - SecurityIssuesReportView
 
+/// Displays a breakdown of open security alerts across all saved repositories.
 struct SecurityIssuesReportView: View {
+
+    // MARK: - Properties
+
+    /// The saved repositories to aggregate security alert counts from.
     @Query(sort: \SavedRepository.displayName) private var repositories: [SavedRepository]
 
+    /// The security alert categories with per-repository breakdowns, filtered to non-zero totals.
     private var categories: [SecurityCategory] {
         [
             SecurityCategory(
@@ -36,14 +42,19 @@ struct SecurityIssuesReportView: View {
         ].filter { $0.count > 0 }
     }
 
+    /// The total open alert count across all repositories and alert types.
     private var totalCount: Int {
         repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
     }
-    
+
+    /// The number of repositories with at least one open security alert.
     private var reposWithAlerts: Int {
         repositories.count(where: { $0.totalSecurityAlerts > 0 })
     }
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         Group {
             if repositories.isEmpty {
@@ -70,7 +81,7 @@ struct SecurityIssuesReportView: View {
                                 .textCase(.uppercase)
                         }
                     }
-                    
+
                     ForEach(categories) { category in
                         Section(category.name) {
                             ForEach(category.repoRows) { row in
@@ -91,17 +102,39 @@ struct SecurityIssuesReportView: View {
     }
 }
 
-// MARK: - Supporting Types
+// MARK: - SecurityCategory
 
+/// A named alert category with a total count and per-repository breakdown rows.
 private struct SecurityCategory: Identifiable {
+
+    // MARK: - Properties
+
+    /// A stable identifier for use in `ForEach`.
     let id = UUID()
+
+    /// The display name of the alert category (e.g., "Dependabot").
     let name: String
+
+    /// The total open alert count across all repositories in this category.
     let count: Int
+
+    /// The per-repository rows, sorted by descending alert count.
     let repoRows: [SecurityRepoRow]
 }
 
+// MARK: - SecurityRepoRow
+
+/// A single row pairing a repository name with its alert count for a category.
 private struct SecurityRepoRow: Identifiable {
+
+    // MARK: - Properties
+
+    /// A stable identifier for use in `ForEach`.
     let id = UUID()
+
+    /// The display name of the repository.
     let name: String
+
+    /// The number of open alerts for this repository in the parent category.
     let count: Int
 }
