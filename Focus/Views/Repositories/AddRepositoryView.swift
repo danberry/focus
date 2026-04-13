@@ -3,24 +3,54 @@ import SwiftData
 
 // MARK: - AddRepositoryView
 
+/// A form for searching for and adding a new GitHub repository to the watch list.
 struct AddRepositoryView: View {
+
+    // MARK: - Properties
+
+    /// The service used to fetch repository metadata from GitHub.
     let repositoryService: RepositoryService
+
+    /// The service used to fetch and sync security alert data.
     let securityService: SecurityService
+
+    /// The service used to sync CODEOWNERS data.
     let codeownersService: CodeownersService
+
+    /// The service used to sync velocity metrics.
     let velocityService: VelocityService
+
+    /// The service used to sync open pull requests.
     let pullRequestService: PullRequestService
 
+    /// The authentication service, providing the current auth state.
     @Environment(AuthenticationService.self) private var authService
+
+    /// The SwiftData model context, injected from the root `ModelContainer`.
     @Environment(\.modelContext) private var modelContext
+
+    /// The dismiss action for closing this sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The GitHub organization or user login entered by the user.
     @State private var owner = ""
+
+    /// The repository name entered by the user.
     @State private var repoName = ""
+
+    /// The display name label entered by the user.
     @State private var displayName = ""
+
+    /// Whether a network request is currently in progress.
     @State private var isLoading = false
+
+    /// The most recent error returned from the add-repository flow, or `nil` if none.
     @State private var error: GitHubError?
+
+    /// Whether the token-entry sheet is currently presented.
     @State private var showTokenEntry = false
 
+    /// Returns `true` when all required fields are non-empty and no request is in flight.
     private var canSubmit: Bool {
         !owner.trimmingCharacters(in: .whitespaces).isEmpty &&
         !repoName.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -28,6 +58,9 @@ struct AddRepositoryView: View {
         !isLoading
     }
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         NavigationStack {
             Form {
@@ -88,8 +121,9 @@ struct AddRepositoryView: View {
         }
     }
 
-    // MARK: - Private
+    // MARK: - Helpers
 
+    /// Validates inputs, fetches the repository, and persists it along with all associated data.
     @MainActor
     private func save() async {
         let trimmedOwner = owner.trimmingCharacters(in: .whitespaces)
