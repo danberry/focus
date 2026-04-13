@@ -5,25 +5,29 @@ import SwiftData
 
 // MARK: - TeamTests
 
+/// Tests for `Team`.
 @Suite("Team Tests")
-@MainActor
+@MainActor // Required because ModelContext operations run on the main actor
 struct TeamTests {
 
-    // MARK: - Helpers
-
+    /// Creates an in-memory `ModelContainer` configured for `Team` objects.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: Team.self, configurations: config)
     }
 
-    // MARK: - Tests
+    // MARK: - init
 
+    /// Verifies that all properties are set correctly when a team is created.
     @Test func initializesWithAllFields() {
         let team = Team(name: "iOS Platform", teamDescription: "Owns the iOS app")
         #expect(team.name == "iOS Platform")
         #expect(team.teamDescription == "Owns the iOS app")
     }
 
+    // MARK: - Persistence
+
+    /// Verifies that a team inserted into a SwiftData context can be fetched back.
     @Test func insertAndFetchFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -40,6 +44,7 @@ struct TeamTests {
         #expect(results[0].teamDescription == "Owns the iOS app")
     }
 
+    /// Verifies that deleting a team removes it from the SwiftData context.
     @Test func deleteFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -57,6 +62,7 @@ struct TeamTests {
         #expect(results.isEmpty)
     }
 
+    /// Verifies that multiple teams are returned in alphabetical order when fetched with a name sort descriptor.
     @Test func multipleTeamsAreFetchedSortedByName() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
