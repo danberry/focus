@@ -16,28 +16,44 @@ import SwiftData
 @MainActor
 final class BackgroundSyncManager {
 
-    // MARK: - Constants
+    // MARK: - Properties
 
+    /// The `BGProcessingTask` identifier registered with the system.
     static let taskIdentifier = "com.danberry.Focus.sync"
+
+    /// The minimum elapsed time between security alert and codeowner syncs.
     static let securitySyncInterval: TimeInterval = 8 * 60 * 60    // 8 hours
+
+    /// The minimum elapsed time between member contribution syncs.
     static let contributionSyncInterval: TimeInterval = 24 * 60 * 60 // 24 hours
+
+    /// The `UserDefaults` key used to persist the last security sync timestamp.
     static let lastSyncedAtKey = "com.danberry.Focus.lastSyncedAt"
+
+    /// The `UserDefaults` key used to persist the last contribution sync timestamp.
     static let lastContributionSyncedAtKey = "com.danberry.Focus.lastContributionSyncedAt"
 
-    // MARK: - State
-
+    /// Whether a sync operation is currently in progress.
     private(set) var isSyncing = false
+
+    /// The date of the most recent completed security sync, or `nil` if never synced.
     private(set) var lastSyncedAt: Date?
+
+    /// The date of the most recent completed contribution sync, or `nil` if never synced.
     private(set) var lastContributionSyncedAt: Date?
 
-    // MARK: - Dependencies (set during setup)
-
+    /// The SwiftData model container, injected during ``setup(modelContainer:tokenProvider:)``.
     private var modelContainer: ModelContainer?
+
+    /// A closure that returns the current GitHub personal access token, injected during ``setup(modelContainer:tokenProvider:)``.
     private var tokenProvider: (@Sendable () -> String?)?
+
+    /// Whether ``setup(modelContainer:tokenProvider:)`` has been called.
     private var isSetup = false
 
     // MARK: - Init
 
+    /// Creates a new `BackgroundSyncManager`, restoring last sync timestamps from `UserDefaults`.
     init() {
         lastSyncedAt = UserDefaults.standard.object(forKey: Self.lastSyncedAtKey) as? Date
         lastContributionSyncedAt = UserDefaults.standard.object(forKey: Self.lastContributionSyncedAtKey) as? Date
@@ -93,6 +109,8 @@ final class BackgroundSyncManager {
 
     // MARK: - Private
 
+    /// Performs a full sync of security, codeowners, velocity, and pull request data, then syncs
+    /// contributions if the 24-hour window has elapsed.
     private func sync(context: ModelContext) async {
         guard let tokenProvider, !isSyncing else { return }
         isSyncing = true
@@ -123,6 +141,7 @@ final class BackgroundSyncManager {
         scheduleNextSync()
     }
 
+    /// Fetches and persists contributions for every ``Member`` in the given context.
     private func syncAllContributions(using service: ContributionService, in context: ModelContext) async {
         let members: [Member]
         let organizations: [SavedOrganization]
@@ -141,6 +160,7 @@ final class BackgroundSyncManager {
         }
     }
 
+    /// Fulfills a `BGProcessingTask` by scheduling the next background run then performing a full sync.
     private func handleBackgroundTask(_ task: BGProcessingTask) async {
         guard let container = modelContainer else {
             task.setTaskCompleted(success: false)
