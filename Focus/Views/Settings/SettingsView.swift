@@ -2,14 +2,28 @@ import SwiftUI
 
 // MARK: - SettingsView
 
+/// Displays controls for updating the GitHub personal access token and navigating to app configuration.
 struct SettingsView: View {
+
+    // MARK: - Properties
+
+    /// The authentication service, used to sign in with a new token or sign out.
     @Environment(AuthenticationService.self) private var authService
+
+    /// The token string entered by the user before submission.
     @State private var newToken = ""
+
+    /// Whether the most recent token update succeeded, controlling success message visibility.
     @State private var showSuccess = false
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         NavigationStack {
             Form {
+                // MARK: GitHub Token
+
                 Section {
                     SecureField("New personal access token", text: $newToken)
                         .textContentType(.password)
@@ -23,6 +37,8 @@ struct SettingsView: View {
                 } footer: {
                     Text("Enter a new token to replace the current one. The token must have repo, read:org, and read:user scopes.")
                 }
+
+                // MARK: Update Token
 
                 Section {
                     Button {
@@ -60,6 +76,8 @@ struct SettingsView: View {
                     }
                 }
 
+                // MARK: Navigation
+
                 Section {
                     NavigationLink("Organizations") {
                         OrganizationsView()
@@ -68,6 +86,8 @@ struct SettingsView: View {
                         DisciplinesView()
                     }
                 }
+
+                // MARK: Sign Out
 
                 Section {
                     Button(role: .destructive) {
