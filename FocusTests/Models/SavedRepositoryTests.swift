@@ -5,12 +5,12 @@ import SwiftData
 
 // MARK: - SavedRepositoryTests
 
+/// Tests for `SavedRepository`.
 @Suite("SavedRepository Tests")
-@MainActor
+@MainActor // Required because ModelContext operations must run on the main actor.
 struct SavedRepositoryTests {
 
-    // MARK: - Helpers
-
+    /// Creates an in-memory `ModelContainer` with `SavedRepository` and all cascade-delete alert types registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
@@ -19,8 +19,9 @@ struct SavedRepositoryTests {
         )
     }
 
-    // MARK: - Tests
+    // MARK: - init
 
+    /// Verifies that all provided fields are stored correctly on initialization.
     @Test func initializesWithAllFields() {
         let repo = SavedRepository(githubId: "MDEwOlJlcG9zaXRvcnk0NDgzODAxMg==", owner: "apple", name: "swift", displayName: "Apple Swift", primaryLanguage: "Swift")
         #expect(repo.githubId == "MDEwOlJlcG9zaXRvcnk0NDgzODAxMg==")
@@ -30,11 +31,15 @@ struct SavedRepositoryTests {
         #expect(repo.primaryLanguage == "Swift")
     }
 
+    /// Verifies that `primaryLanguage` defaults to `nil` when not provided.
     @Test func initializesWithNilLanguage() {
         let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift", displayName: "Apple Swift")
         #expect(repo.primaryLanguage == nil)
     }
 
+    // MARK: - Persistence
+
+    /// Verifies that a repository can be inserted, saved, and fetched from a SwiftData context.
     @Test func insertAndFetchFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -54,6 +59,7 @@ struct SavedRepositoryTests {
         #expect(results[0].primaryLanguage == "Swift")
     }
 
+    /// Verifies that a deleted repository is no longer returned by a fetch.
     @Test func deleteFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -71,6 +77,7 @@ struct SavedRepositoryTests {
         #expect(results.isEmpty)
     }
 
+    /// Verifies that multiple repositories are returned in name-sorted order when a sort descriptor is applied.
     @Test func multipleRepositoriesAreFetchedSortedByName() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -88,6 +95,24 @@ struct SavedRepositoryTests {
         #expect(results.map(\.name) == ["apple", "vapor", "zed"])
     }
 
+    /// Verifies that `displayName` round-trips through persistence without modification.
+    @Test func displayNameIsStoredAndRetrieved() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+
+        let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift", displayName: "My Swift Repo")
+        context.insert(repo)
+        try context.save()
+
+        let descriptor = FetchDescriptor<SavedRepository>()
+        let results = try context.fetch(descriptor)
+
+        #expect(results[0].displayName == "My Swift Repo")
+    }
+
+    // MARK: - totalSecurityAlerts
+
+    /// Verifies that `totalSecurityAlerts` returns the sum of all three alert type counts.
     @Test func totalSecurityAlertsReturnsSumOfAllCounts() {
         let repo = SavedRepository(
             githubId: "abc123",
@@ -101,22 +126,9 @@ struct SavedRepositoryTests {
         #expect(repo.totalSecurityAlerts == 9)
     }
 
+    /// Verifies that `totalSecurityAlerts` returns `0` when all alert counts are at their default value.
     @Test func totalSecurityAlertsIsZeroWhenAllZero() {
         let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift", displayName: "Apple Swift")
         #expect(repo.totalSecurityAlerts == 0)
-    }
-
-    @Test func displayNameIsStoredAndRetrieved() throws {
-        let container = try makeContainer()
-        let context = ModelContext(container)
-
-        let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift", displayName: "My Swift Repo")
-        context.insert(repo)
-        try context.save()
-
-        let descriptor = FetchDescriptor<SavedRepository>()
-        let results = try context.fetch(descriptor)
-
-        #expect(results[0].displayName == "My Swift Repo")
     }
 }
