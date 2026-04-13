@@ -2,16 +2,32 @@ import SwiftUI
 
 // MARK: - DependabotAlertDetailView
 
+/// Displays detail information for a Dependabot alert, including package metadata, assignees, and code owner email actions.
 struct DependabotAlertDetailView: View {
+
+    // MARK: - Properties
+
+    /// The Dependabot alert whose details this view displays.
     let alert: DependabotAlert
+
+    /// The repository that owns this alert.
     let repository: SavedRepository
 
+    /// The authentication service used to obtain tokens for code owner resolution.
     @Environment(AuthenticationService.self) private var authService
+
+    /// The SwiftData model context, injected from the root `ModelContainer`.
     @Environment(\.modelContext) private var modelContext
 
+    /// The current email resolution state, controlling button labels and the disabled state.
     @State private var emailState: EmailState = .idle
+
+    /// Whether the assign code owner sheet is currently presented.
     @State private var showingAssignSheet = false
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List {
             // MARK: Assignees
@@ -93,8 +109,9 @@ struct DependabotAlertDetailView: View {
         }
     }
 
-    // MARK: - Email Resolution
+    // MARK: - Helpers
 
+    /// Resolves code owner emails for the alert's manifest path and opens a pre-filled mailto draft.
     @MainActor
     private func resolveAndEmail() async {
         emailState = .resolving
@@ -130,8 +147,12 @@ struct DependabotAlertDetailView: View {
 
 // MARK: - EmailState
 
+/// Tracks the code owner email resolution lifecycle for the action button.
 private enum EmailState: Equatable {
+    /// No email action is in progress.
     case idle
+    /// Code owner handles are currently being resolved to email addresses.
     case resolving
+    /// Resolution completed but no public email addresses were found.
     case noEmails
 }
