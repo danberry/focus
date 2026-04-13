@@ -1,15 +1,22 @@
 import Testing
 @testable import Focus
 
+/// Tests for `RepositoryService`.
 @Suite("RepositoryService Tests")
 struct RepositoryServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    // MARK: - Setup
+
+    /// Creates a `RepositoryService` wired to the shared `MockHTTPClient`.
     private func makeService() -> RepositoryService {
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return RepositoryService(graphQL: graphQL)
     }
 
+    // MARK: - fetchRepository
+
+    /// Verifies that a successful response is decoded into a `GitHubRepository` with correct field values.
     @Test func fetchRepositoryReturnsRepo() async throws {
         mockHTTP.setSuccess(json: """
             {
@@ -40,6 +47,9 @@ struct RepositoryServiceTests {
         #expect(repo.isPrivate == false)
     }
 
+    // MARK: - fetchViewerRepositories
+
+    /// Verifies that a paginated response is decoded with the correct nodes, cursor, and `hasNextPage` flag.
     @Test func fetchViewerRepositoriesReturnsPaginatedResults() async throws {
         mockHTTP.setSuccess(json: """
             {
