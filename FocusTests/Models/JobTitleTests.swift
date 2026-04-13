@@ -5,24 +5,28 @@ import SwiftData
 
 // MARK: - JobTitleTests
 
+/// Tests for `JobTitle`.
 @Suite("Job Title Tests")
-@MainActor
+@MainActor // Required because SwiftData ModelContext operations are @MainActor
 struct JobTitleTests {
 
-    // MARK: - Helpers
-
+    /// Creates an in-memory `ModelContainer` with `Discipline` and `JobTitle` registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: Discipline.self, JobTitle.self, configurations: config)
     }
 
-    // MARK: - Tests
+    // MARK: - Initialization
 
+    /// Verifies that a `JobTitle` initializes with the given name.
     @Test func initializesWithName() {
         let jobTitle = JobTitle(name: "Senior Engineer")
         #expect(jobTitle.name == "Senior Engineer")
     }
 
+    // MARK: - Persistence
+
+    /// Verifies that a `JobTitle` can be inserted into and fetched from a SwiftData context.
     @Test func insertAndFetchFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -40,6 +44,7 @@ struct JobTitleTests {
         #expect(results[0].name == "Senior Engineer")
     }
 
+    /// Verifies that a deleted `JobTitle` is no longer returned by a fetch descriptor.
     @Test func deleteFromContext() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -59,6 +64,7 @@ struct JobTitleTests {
         #expect(results.isEmpty)
     }
 
+    /// Verifies that updating the `name` property persists the change to SwiftData.
     @Test func inlineEditUpdatesPersistedName() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -78,6 +84,9 @@ struct JobTitleTests {
         #expect(results[0].name == "Senior Engineer")
     }
 
+    // MARK: - Relationships
+
+    /// Verifies that a `JobTitle` carries a back-reference to its parent `Discipline` after insertion.
     @Test func jobTitleBelongsToDiscipline() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
