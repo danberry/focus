@@ -3,17 +3,53 @@ import SwiftData
 
 // MARK: - SavedRepository
 
+/// A GitHub repository that has been saved to the user's watch list.
+///
+/// `SavedRepository` is the root entity in the SwiftData graph. All alert
+/// details, velocity metrics, pull requests, and code owners cascade-delete
+/// when the repository is removed.
 @Model
 final class SavedRepository {
+
+    // MARK: - Properties
+
+    /// The stable GitHub node ID for the repository.
     var githubId: String
+
+    /// The repository owner's login (user or organization).
     var owner: String
+
+    /// The repository name.
     var name: String
+
+    /// The user-facing label shown in lists and navigation titles.
     var displayName: String
+
+    /// The repository's primary programming language, or `nil` if GitHub reports none.
     var primaryLanguage: String?
+
+    /// The current count of open Dependabot alerts.
     var dependabotAlerts: Int
+
+    /// The current count of open code scanning alerts.
     var codeScanningAlerts: Int
+
+    /// The current count of open secret scanning alerts.
     var secretScanningAlerts: Int
 
+    // MARK: - Init
+
+    /// Creates a new saved repository.
+    ///
+    /// - Parameters:
+    ///   - githubId: The stable GitHub node ID for the repository.
+    ///   - owner: The repository owner's login (user or organization).
+    ///   - name: The repository name.
+    ///   - displayName: The user-facing label shown in lists and navigation titles.
+    ///   - primaryLanguage: The repository's primary programming language; defaults to `nil`.
+    ///   - dependabotAlerts: Initial open Dependabot alert count; defaults to `0` until synced.
+    ///   - codeScanningAlerts: Initial open code scanning alert count; defaults to `0` until synced.
+    ///   - secretScanningAlerts: Initial open secret scanning alert count; defaults to `0` until synced.
     init(
         githubId: String,
         owner: String,
@@ -36,26 +72,48 @@ final class SavedRepository {
 
     // MARK: - Relationships
 
+    /// Open Dependabot alerts for this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``DependabotAlert/repository``.
     @Relationship(deleteRule: .cascade, inverse: \DependabotAlert.repository)
     var dependabotAlertDetails: [DependabotAlert] = []
 
+    /// Open code scanning alerts for this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``CodeScanningAlert/repository``.
     @Relationship(deleteRule: .cascade, inverse: \CodeScanningAlert.repository)
     var codeScanningAlertDetails: [CodeScanningAlert] = []
 
+    /// Open secret scanning alerts for this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``SecretScanningAlert/repository``.
     @Relationship(deleteRule: .cascade, inverse: \SecretScanningAlert.repository)
     var secretScanningAlertDetails: [SecretScanningAlert] = []
 
+    /// Code owners assigned to this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``Codeowner/repository``.
     @Relationship(deleteRule: .cascade, inverse: \Codeowner.repository)
     var codeowners: [Codeowner] = []
 
+    /// Velocity metrics for this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``RepositoryVelocity/repository``.
     @Relationship(deleteRule: .cascade, inverse: \RepositoryVelocity.repository)
     var velocityMetrics: [RepositoryVelocity] = []
 
+    /// Open pull requests for this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``OpenPullRequest/repository``.
     @Relationship(deleteRule: .cascade, inverse: \OpenPullRequest.repository)
     var openPullRequests: [OpenPullRequest] = []
 
     // MARK: - Computed
 
+    /// The sum of all three security alert type counts.
+    ///
+    /// Use for badge display. Prefer individual alert count properties when the
+    /// breakdown by type matters.
     var totalSecurityAlerts: Int {
         dependabotAlerts + codeScanningAlerts + secretScanningAlerts
     }
