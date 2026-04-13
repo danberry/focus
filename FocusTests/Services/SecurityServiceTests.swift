@@ -3,16 +3,21 @@ import Testing
 import SwiftData
 @testable import Focus
 
+/// Tests for ``SecurityService``.
 @Suite("SecurityService Tests")
-@MainActor
+@MainActor // Required because sync methods write to a @MainActor ModelContext
 struct SecurityServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    // MARK: - Setup
+
+    /// Creates a ``SecurityService`` wired to the shared ``MockHTTPClient``.
     private func makeService() -> SecurityService {
         let rest = RESTClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return SecurityService(rest: rest)
     }
 
+    /// Creates an in-memory ``ModelContainer`` with the alert model types registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
@@ -21,6 +26,9 @@ struct SecurityServiceTests {
         )
     }
 
+    // MARK: - fetchMetrics
+
+    /// Verifies that a 2-item array response yields a count of 2 for all three alert types.
     @Test func fetchMetricsReturnsCorrectCounts() async {
         // MockHTTPClient returns the same response for every call.
         // All three endpoints return an array of 2 items.
@@ -32,6 +40,7 @@ struct SecurityServiceTests {
         #expect(metrics.secretScanningAlerts == 2)
     }
 
+    /// Verifies that a 403 response causes all three counts to be returned as `nil`.
     @Test func fetchMetricsHandlesForbidden() async {
         mockHTTP.setSuccess(json: "{}", statusCode: 403)
         let metrics = await makeService().fetchMetrics(owner: "apple", repo: "swift")
@@ -41,6 +50,7 @@ struct SecurityServiceTests {
         #expect(metrics.secretScanningAlerts == nil)
     }
 
+    /// Verifies that a 404 response causes all three counts to be returned as `nil`.
     @Test func fetchMetricsHandlesNotFound() async {
         mockHTTP.setSuccess(json: "{}", statusCode: 404)
         let metrics = await makeService().fetchMetrics(owner: "apple", repo: "swift")
@@ -50,6 +60,7 @@ struct SecurityServiceTests {
         #expect(metrics.secretScanningAlerts == nil)
     }
 
+    /// Verifies that the request targets `api.github.com` with the expected repository path prefix.
     @Test func fetchMetricsUsesCorrectPath() async {
         mockHTTP.setSuccess(json: "[]")
         _ = await makeService().fetchMetrics(owner: "octocat", repo: "hello-world")
@@ -63,6 +74,7 @@ struct SecurityServiceTests {
 
     // MARK: - syncDependabotAlerts
 
+    /// Verifies that a two-alert response is decoded and persisted with all expected fields.
     @Test func syncDependabotAlertsCreatesAlerts() async throws {
         let json = """
         [
@@ -145,6 +157,7 @@ struct SecurityServiceTests {
         #expect(second.manifestPath == nil)
     }
 
+    /// Verifies that a second sync replaces previously persisted alerts rather than appending.
     @Test func syncDependabotAlertsReplacesExistingAlerts() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -192,6 +205,7 @@ struct SecurityServiceTests {
         #expect(alert.packageName == "new-pkg")
     }
 
+    /// Verifies that existing alerts are preserved when the network call returns an error.
     @Test func syncDependabotAlertsKeepsExistingOnError() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -211,6 +225,7 @@ struct SecurityServiceTests {
 
     // MARK: - syncCodeScanningAlerts
 
+    /// Verifies that a two-alert response is decoded and persisted correctly.
     @Test func syncCodeScanningAlertsCreatesAlerts() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -252,6 +267,7 @@ struct SecurityServiceTests {
         #expect(alerts[1].securitySeverityLevel == "high")
     }
 
+    /// Verifies that a second sync replaces all previously persisted alerts.
     @Test func syncCodeScanningAlertsReplacesExistingAlerts() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -296,6 +312,7 @@ struct SecurityServiceTests {
         #expect(repo.codeScanningAlertDetails[0].ruleName == "new-rule")
     }
 
+    /// Verifies that an empty array response leaves the alert list empty.
     @Test func syncCodeScanningAlertsHandlesEmptyResponse() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -308,6 +325,7 @@ struct SecurityServiceTests {
         #expect(repo.codeScanningAlertDetails.isEmpty)
     }
 
+    /// Verifies that a 403 response does not crash and leaves alerts unchanged.
     @Test func syncCodeScanningAlertsHandlesError() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -321,6 +339,7 @@ struct SecurityServiceTests {
         #expect(repo.codeScanningAlertDetails.isEmpty)
     }
 
+    /// Verifies that each created alert has its repository relationship set to the source repository.
     @Test func syncCodeScanningAlertsSetsRepository() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -345,6 +364,7 @@ struct SecurityServiceTests {
 
     // MARK: - syncSecretScanningAlerts
 
+    /// Verifies that a two-alert response is decoded and persisted with all expected fields.
     @Test func syncSecretScanningAlertsCreatesAlerts() async throws {
         let json = """
         [
@@ -388,6 +408,7 @@ struct SecurityServiceTests {
         #expect(alerts[1].publiclyLeaked == true)
     }
 
+    /// Verifies that a second sync replaces the previously persisted stale alert.
     @Test func syncSecretScanningAlertsReplacesExisting() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
@@ -426,6 +447,7 @@ struct SecurityServiceTests {
         #expect(alerts[0].alertNumber == 1)
     }
 
+    /// Verifies that a 403 response leaves the alert list empty.
     @Test func syncSecretScanningAlertsHandlesError() async throws {
         mockHTTP.setSuccess(json: "{}", statusCode: 403)
 
@@ -440,6 +462,7 @@ struct SecurityServiceTests {
         #expect(repo.secretScanningAlertDetails.isEmpty)
     }
 
+    /// Verifies that the request targets the secret-scanning endpoint for the given owner and repo.
     @Test func syncSecretScanningAlertsUsesCorrectEndpoint() async throws {
         mockHTTP.setSuccess(json: "[]")
 
