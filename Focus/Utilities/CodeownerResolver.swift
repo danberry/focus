@@ -2,13 +2,39 @@ import Foundation
 
 // MARK: - CodeownerResolver
 
-/// Resolves which CODEOWNERS handles are responsible for a given file path,
-/// following GitHub's gitignore-style matching rules (last matching rule wins).
+/// Resolves the set of owner handles responsible for a given file path,
+/// applying GitHub's CODEOWNERS matching semantics.
+///
+/// Matching follows gitignore-style glob rules with a **last-rule-wins** policy:
+/// when multiple patterns match the same path, the final pattern listed in the
+/// CODEOWNERS file determines ownership. `CodeownerResolver` preserves this
+/// semantic by scanning rules in file order and retaining only the handles
+/// from the last matching rule.
+///
+/// Supported pattern syntax:
+/// - A `nil` pattern matches every path (catch-all / legacy records).
+/// - A pattern with no `/` matches the basename anywhere in the tree.
+/// - A leading `/` anchors the pattern to the repository root.
+/// - A trailing `/` matches any file under that directory at any depth.
+/// - `*` matches any sequence of characters except `/`.
+/// - `**` matches any sequence of characters including `/` (multi-segment wildcard).
+/// - `?` matches a single non-separator character.
 enum CodeownerResolver {
 
-    /// Returns the handles that own `filePath` per CODEOWNERS rules.
-    /// The last matching entry in the list wins (GitHub semantics).
-    /// Codeowners must be passed in file order (insertion order from `syncCodeowners`).
+    // MARK: - Resolution
+
+    /// Returns the owner handles responsible for `filePath` under the supplied CODEOWNERS rules.
+    ///
+    /// Scans `codeowners` in file order and applies last-rule-wins semantics:
+    /// the handles from the final matching rule are returned. When multiple
+    /// ``Codeowner`` rows share the same `pathPattern` (e.g., one pattern
+    /// mapped to several handles), they are collapsed into a single logical
+    /// rule before the last-match decision is made.
+    ///
+    /// - Parameters:
+    ///   - filePath: The repository-relative path to evaluate (leading `/` is stripped if present).
+    ///   - codeowners: All CODEOWNERS entries in file order, as produced by `syncCodeowners`.
+    /// - Returns: The handle strings from the last matching rule, or an empty array if no rule matches.
     static func resolve(filePath: String, codeowners: [Codeowner]) -> [String] {
         var lastMatch: [String] = []
         var lastMatchedPattern: String? = nil
@@ -23,13 +49,23 @@ enum CodeownerResolver {
         return lastMatch
     }
 
-    /// Gitignore-style glob matching of a CODEOWNERS pattern against a file path.
-    /// - A `nil` pattern matches everything (catch-all / legacy records).
-    /// - A pattern without `/` (other than a trailing one) matches a filename anywhere.
-    /// - A leading `/` anchors the match to the repository root.
-    /// - A trailing `/` matches any file under that directory.
-    /// - `*` matches any sequence of characters except `/`.
-    /// - `**` matches any sequence of characters including `/`.
+    // MARK: - Matching
+
+    /// Returns whether `pattern` matches `filePath` using gitignore-style glob rules.
+    ///
+    /// Pattern semantics applied in priority order:
+    /// 1. A `nil` pattern matches everything (catch-all / legacy records).
+    /// 2. A leading `/` anchors the match to the repository root; the slash is stripped before matching.
+    /// 3. A trailing `/` (with or without a leading `/`) expands to a directory prefix match at any depth.
+    /// 4. A pattern with no `/` is matched against the basename only, ignoring directory components.
+    /// 5. A pattern with an internal `/` but no leading `/` is matched relative to the root.
+    ///
+    /// - Parameters:
+    ///   - pattern: The CODEOWNERS path pattern, or `nil` for a catch-all entry.
+    ///   - filePath: The repository-relative path to test (leading `/` is stripped if present).
+    /// - Returns: `true` if the pattern matches `filePath`; `false` otherwise.
+    // TODO: Add support for negation patterns (lines prefixed with `!`) — currently any negated entry is treated as a literal string beginning with `!`, which will never match a normal path and silently excludes ownership for that entry.
+    // TODO: Add support for character-class patterns (`[abc]`, `[a-z]`) — unrecognised bracket expressions are passed through as literal characters and will silently fail to match paths that should be covered.
     static func matches(pattern: String?, filePath: String) -> Bool {
         guard let pattern else { return true }
 
@@ -62,13 +98,26 @@ enum CodeownerResolver {
 
     // MARK: - Private
 
-    /// Recursive glob match supporting `*` (non-separator wildcard) and `**` (multi-segment wildcard).
+    /// Converts `pattern` and `path` to `Substring` slices and delegates to the
+    /// recursive ``globMatchSlices(_:_:)`` engine.
     private static func globMatch(pattern: String, path: String) -> Bool {
         var p = pattern[pattern.startIndex...]
         var s = path[path.startIndex...]
         return globMatchSlices(&p, &s)
     }
 
+    /// Recursively matches `pattern` against `path` using a consume-and-advance strategy.
+    ///
+    /// Both arguments are `inout Substring` slices so the algorithm advances in place
+    /// without allocating new strings. The rules applied at each position:
+    /// - `**` — consumes the double-star (and any following `/`), then tries to match the
+    ///   remaining pattern against every suffix of `path` that starts after a `/`.
+    /// - `*`  — consumes the single star, then tries every non-`/` prefix of `path`.
+    /// - `?`  — matches exactly one character that is not `/`.
+    /// - Literal — must equal the corresponding character in `path`.
+    ///
+    /// Returns `true` only when both `pattern` and `path` are fully consumed simultaneously.
+    // TODO: Verify that `**` correctly matches zero segments (e.g. `**/foo` against `foo` at the root) — the branch advances by searching for the next `/`, so zero-segment matching relies on the empty-pattern early-return path; a missing test here could allow a regression to go undetected.
     private static func globMatchSlices(
         _ pattern: inout Substring,
         _ path: inout Substring
