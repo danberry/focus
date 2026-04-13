@@ -2,10 +2,20 @@ import SwiftUI
 
 // MARK: - AllDependabotAlertsView
 
+/// Displays all Dependabot alerts for a repository in a navigable list.
 struct AllDependabotAlertsView: View {
+
+    // MARK: - Properties
+
+    /// The Dependabot alerts to display.
     let alerts: [DependabotAlert]
+
+    /// The repository these alerts belong to.
     let repository: SavedRepository
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List {
             ForEach(alerts) { alert in
