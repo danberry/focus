@@ -2,19 +2,41 @@ import SwiftUI
 
 // MARK: - AssignCodeOwnerView
 
+/// A sheet for selecting assignees for a Dependabot alert from the repository's code owners.
 struct AssignCodeOwnerView: View {
+
+    // MARK: - Properties
+
+    /// The Dependabot alert to assign owners to.
     let alert: DependabotAlert
+
+    /// The repository that owns the alert.
     let repository: SavedRepository
 
+    /// The authentication service providing the API token.
     @Environment(AuthenticationService.self) private var authService
+
+    /// The SwiftData model context, injected from the root `ModelContainer`.
     @Environment(\.modelContext) private var modelContext
+
+    /// The dismiss action for closing the sheet.
     @Environment(\.dismiss) private var dismiss
 
+    /// The resolved list of candidate logins available for assignment.
     @State private var candidates: [String] = []
+
+    /// Whether the candidate list is currently loading.
     @State private var isLoadingCandidates = true
+
+    /// The set of currently selected assignee logins.
     @State private var selectedLogins: Set<String> = []
+
+    /// The current state of the save operation.
     @State private var saveState: SaveState = .idle
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         NavigationStack {
             List(candidates, id: \.self, selection: $selectedLogins) { login in
@@ -79,11 +101,9 @@ struct AssignCodeOwnerView: View {
         }
     }
 
-    // MARK: - Candidates
+    // MARK: - Helpers
 
-    /// Resolves all CODEOWNERS handles for this alert's manifest path to individual logins.
-    /// Team handles (e.g. `@org/frontend-team`) are expanded to their members via the GitHub API.
-    /// Currently assigned logins not found in CODEOWNERS are appended so they can be deselected.
+    /// Resolves CODEOWNERS handles for the alert's manifest path to individual GitHub logins.
     private func loadCandidates() async {
         let resolvedHandles = CodeownerResolver.resolve(
             filePath: alert.manifestPath ?? "",
@@ -99,8 +119,7 @@ struct AssignCodeOwnerView: View {
         isLoadingCandidates = false
     }
 
-    // MARK: - Save
-
+    /// Patches the alert's assignees via the GitHub REST API and dismisses on success.
     @MainActor
     private func save() async {
         saveState = .saving
@@ -123,8 +142,12 @@ struct AssignCodeOwnerView: View {
 
 // MARK: - SaveState
 
+/// The state of the assignee save operation.
 private enum SaveState: Equatable {
+    /// No save operation is in progress.
     case idle
+    /// A save operation is currently running.
     case saving
+    /// The save operation failed with the associated error message.
     case error(String)
 }
