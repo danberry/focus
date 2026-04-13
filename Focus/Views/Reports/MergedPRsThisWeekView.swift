@@ -3,16 +3,30 @@ import SwiftData
 
 // MARK: - MergedPRsThisWeekView
 
+/// Displays a list of pull requests merged during the current week, grouped by repository.
 struct MergedPRsThisWeekView: View {
+
+    // MARK: - Properties
+
+    /// The authentication service, used to obtain a token provider for API requests.
     @Environment(AuthenticationService.self) private var authService
+
+    /// All repositories the user has saved, sorted alphabetically by display name.
     @Query(sort: \SavedRepository.displayName) private var savedRepositories: [SavedRepository]
 
+    /// Whether a data fetch is currently in progress.
     @State private var isLoading = false
+
+    /// The last error returned by the data fetch, or `nil` if the last fetch succeeded.
     @State private var error: GitHubError?
+
+    /// Merged PRs indexed by the lowercased `owner/name` repository key.
     @State private var prsByRepo: [String: [MergedPR]] = [:]
 
+    /// All merged PRs across every repository, unsorted.
     private var allPRs: [MergedPR] { prsByRepo.values.flatMap { $0 } }
 
+    /// A UTC-based Gregorian calendar with Monday as the first weekday.
     private var utcCalendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "UTC")!
@@ -20,14 +34,17 @@ struct MergedPRsThisWeekView: View {
         return cal
     }
 
+    /// The start of the current ISO week in UTC (Monday at 00:00:00 UTC).
     private var weekStart: Date {
         utcCalendar.dateComponents([.calendar, .yearForWeekOfYear, .weekOfYear], from: Date()).date!
     }
 
+    /// The start of today in UTC.
     private var today: Date {
         utcCalendar.startOfDay(for: Date())
     }
 
+    /// A formatted date range string spanning from the week start through today (e.g. "Apr 7 – 13, 2026").
     private var dateSubtitle: String {
         let fmt = DateFormatter()
         fmt.timeZone = TimeZone(identifier: "UTC")
@@ -47,10 +64,12 @@ struct MergedPRsThisWeekView: View {
         return "\(startStr) – \(endStr)"
     }
 
+    /// A lookup from lowercased `owner/name` key to the repository's user-facing display name.
     private var displayNameByRepo: [String: String] {
         Dictionary(uniqueKeysWithValues: savedRepositories.map { ("\($0.owner)/\($0.name)".lowercased(), $0.displayName) })
     }
 
+    /// Repository sections sorted alphabetically by display name, with each section's PRs sorted by merge date ascending.
     private var repoSections: [(repoName: String, prs: [MergedPR])] {
         let lookup = displayNameByRepo
         return prsByRepo
@@ -58,6 +77,9 @@ struct MergedPRsThisWeekView: View {
             .sorted { $0.repoName < $1.repoName }
     }
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         Group {
             if isLoading && allPRs.isEmpty {
@@ -86,7 +108,7 @@ struct MergedPRsThisWeekView: View {
                                 .textCase(.uppercase)
                         }
                     }
-                    
+
                     ForEach(repoSections, id: \.repoName) { section in
                         NavigationLink(destination: RepoMergedPRsListView(repoName: section.repoName, prs: section.prs)) {
                             LabeledContent(section.repoName) {
@@ -109,6 +131,7 @@ struct MergedPRsThisWeekView: View {
 
     // MARK: - Private
 
+    /// Fetches merged PRs for all saved repositories within the current week and updates `prsByRepo`.
     @MainActor
     private func loadData() async {
         guard !isLoading else { return }
@@ -134,12 +157,23 @@ struct MergedPRsThisWeekView: View {
 
 // MARK: - RepoMergedPRsListView
 
+/// Displays a list of merged pull requests for a single repository, each linking to its GitHub URL.
 private struct RepoMergedPRsListView: View {
-    @Environment(\.openURL) private var openURL
 
+    // MARK: - Properties
+
+    /// The display name of the repository shown in the navigation title.
     let repoName: String
+
+    /// The merged pull requests to display, in the order provided by the caller.
     let prs: [MergedPR]
 
+    /// The environment action used to open a pull request URL in the default browser.
+    @Environment(\.openURL) private var openURL
+
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List(prs) { pr in
             Button {
