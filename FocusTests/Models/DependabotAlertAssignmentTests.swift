@@ -5,12 +5,14 @@ import SwiftData
 
 // MARK: - DependabotAlertAssignmentTests
 
+/// Tests for `DependabotAlert` assignment behavior.
 @Suite("DependabotAlert Assignment Tests")
-@MainActor
+@MainActor // Required because DependabotAlert is a SwiftData @Model accessed via mainContext
 struct DependabotAlertAssignmentTests {
 
-    // MARK: - Helpers
+    // MARK: - Setup
 
+    /// Creates an in-memory `ModelContainer` with `SavedRepository` and `DependabotAlert` registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
@@ -19,6 +21,7 @@ struct DependabotAlertAssignmentTests {
         )
     }
 
+    /// Creates a `DependabotAlert` with representative test values.
     private func makeAlert() -> DependabotAlert {
         DependabotAlert(
             alertNumber: 1,
@@ -29,19 +32,22 @@ struct DependabotAlertAssignmentTests {
         )
     }
 
-    // MARK: - Tests
+    // MARK: - assignedLogins
 
+    /// Verifies that a newly created alert has no assigned logins.
     @Test func defaultAssignedLoginsIsEmpty() {
         let alert = makeAlert()
         #expect(alert.assignedLogins.isEmpty)
     }
 
+    /// Verifies that assigned logins can be set and read back.
     @Test func canSetAssignedLogins() {
         let alert = makeAlert()
         alert.assignedLogins = ["alice", "bob"]
         #expect(alert.assignedLogins == ["alice", "bob"])
     }
 
+    /// Verifies that assigned logins can be cleared after being set.
     @Test func canClearAssignedLogins() {
         let alert = makeAlert()
         alert.assignedLogins = ["alice"]
@@ -49,6 +55,7 @@ struct DependabotAlertAssignmentTests {
         #expect(alert.assignedLogins.isEmpty)
     }
 
+    /// Verifies that assigned logins round-trip correctly through SwiftData persistence.
     @Test func assignedLoginsPersistInSwiftData() throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -68,6 +75,7 @@ struct DependabotAlertAssignmentTests {
         #expect(fetched[0].assignedLogins == ["carol", "dave"])
     }
 
+    /// Verifies that setting assigned logins does not modify other alert fields.
     @Test func assignedLoginsDoNotAffectOtherFields() {
         let alert = makeAlert()
         alert.assignedLogins = ["eve"]
