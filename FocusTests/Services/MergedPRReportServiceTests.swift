@@ -2,15 +2,20 @@ import Foundation
 import Testing
 @testable import Focus
 
+/// Tests for `MergedPRReportService`.
 @Suite("MergedPRReportService Tests")
 struct MergedPRReportServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    // MARK: - Setup
+
+    /// Creates a `MergedPRReportService` wired to the shared `MockHTTPClient`.
     private func makeService() -> MergedPRReportService {
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return MergedPRReportService(graphQL: graphQL)
     }
 
+    /// Creates a JSON response string with the given PR nodes and pagination metadata.
     private func makeResponse(nodes: [String], hasNextPage: Bool = false, endCursor: String? = nil) -> String {
         let cursor = endCursor.map { "\"\($0)\"" } ?? "null"
         return """
@@ -28,6 +33,7 @@ struct MergedPRReportServiceTests {
         """
     }
 
+    /// Creates a JSON fragment representing a single merged PR node.
     private func prNode(number: Int, title: String, mergedAt: String, login: String, url: String, repo: String) -> String {
         """
         {
@@ -41,8 +47,9 @@ struct MergedPRReportServiceTests {
         """
     }
 
-    // MARK: - Empty repos guard
+    // MARK: - fetchMergedPRs
 
+    /// Verifies that passing an empty repository list returns an empty result without making a network request.
     @Test func emptyRepositoriesReturnsEmptyDictWithoutCallingAPI() async throws {
         // No mock response set — if the API were called, MockHTTPClient would fatalError.
         let result = try await makeService().fetchMergedPRs(for: [], on: Date())
@@ -50,8 +57,7 @@ struct MergedPRReportServiceTests {
         #expect(mockHTTP.lastRequest == nil)
     }
 
-    // MARK: - Successful fetch parses fields correctly
-
+    /// Verifies that all fields of a single merged PR are decoded and mapped correctly.
     @Test func parsesSinglePRFieldsCorrectly() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: [
             prNode(
@@ -88,8 +94,7 @@ struct MergedPRReportServiceTests {
         #expect(components.hour == 14)
     }
 
-    // MARK: - Grouping by repo
-
+    /// Verifies that PRs from multiple repositories are grouped under their respective `nameWithOwner` keys.
     @Test func groupsPRsByRepo() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: [
             prNode(number: 1, title: "PR A", mergedAt: "2026-04-06T10:00:00Z", login: "alice", url: "https://github.com/acme/foo/pull/1", repo: "acme/foo"),
@@ -112,8 +117,7 @@ struct MergedPRReportServiceTests {
         #expect(barPRs.first?.number == 2)
     }
 
-    // MARK: - Sorting within repo
-
+    /// Verifies that PRs within a repository are sorted by `mergedAt` in ascending order.
     @Test func sortsPRsByMergedAtAscending() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: [
             prNode(number: 10, title: "Later",   mergedAt: "2026-04-06T20:00:00Z", login: "a", url: "https://github.com/acme/repo/pull/10", repo: "acme/repo"),
@@ -131,8 +135,7 @@ struct MergedPRReportServiceTests {
         #expect(prs[1].number == 10)
     }
 
-    // MARK: - Non-PR nodes are skipped
-
+    /// Verifies that non-PR nodes in the search results are silently filtered out.
     @Test func nonPRNodesAreFilteredOut() async throws {
         // A node with all-nil fields represents a non-PR search result (e.g. an Issue).
         let nilNode = "{}"
@@ -151,8 +154,7 @@ struct MergedPRReportServiceTests {
         #expect(prs.first?.number == 5)
     }
 
-    // MARK: - Query variable contains correct date and repo qualifiers
-
+    /// Verifies that the GraphQL query string includes the correct date and repo qualifiers for the given inputs.
     @Test func queryContainsCorrectDateAndRepoQualifiers() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: []))
 
@@ -177,6 +179,7 @@ struct MergedPRReportServiceTests {
         #expect(q.contains("is:merged"))
     }
 
+    /// Verifies that the query string includes a `repo:` qualifier for each repository in the input list.
     @Test func queryIncludesAllSavedRepos() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: []))
 
@@ -194,8 +197,7 @@ struct MergedPRReportServiceTests {
         #expect(q.contains("repo:acme/bar"))
     }
 
-    // MARK: - Empty response
-
+    /// Verifies that a response with no nodes returns an empty result dictionary.
     @Test func emptyNodesReturnsEmptyDict() async throws {
         mockHTTP.setSuccess(json: makeResponse(nodes: []))
 
@@ -207,8 +209,7 @@ struct MergedPRReportServiceTests {
         #expect(result.isEmpty)
     }
 
-    // MARK: - Network error propagates
-
+    /// Verifies that a network-level error is propagated to the caller.
     @Test func throwsOnNetworkError() async throws {
         mockHTTP.setFailure(URLError(.notConnectedToInternet))
 
@@ -220,8 +221,7 @@ struct MergedPRReportServiceTests {
         }
     }
 
-    // MARK: - GraphQL errors propagate
-
+    /// Verifies that a GraphQL error response is surfaced as a `GitHubError`.
     @Test func throwsOnGraphQLError() async throws {
         mockHTTP.setSuccess(json: """
             {
@@ -238,8 +238,7 @@ struct MergedPRReportServiceTests {
         }
     }
 
-    // MARK: - Paging
-
+    /// Verifies that all pages are fetched until the response indicates no further pages.
     @Test func fetchesAllPagesUntilHasNextPageIsFalse() async throws {
         // Page 1: two PRs, more pages available.
         mockHTTP.enqueueSuccess(json: makeResponse(
@@ -268,6 +267,7 @@ struct MergedPRReportServiceTests {
         #expect(prs.map(\.number) == [1, 2, 3])
     }
 
+    /// Verifies that the second page request includes the cursor returned by the first page.
     @Test func secondPageRequestIncludesAfterCursor() async throws {
         mockHTTP.enqueueSuccess(json: makeResponse(
             nodes: [prNode(number: 1, title: "PR 1", mergedAt: "2026-04-06T08:00:00Z", login: "alice", url: "https://github.com/acme/repo/pull/1", repo: "acme/repo")],
