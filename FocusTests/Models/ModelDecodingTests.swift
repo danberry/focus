@@ -2,14 +2,20 @@ import Testing
 import Foundation
 @testable import Focus
 
+/// Tests for model JSON decoding.
 @Suite("Model Decoding Tests")
 struct ModelDecodingTests {
+
+    /// A JSON decoder configured with snake_case key conversion for GitHub API responses.
     private let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase
         return d
     }()
 
+    // MARK: - GitHubUser
+
+    /// Verifies that a fully populated user payload decodes all fields correctly.
     @Test func decodesGitHubUser() throws {
         let json = """
             {
@@ -33,6 +39,7 @@ struct ModelDecodingTests {
         #expect(user.company == "GitHub")
     }
 
+    /// Verifies that optional fields decode as `nil` when the API returns null.
     @Test func decodesGitHubUserWithNulls() throws {
         let json = """
             {
@@ -56,6 +63,9 @@ struct ModelDecodingTests {
         #expect(user.publicRepos == nil)
     }
 
+    // MARK: - GitHubRepository
+
+    /// Verifies that a repository payload with nested language and owner objects decodes correctly.
     @Test func decodesGitHubRepository() throws {
         let json = """
             {
@@ -81,6 +91,9 @@ struct ModelDecodingTests {
         #expect(repo.owner?.login == "octocat")
     }
 
+    // MARK: - GitHubTeam
+
+    /// Verifies that a team payload with member and repo counts decodes correctly.
     @Test func decodesGitHubTeam() throws {
         let json = """
             {
@@ -101,6 +114,9 @@ struct ModelDecodingTests {
         #expect(team.membersCount == 25)
     }
 
+    // MARK: - GitHubOrganization
+
+    /// Verifies that an organization payload decodes the node ID into the `id` field.
     @Test func decodesGitHubOrganization() throws {
         let json = """
             {
