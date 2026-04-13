@@ -3,16 +3,19 @@ import Testing
 import SwiftData
 @testable import Focus
 
+/// Tests for ``ContributionService``.
 @Suite("ContributionService Tests")
-@MainActor
+@MainActor // Required because ContributionService.syncContributions is @MainActor
 struct ContributionServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    /// Creates a `ContributionService` wired to the shared `MockHTTPClient`.
     private func makeService() -> ContributionService {
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return ContributionService(graphQL: graphQL)
     }
 
+    /// Creates an in-memory `ModelContainer` with the contribution model types registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
@@ -21,6 +24,7 @@ struct ContributionServiceTests {
         )
     }
 
+    /// Builds a minimal GraphQL contribution response JSON string with configurable contribution counts.
     private func makeResponse(commits: Int = 10, prs: Int = 3, reviews: Int = 2, issues: Int = 1) -> String {
         """
         {
@@ -48,8 +52,7 @@ struct ContributionServiceTests {
         """
     }
 
-    // MARK: - syncContributions creates record
-
+    /// Verifies that a successful sync creates a contribution record with the correct field values.
     @Test func syncContributionsCreatesRecord() async throws {
         mockHTTP.setSuccess(json: makeResponse(commits: 10, prs: 3, reviews: 2, issues: 1))
 
@@ -70,8 +73,7 @@ struct ContributionServiceTests {
         #expect(record.issues == 1)
     }
 
-    // MARK: - Updates denormalized contributionCount
-
+    /// Verifies that a successful sync updates the member's denormalized contribution count.
     @Test func syncContributionsUpdatesContributionCount() async throws {
         mockHTTP.setSuccess(json: makeResponse(commits: 10, prs: 3, reviews: 2, issues: 1))
 
@@ -86,8 +88,7 @@ struct ContributionServiceTests {
         #expect(member.totalContributions == 16)
     }
 
-    // MARK: - Full-replace sync
-
+    /// Verifies that a second sync replaces previously persisted contributions rather than appending.
     @Test func syncContributionsReplacesExistingRecord() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -116,8 +117,7 @@ struct ContributionServiceTests {
         #expect(member.contributionCount == 8)
     }
 
-    // MARK: - Silent failure keeps existing data
-
+    /// Verifies that a 403 response leaves existing contributions and count unchanged.
     @Test func syncContributionsKeepsExistingOnNetworkError() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -140,6 +140,7 @@ struct ContributionServiceTests {
         #expect(member.contributionCount == 10)
     }
 
+    /// Verifies that a GraphQL validation error leaves existing contributions and count unchanged.
     @Test func syncContributionsKeepsExistingOnGraphQLError() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -170,8 +171,7 @@ struct ContributionServiceTests {
         #expect(member.contributionCount == 4)
     }
 
-    // MARK: - Null user in response
-
+    /// Verifies that a null user in the response creates no record and leaves contribution count unchanged.
     @Test func syncContributionsHandlesNullUser() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -192,8 +192,7 @@ struct ContributionServiceTests {
         #expect(member.contributionCount == 0)
     }
 
-    // MARK: - Sets period dates
-
+    /// Verifies that the synced record's period and fetch dates are set to approximately the current time and one year prior.
     @Test func syncContributionsSetsApproximatePeriod() async throws {
         mockHTTP.setSuccess(json: makeResponse())
 
@@ -222,8 +221,7 @@ struct ContributionServiceTests {
         #expect(record.fetchedAt <= after)
     }
 
-    // MARK: - Sets back-reference
-
+    /// Verifies that the synced contribution record's back-reference points to the owning member.
     @Test func syncContributionsSetsBackReference() async throws {
         mockHTTP.setSuccess(json: makeResponse())
 
@@ -238,8 +236,7 @@ struct ContributionServiceTests {
         #expect(record.member === member)
     }
 
-    // MARK: - Uses GraphQL endpoint
-
+    /// Verifies that contribution data is fetched from the GitHub GraphQL endpoint.
     @Test func syncContributionsUsesGraphQLEndpoint() async throws {
         mockHTTP.setSuccess(json: makeResponse())
 
@@ -255,8 +252,7 @@ struct ContributionServiceTests {
         #expect(url?.path == "/graphql")
     }
 
-    // MARK: - Multi-member sync (pattern used by BackgroundSyncManager.syncAllContributions)
-
+    /// Verifies that members without a GitHub login are skipped during a multi-member sync loop.
     @Test func syncAllSkipsMembersWithoutGitHubLogin() async throws {
         mockHTTP.setSuccess(json: makeResponse(commits: 5, prs: 1, reviews: 0, issues: 0))
 
@@ -278,6 +274,7 @@ struct ContributionServiceTests {
         #expect(unlinked.contributionCount == 0)
     }
 
+    /// Verifies that each linked member receives independent contribution data during a multi-member sync.
     @Test func syncAllSyncsEachLinkedMemberIndependently() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -302,8 +299,7 @@ struct ContributionServiceTests {
         #expect(bob.contributions.first?.commits == 3)
     }
 
-    // MARK: - Zero contributions
-
+    /// Verifies that a response with all-zero counts creates a record with zero values and a zero contribution count.
     @Test func syncContributionsHandlesZeroContributions() async throws {
         mockHTTP.setSuccess(json: makeResponse(commits: 0, prs: 0, reviews: 0, issues: 0))
 
@@ -323,8 +319,7 @@ struct ContributionServiceTests {
         #expect(record.issues == 0)
     }
 
-    // MARK: - Single organization ID
-
+    /// Verifies that contributions are fetched and persisted correctly when a single organization ID is provided.
     @Test func syncContributionsWithOneOrgUsesOrgQuery() async throws {
         mockHTTP.setSuccess(json: makeResponse(commits: 4, prs: 1, reviews: 0, issues: 1))
 
@@ -345,8 +340,7 @@ struct ContributionServiceTests {
         #expect(member.contributionCount == 6)
     }
 
-    // MARK: - Multiple organization IDs (aggregation)
-
+    /// Verifies that contribution totals are summed across multiple organization IDs into a single record.
     @Test func syncContributionsAggregatesAcrossOrganizations() async throws {
         // Two orgs: first returns commits=5, prs=2; second returns commits=3, issues=1.
         mockHTTP.enqueueSuccess(json: makeResponse(commits: 5, prs: 2, reviews: 0, issues: 0))
@@ -370,6 +364,7 @@ struct ContributionServiceTests {
         #expect(member.contributionCount == 11)
     }
 
+    /// Verifies that daily contribution counts for the same date are summed across multiple organization IDs.
     @Test func syncContributionsAggregatesDailyCountsAcrossOrganizations() async throws {
         // Two orgs both have activity on 2025-04-05 — their daily counts should be summed.
         let org1Response = """
@@ -428,6 +423,7 @@ struct ContributionServiceTests {
         #expect(day.count == 5)
     }
 
+    /// Verifies that a null-user response for one organization is skipped and other organizations' data is used.
     @Test func syncContributionsSkipsOrgWithNullUser() async throws {
         // First org returns null user; second org has real data — only second counts.
         let nullUserResponse = """
@@ -451,6 +447,7 @@ struct ContributionServiceTests {
         #expect(member.contributionCount == 8)
     }
 
+    /// Verifies that existing contributions are preserved when all organization queries return null users.
     @Test func syncContributionsKeepsExistingWhenAllOrgsReturnNullUser() async throws {
         let container = try makeContainer()
         let context = container.mainContext
