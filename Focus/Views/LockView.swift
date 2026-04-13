@@ -2,9 +2,17 @@ import SwiftUI
 
 // MARK: - LockView
 
+/// Displays a lock screen prompting the user to authenticate with Face ID to access their GitHub token.
 struct LockView: View {
+
+    // MARK: - Properties
+
+    /// The authentication service, used to trigger Face ID and load the stored token.
     @Environment(AuthenticationService.self) private var authService
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
