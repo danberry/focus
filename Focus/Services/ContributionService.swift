@@ -3,16 +3,33 @@ import SwiftData
 
 // MARK: - ContributionService
 
+/// Fetches and persists GitHub contribution data for team members.
+///
+/// `ContributionService` operates in two modes:
+/// - **Global**: fetches contributions across all repositories the member has contributed to.
+/// - **Organization-scoped**: fetches contributions scoped to the tracked organizations, issuing
+///   one GraphQL query per org and aggregating the results.
+///
+/// All network calls go through the injected ``GraphQLClient``.
 struct ContributionService: Sendable {
+
+    // MARK: - Properties
+
+    /// The GraphQL client used to execute contribution queries.
     private let graphQL: GraphQLClient
 
+    // MARK: - Init
+
+    /// Creates a new `ContributionService`.
+    ///
+    /// - Parameter graphQL: The client used to execute GitHub GraphQL queries.
     init(graphQL: GraphQLClient) {
         self.graphQL = graphQL
     }
 
     // MARK: - Sync
 
-    /// Syncs contributions for a single member.
+    /// Syncs contributions for a single member over the trailing 365 days.
     ///
     /// When `organizationIDs` is non-empty the query is issued once per organization (using each
     /// org's GitHub global node ID) and the results are aggregated. This scopes contributions to
@@ -20,6 +37,15 @@ struct ContributionService: Sendable {
     ///
     /// When `organizationIDs` is empty the global query is used, returning contributions across
     /// all repositories the member has contributed to.
+    ///
+    /// Existing ``MemberContribution`` and ``DailyContribution`` records for the member are
+    /// replaced on every successful sync. Errors are silently discarded to preserve existing data.
+    ///
+    /// - Parameters:
+    ///   - login: The member's GitHub login.
+    ///   - member: The ``Member`` SwiftData object to update.
+    ///   - organizationIDs: GitHub global node IDs of tracked organizations; pass `[]` for the global query.
+    ///   - context: The SwiftData model context used for persistence.
     @MainActor
     func syncContributions(
         login: String,
@@ -114,6 +140,7 @@ struct ContributionService: Sendable {
 
     // MARK: - Private
 
+    /// Merges daily contribution counts from a calendar response into a date-keyed accumulator.
     private func accumulateDailyCounts(
         from calendar: ContributionsResponse.ContributionCalendar,
         into dailyCounts: inout [String: Int]
@@ -125,6 +152,7 @@ struct ContributionService: Sendable {
         }
     }
 
+    /// Replaces all existing ``DailyContribution`` records for the member with the given date-keyed counts.
     @MainActor
     private func syncDailyContributions(
         from dailyCounts: [String: Int],
@@ -150,31 +178,59 @@ struct ContributionService: Sendable {
     }
 }
 
-// MARK: - Response types (private)
+// MARK: - API Response Types
 
+/// A GitHub GraphQL API response containing a user's contribution data.
 private struct ContributionsResponse: Decodable, Sendable {
+
+    /// The user node returned by the query, or `nil` if the login was not found.
     let user: UserNode?
 
+    /// A GitHub user node containing contribution data.
     struct UserNode: Decodable, Sendable {
+
+        /// The contribution collection for the requested time window.
         let contributionsCollection: Collection
 
+        /// A collection of GitHub contribution counts and calendar data for a time period.
         struct Collection: Decodable, Sendable {
+
+            /// The total number of commit contributions in the period.
             let totalCommitContributions: Int
+
+            /// The total number of pull request contributions in the period.
             let totalPullRequestContributions: Int
+
+            /// The total number of pull request review contributions in the period.
             let totalPullRequestReviewContributions: Int
+
+            /// The total number of issue contributions in the period.
             let totalIssueContributions: Int
+
+            /// The contribution calendar containing per-day counts.
             let contributionCalendar: ContributionCalendar
         }
     }
 
+    /// A calendar of daily contribution counts organized by week.
     struct ContributionCalendar: Decodable, Sendable {
+
+        /// The weeks in this calendar, each containing one or more days.
         let weeks: [Week]
 
+        /// A single week of contribution data.
         struct Week: Decodable, Sendable {
+
+            /// The individual days within this week.
             let contributionDays: [Day]
 
+            /// A single day's contribution record.
             struct Day: Decodable, Sendable {
+
+                /// The date of this contribution day, formatted as `"yyyy-MM-dd"`.
                 let date: String
+
+                /// The total number of contributions on this day.
                 let contributionCount: Int
             }
         }
