@@ -2,19 +2,39 @@ import Foundation
 
 // MARK: - CodeownerEmailService
 
+/// Resolves GitHub CODEOWNERS handles to user logins and email addresses.
+///
+/// `CodeownerEmailService` expands both individual handles (`@username`) and team handles
+/// (`@org/team-slug`) by fetching team membership via the GitHub REST API. All resolutions
+/// run concurrently. Network errors are silently discarded.
+///
+/// All network calls go through the injected ``RESTClient``.
 struct CodeownerEmailService: Sendable {
+
+    // MARK: - Properties
+
+    /// The REST client used for all GitHub API requests.
     private let rest: RESTClient
 
+    // MARK: - Init
+
+    /// Creates a new service backed by the given REST client.
+    ///
+    /// - Parameter rest: The client used for GitHub REST API calls.
     init(rest: RESTClient) {
         self.rest = rest
     }
 
     // MARK: - Login Resolution
 
-    /// Resolves the given CODEOWNERS handles to individual user logins.
-    /// Individual handles (`@username`) → their login directly.
-    /// Team handles (`@org/team-slug`) → expand via `GET /orgs/{org}/teams/{slug}/members`.
-    /// Returns deduplicated, sorted logins. Network errors are silently ignored.
+    /// Resolves CODEOWNERS handles to deduplicated, sorted GitHub user logins.
+    ///
+    /// Individual handles (`@username`) resolve directly to their login. Team handles
+    /// (`@org/team-slug`) are expanded via `GET /orgs/{org}/teams/{slug}/members`.
+    /// Network errors for any handle are silently discarded.
+    ///
+    /// - Parameter handles: CODEOWNERS-formatted owner handles, with or without a leading `@`.
+    /// - Returns: A sorted, deduplicated list of GitHub user logins.
     func resolveLogins(handles: [String]) async -> [String] {
         var logins = Set<String>()
         await withTaskGroup(of: [String].self) { group in
@@ -32,10 +52,16 @@ struct CodeownerEmailService: Sendable {
 
     // MARK: - Email Resolution
 
-    /// Resolves email addresses for the given CODEOWNERS handles.
-    /// Individual handles (`@username`) → `GET /users/{login}`
-    /// Team handles (`@org/team-slug`) → expand members, then look up each member's email.
-    /// Returns deduplicated, non-empty email strings. Network errors are silently ignored.
+    /// Resolves CODEOWNERS handles to deduplicated, sorted email addresses.
+    ///
+    /// Individual handles (`@username`) are resolved via `GET /users/{login}`. Team handles
+    /// (`@org/team-slug`) are expanded to their member list, then each member's email is fetched
+    /// individually. Empty and missing email addresses are excluded. Network errors are silently discarded.
+    ///
+    /// - Parameters:
+    ///   - handles: CODEOWNERS-formatted owner handles, with or without a leading `@`.
+    ///   - organization: The owning organization context for team membership lookups.
+    /// - Returns: A sorted, deduplicated list of non-empty email addresses.
     func resolveEmails(handles: [String], organization: String) async -> [String] {
         var emails = Set<String>()
         await withTaskGroup(of: [String].self) { group in
@@ -53,6 +79,9 @@ struct CodeownerEmailService: Sendable {
 
     // MARK: - Private
 
+    /// Resolves a single handle to one or more GitHub user logins.
+    ///
+    /// Returns `[login]` for individual handles and expands team handles via ``resolveTeamToLogins(_:)``.
     private func resolveHandleToLogins(_ handle: String) async -> [String] {
         let login = handle.hasPrefix("@") ? String(handle.dropFirst()) : handle
         if login.contains("/") {
@@ -62,6 +91,9 @@ struct CodeownerEmailService: Sendable {
         }
     }
 
+    /// Fetches all member logins for a team specified as `org/team-slug`.
+    ///
+    /// Returns an empty array on any network or decoding error.
     private func resolveTeamToLogins(_ orgAndSlug: String) async -> [String] {
         let parts = orgAndSlug.split(separator: "/", maxSplits: 1)
         guard parts.count == 2 else { return [] }
@@ -77,6 +109,9 @@ struct CodeownerEmailService: Sendable {
         }
     }
 
+    /// Resolves a single handle to one or more email addresses.
+    ///
+    /// Delegates individual handles to ``fetchUserEmail(login:)`` and team handles to ``resolveTeam(_:organization:)``.
     private func resolveHandle(_ handle: String, organization: String) async -> [String] {
         let login = handle.hasPrefix("@") ? String(handle.dropFirst()) : handle
         if login.contains("/") {
@@ -89,6 +124,9 @@ struct CodeownerEmailService: Sendable {
         }
     }
 
+    /// Fetches email addresses for all members of a team specified as `org/team-slug`.
+    ///
+    /// Member email lookups run concurrently. Returns an empty array on any team membership error.
     private func resolveTeam(_ orgAndSlug: String, organization: String) async -> [String] {
         let parts = orgAndSlug.split(separator: "/", maxSplits: 1)
         guard parts.count == 2 else { return [] }
@@ -116,6 +154,9 @@ struct CodeownerEmailService: Sendable {
         return emails
     }
 
+    /// Fetches the public email address for a GitHub user.
+    ///
+    /// Returns `nil` on any network error or when the profile email is empty.
     private func fetchUserEmail(login: String) async -> String? {
         do {
             let profile: UserProfileResponse = try await rest.get(
@@ -128,9 +169,12 @@ struct CodeownerEmailService: Sendable {
     }
 }
 
-// MARK: - UserProfileResponse
+// MARK: - API Response Types
 
+/// A GitHub REST API user profile response.
 private struct UserProfileResponse: Decodable, Sendable {
+    /// The user's GitHub login handle.
     let login: String
+    /// The user's public email address, or `nil` if not set on their profile.
     let email: String?
 }
