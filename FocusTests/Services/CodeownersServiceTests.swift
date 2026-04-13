@@ -5,16 +5,21 @@ import SwiftData
 
 // MARK: - CodeownersServiceTests
 
+/// Tests for `CodeownersService`.
 @Suite("CodeownersService Tests")
-@MainActor
+@MainActor // Required because syncCodeowners is @MainActor
 struct CodeownersServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    // MARK: - Setup
+
+    /// Creates a `CodeownersService` wired to the shared `MockHTTPClient`.
     private func makeService() -> CodeownersService {
         let rest = RESTClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return CodeownersService(rest: rest)
     }
 
+    /// Creates an in-memory `ModelContainer` with the relevant model types registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: SavedRepository.self, configurations: config)
@@ -28,8 +33,9 @@ struct CodeownersServiceTests {
         """
     }
 
-    // MARK: - Sync creates records
+    // MARK: - syncCodeowners
 
+    /// Verifies that syncing a CODEOWNERS file creates one record per unique owner handle.
     @Test func syncCodeownersCreatesRecords() async throws {
         let content = """
         * @alice @bob
@@ -50,6 +56,7 @@ struct CodeownersServiceTests {
         #expect(handles.contains("@bob"))
     }
 
+    /// Verifies that the path pattern from each CODEOWNERS line is stored on the record.
     @Test func syncCodeownersPreservesPatterns() async throws {
         let content = "*.swift @alice\n"
         mockHTTP.setSuccess(json: contentsResponse(for: content))
@@ -66,6 +73,7 @@ struct CodeownersServiceTests {
         #expect(codeowner.pathPattern == "*.swift")
     }
 
+    /// Verifies that comment lines in a CODEOWNERS file are skipped and produce no records.
     @Test func syncCodeownersIgnoresCommentLines() async throws {
         let content = """
         # This is a comment
@@ -85,6 +93,7 @@ struct CodeownersServiceTests {
         #expect(repo.codeowners[0].handle == "@alice")
     }
 
+    /// Verifies that a second sync replaces previously persisted codeowners rather than appending.
     @Test func syncCodeownersReplacesExistingRecords() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -106,6 +115,7 @@ struct CodeownersServiceTests {
         #expect(repo.codeowners[0].handle == "@new-owner")
     }
 
+    /// Verifies that a non-2xx API response leaves the repository's codeowners list empty.
     @Test func syncCodeownersReturnsEmptyWhenAPIFails() async throws {
         mockHTTP.setSuccess(json: "{}", statusCode: 404)
 
@@ -119,6 +129,7 @@ struct CodeownersServiceTests {
         #expect(repo.codeowners.isEmpty)
     }
 
+    /// Verifies that the request targets the GitHub Contents API path for the repository.
     @Test func syncCodeownersUsesCorrectEndpoint() async throws {
         mockHTTP.setSuccess(json: contentsResponse(for: "* @alice\n"))
 
@@ -133,6 +144,7 @@ struct CodeownersServiceTests {
         #expect(path.hasPrefix("/repos/octocat/hello-world/contents/"))
     }
 
+    /// Verifies that a team slug (org/team format) is stored correctly and flagged as a team owner.
     @Test func syncCodeownersHandlesTeamOwners() async throws {
         mockHTTP.setSuccess(json: contentsResponse(for: "* @acme/engineers\n"))
 
@@ -148,6 +160,7 @@ struct CodeownersServiceTests {
         #expect(codeowner.isTeam == true)
     }
 
+    /// Verifies that each synced codeowner record has its repository relationship set.
     @Test func syncCodeownersSetsSetsRepositoryRelationship() async throws {
         mockHTTP.setSuccess(json: contentsResponse(for: "* @alice\n"))
 
@@ -162,6 +175,7 @@ struct CodeownersServiceTests {
         #expect(codeowner.repository === repo)
     }
 
+    /// Verifies that a line with only a handle and no explicit pattern defaults to the wildcard pattern.
     @Test func syncCodeownersHandlesHandleWithNoPattern() async throws {
         // CODEOWNERS file with only a handle and no explicit path pattern
         let content = "@acme/mobile-team\n"
@@ -180,6 +194,7 @@ struct CodeownersServiceTests {
         #expect(codeowner.isTeam == true)
     }
 
+    /// Verifies that a line with only a path pattern and no owner handles produces no records.
     @Test func syncCodeownersHandlesPatternWithoutOwners() async throws {
         // A line with only a path pattern and no @ handles should produce no records
         let content = """
