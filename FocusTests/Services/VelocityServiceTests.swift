@@ -3,16 +3,21 @@ import Testing
 import SwiftData
 @testable import Focus
 
+/// Tests for `VelocityService`.
 @Suite("VelocityService Tests")
-@MainActor
+@MainActor // Required because syncVelocity is @MainActor
 struct VelocityServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    // MARK: - Setup
+
+    /// Creates a `VelocityService` wired to the shared `MockHTTPClient`.
     private func makeService() -> VelocityService {
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return VelocityService(graphQL: graphQL)
     }
 
+    /// Creates an in-memory `ModelContainer` with velocity model types registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
@@ -21,6 +26,7 @@ struct VelocityServiceTests {
         )
     }
 
+    /// Creates a JSON response string with configurable merged PR counts for all four velocity periods.
     private func makeResponse(
         w7c: Int = 5, w7p: Int = 3,
         d30c: Int = 20, d30p: Int = 15,
@@ -43,8 +49,9 @@ struct VelocityServiceTests {
         """
     }
 
-    // MARK: - syncVelocity creates four records
+    // MARK: - syncVelocity
 
+    /// Verifies that syncing creates exactly four velocity records, one per period.
     @Test func syncVelocityCreatesFourRecords() async throws {
         mockHTTP.setSuccess(json: makeResponse())
 
@@ -60,8 +67,7 @@ struct VelocityServiceTests {
         #expect(periods == ["7D", "30D", "90D", "YTD"])
     }
 
-    // MARK: - Counts are stored correctly
-
+    /// Verifies that current and prior counts are stored correctly for each period.
     @Test func syncVelocityStoresCorrectCounts() async throws {
         mockHTTP.setSuccess(json: makeResponse(w7c: 5, w7p: 3, d30c: 20, d30p: 15, d90c: 60, d90p: 55, ytdC: 80, ytdP: 70))
 
@@ -81,8 +87,7 @@ struct VelocityServiceTests {
         #expect(recordYtd.priorCount == 70)
     }
 
-    // MARK: - Full-replace sync
-
+    /// Verifies that a second sync replaces previously persisted records rather than appending.
     @Test func syncVelocityFullReplaces() async throws {
         mockHTTP.setSuccess(json: makeResponse(d30c: 99, d30p: 88))
 
@@ -105,8 +110,7 @@ struct VelocityServiceTests {
         #expect(record.priorCount == 31)
     }
 
-    // MARK: - Silent failure preserves existing data
-
+    /// Verifies that a network error leaves existing velocity records untouched.
     @Test func syncVelocitySilentlyFailsOnError() async throws {
         mockHTTP.setSuccess(json: makeResponse(d30c: 10, d30p: 8))
 
@@ -128,39 +132,45 @@ struct VelocityServiceTests {
         #expect(record.currentCount == 10)
     }
 
-    // MARK: - VelocityComparison trend logic
+    // MARK: - VelocityComparison
 
+    /// Verifies that a higher current count produces an `.up` trend with the correct delta.
     @Test func trendUp() {
         let c = VelocityComparison(current: 10, prior: 7)
         #expect(c.trend == .up)
         #expect(c.delta == 3)
     }
 
+    /// Verifies that a lower current count produces a `.down` trend with the correct delta.
     @Test func trendDown() {
         let c = VelocityComparison(current: 4, prior: 9)
         #expect(c.trend == .down)
         #expect(c.delta == -5)
     }
 
+    /// Verifies that equal counts produce a `.flat` trend with zero delta.
     @Test func trendFlat() {
         let c = VelocityComparison(current: 6, prior: 6)
         #expect(c.trend == .flat)
         #expect(c.delta == 0)
     }
 
+    /// Verifies that `percentChange` is `nil` when the prior period had zero merges.
     @Test func percentChangeNilWhenPriorIsZero() {
         let c = VelocityComparison(current: 5, prior: 0)
         #expect(c.percentChange == nil)
     }
 
+    /// Verifies that `percentChange` is calculated correctly when prior is non-zero.
     @Test func percentChangeCalculated() throws {
         let c = VelocityComparison(current: 15, prior: 10)
         let pct = try #require(c.percentChange)
         #expect(pct == 50.0)
     }
 
-    // MARK: - Date window math
+    // MARK: - buildDateWindows
 
+    /// Verifies that prior windows cover the same calendar dates one year back.
     @Test func dateWindowsPriorIsSameCalendarDatesOneYearBack() throws {
         let service = makeService()
         // Use a fixed "today" so the test is deterministic
@@ -187,6 +197,7 @@ struct VelocityServiceTests {
         #expect(windows.ytd.prior   == "2025-01-01..2025-04-06")
     }
 
+    /// Verifies that the YTD window is a single-day range when today is January 1st.
     @Test func dateWindowsYTDOnJanFirst() throws {
         let service = makeService()
         var cal = Calendar(identifier: .gregorian)
