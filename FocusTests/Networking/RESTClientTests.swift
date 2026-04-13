@@ -2,14 +2,17 @@ import Testing
 import Foundation
 @testable import Focus
 
+/// Tests for ``RESTClient``.
 @Suite("RESTClient Tests")
 struct RESTClientTests {
     let mockHTTP = MockHTTPClient()
 
+    /// Creates a ``RESTClient`` wired to the shared ``MockHTTPClient``.
     private func makeClient() -> RESTClient {
         RESTClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
     }
 
+    /// Verifies that `get` attaches the Authorization, Accept, and GitHub API version headers to every request.
     @Test func sendsCorrectHeaders() async throws {
         mockHTTP.setSuccess(json: "[]")
 
@@ -22,6 +25,7 @@ struct RESTClientTests {
         #expect(request.value(forHTTPHeaderField: "X-GitHub-Api-Version") == "2022-11-28")
     }
 
+    /// Verifies that `get` decodes a JSON array response into the expected model array.
     @Test func decodesArrayResponse() async throws {
         mockHTTP.setSuccess(json: """
             [{"id": 1, "name": "Engineering", "slug": "engineering", "description": "Eng team", "privacy": "closed", "members_count": 10, "repos_count": 5}]
@@ -34,6 +38,7 @@ struct RESTClientTests {
         #expect(teams[0].slug == "engineering")
     }
 
+    /// Verifies that `get` throws a ``GitHubError`` when the server responds with a 404 status code.
     @Test func throwsNotFoundOn404() async throws {
         mockHTTP.setSuccess(json: "{\"message\": \"Not Found\"}", statusCode: 404)
 
