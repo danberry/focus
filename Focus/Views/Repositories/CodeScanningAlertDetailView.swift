@@ -2,9 +2,17 @@ import SwiftUI
 
 // MARK: - CodeScanningAlertDetailView
 
+/// Displays details for a single code scanning alert.
 struct CodeScanningAlertDetailView: View {
+
+    // MARK: - Properties
+
+    /// The code scanning alert to display.
     let alert: CodeScanningAlert
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List {
             // MARK: Overview
