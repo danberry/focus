@@ -2,9 +2,17 @@ import SwiftUI
 
 // MARK: - AllCodeScanningAlertsView
 
+/// Displays a list of code scanning alerts for a repository.
 struct AllCodeScanningAlertsView: View {
+
+    // MARK: - Properties
+
+    /// The code scanning alerts to display.
     let alerts: [CodeScanningAlert]
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List {
             ForEach(alerts) { alert in
