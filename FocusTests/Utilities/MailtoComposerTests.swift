@@ -4,28 +4,33 @@ import Foundation
 
 // MARK: - MailtoComposerTests
 
+/// Tests for `MailtoComposer`.
 @Suite("MailtoComposer Tests")
 struct MailtoComposerTests {
 
     // MARK: - url(for:)
 
+    /// Verifies that `url(for:)` returns `nil` when the draft has no recipients.
     @Test func urlIsNilWhenNoRecipients() {
         let draft = MailtoComposer.EmailDraft(recipients: [], subject: "Test", body: "Body")
         #expect(MailtoComposer.url(for: draft) == nil)
     }
 
+    /// Verifies that the generated URL uses the `mailto` scheme.
     @Test func urlSchemeIsMailto() {
         let draft = MailtoComposer.EmailDraft(recipients: ["a@example.com"], subject: "Hi", body: "Hello")
         let url = MailtoComposer.url(for: draft)
         #expect(url?.scheme == "mailto")
     }
 
+    /// Verifies that a single recipient address appears in the generated URL.
     @Test func urlContainsSingleRecipient() {
         let draft = MailtoComposer.EmailDraft(recipients: ["alice@example.com"], subject: "Hi", body: "Hello")
         let url = MailtoComposer.url(for: draft)
         #expect(url?.absoluteString.contains("alice@example.com") == true)
     }
 
+    /// Verifies that all recipient addresses appear in the generated URL when multiple are provided.
     @Test func urlContainsAllRecipients() {
         let draft = MailtoComposer.EmailDraft(
             recipients: ["alice@example.com", "bob@example.com"],
@@ -38,12 +43,14 @@ struct MailtoComposerTests {
         #expect(str.contains("bob@example.com"))
     }
 
+    /// Verifies that the subject is percent-encoded in the generated URL.
     @Test func urlContainsEncodedSubject() {
         let draft = MailtoComposer.EmailDraft(recipients: ["a@b.com"], subject: "Hello World", body: "")
         let url = MailtoComposer.url(for: draft)
         #expect(url?.query?.contains("subject=Hello%20World") == true)
     }
 
+    /// Verifies that the body parameter is present in the generated URL.
     @Test func urlContainsBody() {
         let draft = MailtoComposer.EmailDraft(recipients: ["a@b.com"], subject: "S", body: "Some body text")
         let url = MailtoComposer.url(for: draft)
@@ -52,6 +59,7 @@ struct MailtoComposerTests {
 
     // MARK: - draft(for:repository:recipients:)
 
+    /// Verifies that the draft subject includes the package name, severity, and repository display name.
     @Test func draftSubjectIncludesPackageAndSeverity() {
         let alert = makeAlert(packageName: "lodash", severity: "high")
         let repo = makeRepo(owner: "acme", name: "app", displayName: "acme/app")
@@ -61,48 +69,56 @@ struct MailtoComposerTests {
         #expect(draft.subject.contains("acme/app"))
     }
 
+    /// Verifies that the draft body includes the GHSA advisory identifier.
     @Test func draftBodyIncludesGHSAId() {
         let alert = makeAlert(ghsaId: "GHSA-1234-5678-abcd")
         let draft = MailtoComposer.draft(for: alert, repository: makeRepo(), recipients: ["a@b.com"])
         #expect(draft.body.contains("GHSA-1234-5678-abcd"))
     }
 
+    /// Verifies that the draft body includes the manifest file path.
     @Test func draftBodyIncludesManifestPath() {
         let alert = makeAlert(manifestPath: "package-lock.json")
         let draft = MailtoComposer.draft(for: alert, repository: makeRepo(), recipients: ["a@b.com"])
         #expect(draft.body.contains("package-lock.json"))
     }
 
+    /// Verifies that the draft body shows "unknown" when the manifest path is `nil`.
     @Test func draftBodyShowsUnknownWhenManifestPathIsNil() {
         let alert = makeAlert(manifestPath: nil)
         let draft = MailtoComposer.draft(for: alert, repository: makeRepo(), recipients: ["a@b.com"])
         #expect(draft.body.contains("unknown"))
     }
 
+    /// Verifies that the draft body shows "N/A" when no CVE identifier is available.
     @Test func draftBodyShowsNAWhenNoCVE() {
         let alert = makeAlert(cveId: nil)
         let draft = MailtoComposer.draft(for: alert, repository: makeRepo(), recipients: ["a@b.com"])
         #expect(draft.body.contains("N/A"))
     }
 
+    /// Verifies that the draft body includes the CVE identifier when one is present.
     @Test func draftBodyIncludesCVEWhenPresent() {
         let alert = makeAlert(cveId: "CVE-2024-0001")
         let draft = MailtoComposer.draft(for: alert, repository: makeRepo(), recipients: ["a@b.com"])
         #expect(draft.body.contains("CVE-2024-0001"))
     }
 
+    /// Verifies that the draft body shows "No fix available" when no fixed version is known.
     @Test func draftBodyShowsNoFixAvailableWhenFixVersionIsNil() {
         let alert = makeAlert(fixVersion: nil)
         let draft = MailtoComposer.draft(for: alert, repository: makeRepo(), recipients: ["a@b.com"])
         #expect(draft.body.contains("No fix available"))
     }
 
+    /// Verifies that the draft body includes the GitHub alert detail URL.
     @Test func draftBodyIncludesGitHubLink() {
         let alert = makeAlert(htmlUrl: "https://github.com/acme/app/security/dependabot/1")
         let draft = MailtoComposer.draft(for: alert, repository: makeRepo(), recipients: ["a@b.com"])
         #expect(draft.body.contains("https://github.com/acme/app/security/dependabot/1"))
     }
 
+    /// Verifies that the draft recipients exactly match the input array.
     @Test func draftRecipientsMatchInput() {
         let recipients = ["alice@example.com", "bob@example.com"]
         let draft = MailtoComposer.draft(for: makeAlert(), repository: makeRepo(), recipients: recipients)
@@ -111,6 +127,7 @@ struct MailtoComposerTests {
 
     // MARK: - Helpers
 
+    /// Creates a `DependabotAlert` with configurable fields for use in test assertions.
     private func makeAlert(
         packageName: String = "pkg",
         severity: String = "medium",
@@ -138,6 +155,7 @@ struct MailtoComposerTests {
         )
     }
 
+    /// Creates a `SavedRepository` with configurable owner, name, and display name.
     private func makeRepo(owner: String = "acme", name: String = "app", displayName: String = "acme/app") -> SavedRepository {
         SavedRepository(githubId: "1", owner: owner, name: name, displayName: displayName)
     }
