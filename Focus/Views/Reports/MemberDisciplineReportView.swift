@@ -4,9 +4,15 @@ import Charts
 
 // MARK: - MemberDisciplineReportView
 
+/// Displays team members grouped by discipline with a donut chart summary.
 struct MemberDisciplineReportView: View {
+
+    // MARK: - Properties
+
+    /// All members, sorted alphabetically by name.
     @Query(sort: \Member.name) private var members: [Member]
 
+    /// Members grouped and sorted by discipline name, with "Unassigned" last.
     private var sections: [(discipline: String, members: [Member])] {
         var grouped: [String: [Member]] = [:]
         for member in members {
@@ -22,6 +28,9 @@ struct MemberDisciplineReportView: View {
             }
     }
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         Group {
             if members.isEmpty {
@@ -61,9 +70,15 @@ struct MemberDisciplineReportView: View {
 
 // MARK: - DisciplineBreakdownChartView
 
+/// A donut chart and legend showing member counts by discipline.
 private struct DisciplineBreakdownChartView: View {
+
+    // MARK: - Properties
+
+    /// The discipline sections to render, each with a name and member list.
     let sections: [(discipline: String, members: [Member])]
 
+    /// The color palette used to differentiate disciplines in the chart and legend.
     private static let palette: [Color] = [
         .accentedBlue,
         .accentedGreen,
@@ -75,10 +90,15 @@ private struct DisciplineBreakdownChartView: View {
         .accentedYellow,
     ]
 
+    /// The total number of members across all sections.
     private var total: Int { sections.reduce(0) { $0 + $1.members.count } }
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // MARK: Chart
             ZStack {
                 Chart(sections.indices, id: \.self) { index in
                     let section = sections[index]
@@ -106,7 +126,7 @@ private struct DisciplineBreakdownChartView: View {
                 }
             }
 
-            // Legend
+            // MARK: Legend
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(sections.indices, id: \.self) { index in
                     let section = sections[index]
