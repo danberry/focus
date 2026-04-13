@@ -3,22 +3,26 @@ import Testing
 import SwiftData
 @testable import Focus
 
+/// Tests for `BackgroundSyncManager`.
 @Suite("BackgroundSyncManager Tests")
-@MainActor
+@MainActor // Required because BackgroundSyncManager and its sync methods are @MainActor
 struct BackgroundSyncManagerTests {
 
     // MARK: - Sync intervals
 
+    /// Verifies that the security sync interval constant equals 8 hours (28 800 seconds).
     @Test("security sync interval is 8 hours")
     func securitySyncIntervalIs8Hours() {
         #expect(BackgroundSyncManager.securitySyncInterval == 8 * 60 * 60)
     }
 
+    /// Verifies that the contribution sync interval constant equals 24 hours (86 400 seconds).
     @Test("contribution sync interval is 24 hours")
     func contributionSyncIntervalIs24Hours() {
         #expect(BackgroundSyncManager.contributionSyncInterval == 24 * 60 * 60)
     }
 
+    /// Verifies that the contribution sync interval is strictly longer than the security sync interval.
     @Test("contribution sync interval is longer than security sync interval")
     func contributionIntervalLongerThanSecurity() {
         #expect(BackgroundSyncManager.contributionSyncInterval > BackgroundSyncManager.securitySyncInterval)
@@ -26,6 +30,7 @@ struct BackgroundSyncManagerTests {
 
     // MARK: - Initial state
 
+    /// Verifies that `lastContributionSyncedAt` is `nil` when no value is stored in `UserDefaults`.
     @Test("lastContributionSyncedAt starts nil when no UserDefaults value")
     func lastContributionSyncedAtStartsNil() {
         // Ensure no stale value from a prior run.
@@ -34,6 +39,7 @@ struct BackgroundSyncManagerTests {
         #expect(manager.lastContributionSyncedAt == nil)
     }
 
+    /// Verifies that `lastSyncedAt` is `nil` when no value is stored in `UserDefaults`.
     @Test("lastSyncedAt starts nil when no UserDefaults value")
     func lastSyncedAtStartsNil() {
         UserDefaults.standard.removeObject(forKey: BackgroundSyncManager.lastSyncedAtKey)
@@ -43,6 +49,7 @@ struct BackgroundSyncManagerTests {
 
     // MARK: - UserDefaults persistence
 
+    /// Verifies that a date stored in `UserDefaults` before init is surfaced as `lastContributionSyncedAt`.
     @Test("lastContributionSyncedAt is loaded from UserDefaults on init")
     func lastContributionSyncedAtLoadedFromUserDefaults() {
         let stored = Date(timeIntervalSinceNow: -3600)
@@ -54,6 +61,7 @@ struct BackgroundSyncManagerTests {
         #expect(abs(loaded.timeIntervalSince(stored)) < 0.001)
     }
 
+    /// Verifies that a date stored in `UserDefaults` before init is surfaced as `lastSyncedAt`.
     @Test("lastSyncedAt is loaded from UserDefaults on init")
     func lastSyncedAtLoadedFromUserDefaults() {
         let stored = Date(timeIntervalSinceNow: -1800)
@@ -67,6 +75,7 @@ struct BackgroundSyncManagerTests {
 
     // MARK: - syncIfNeeded short-circuit
 
+    /// Verifies that `syncIfNeeded` returns without syncing when `setup()` has not been called.
     @Test("syncIfNeeded does nothing when not set up")
     func syncIfNeededDoesNothingWhenNotSetUp() async throws {
         UserDefaults.standard.removeObject(forKey: BackgroundSyncManager.lastSyncedAtKey)
@@ -84,6 +93,7 @@ struct BackgroundSyncManagerTests {
         #expect(!manager.isSyncing)
     }
 
+    /// Verifies that `syncIfNeeded` leaves timestamps unchanged when both sync thresholds are below their limits.
     @Test("syncIfNeeded does nothing when both syncs are fresh")
     func syncIfNeededDoesNothingWhenBothFresh() async throws {
         // Seed recent timestamps so neither threshold is exceeded.
