@@ -1,15 +1,20 @@
 import Testing
 @testable import Focus
 
+/// Tests for `TeamService`.
 @Suite("TeamService Tests")
 struct TeamServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    /// Creates a `TeamService` wired to the shared `MockHTTPClient`.
     private func makeService() -> TeamService {
         let rest = RESTClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return TeamService(rest: rest)
     }
 
+    // MARK: - fetchTeams
+
+    /// Verifies that a successful response is decoded into the expected list of teams.
     @Test func fetchTeamsReturnsList() async throws {
         mockHTTP.setSuccess(json: """
             [
@@ -42,6 +47,9 @@ struct TeamServiceTests {
         #expect(teams[1].slug == "design")
     }
 
+    // MARK: - fetchTeamMembers
+
+    /// Verifies that a successful response is decoded into the expected list of members.
     @Test func fetchTeamMembersReturnsList() async throws {
         mockHTTP.setSuccess(json: """
             [
