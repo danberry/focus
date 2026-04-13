@@ -2,10 +2,16 @@ import SwiftUI
 
 // MARK: - ReportsView
 
+/// Displays the available reports for merged pull requests, team composition, and security.
 struct ReportsView: View {
+
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         NavigationStack {
             List {
+                // MARK: Merged PRs
                 NavigationLink {
                     MergedPRsTodayView()
                 } label: {
@@ -33,6 +39,7 @@ struct ReportsView: View {
                         Text("PRs merged across your saved repos this week")
                     }
                 }
+                // MARK: Members
                 NavigationLink {
                     MemberDisciplineReportView()
                 } label: {
@@ -42,6 +49,7 @@ struct ReportsView: View {
                         Text("Breakdown of members across each discipline")
                     }
                 }
+                // MARK: Security
                 NavigationLink {
                     SecurityIssuesReportView()
                 } label: {
