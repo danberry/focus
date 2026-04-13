@@ -3,22 +3,37 @@ import SwiftData
 
 // MARK: - MergedPRsYesterdayView
 
+/// Displays a report of pull requests merged across all watched repositories yesterday.
 struct MergedPRsYesterdayView: View {
+
+    // MARK: - Properties
+
+    /// The authentication service used to obtain a token for API requests.
     @Environment(AuthenticationService.self) private var authService
+
+    /// All repositories the user has saved, sorted alphabetically by display name.
     @Query(sort: \SavedRepository.displayName) private var savedRepositories: [SavedRepository]
 
+    /// Whether a data load is currently in progress.
     @State private var isLoading = false
+
+    /// The most recent error returned by the data load, or `nil` if the last load succeeded.
     @State private var error: GitHubError?
+
+    /// Merged PRs keyed by `owner/repo` slug.
     @State private var prsByRepo: [String: [MergedPR]] = [:]
 
+    /// All merged PRs across every repository, flattened into a single array.
     private var allPRs: [MergedPR] { prsByRepo.values.flatMap { $0 } }
 
+    /// Yesterday's date in UTC.
     private var yesterday: Date {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "UTC")!
         return cal.date(byAdding: .day, value: -1, to: Date())!
     }
 
+    /// A formatted long-style date string for yesterday, used as the navigation subtitle detail.
     private var dateSubtitle: String {
         let fmt = DateFormatter()
         fmt.dateStyle = .long
@@ -26,10 +41,12 @@ struct MergedPRsYesterdayView: View {
         return fmt.string(from: yesterday)
     }
 
+    /// A lookup from lowercased `owner/repo` slug to the user-facing display name.
     private var displayNameByRepo: [String: String] {
         Dictionary(uniqueKeysWithValues: savedRepositories.map { ("\($0.owner)/\($0.name)".lowercased(), $0.displayName) })
     }
 
+    /// Per-repository sections sorted alphabetically by display name, with each section's PRs sorted by merge time.
     private var repoSections: [(repoName: String, prs: [MergedPR])] {
         let lookup = displayNameByRepo
         return prsByRepo
@@ -37,6 +54,9 @@ struct MergedPRsYesterdayView: View {
             .sorted { $0.repoName < $1.repoName }
     }
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         Group {
             if isLoading && allPRs.isEmpty {
@@ -65,7 +85,7 @@ struct MergedPRsYesterdayView: View {
                                 .textCase(.uppercase)
                         }
                     }
-                    
+
                     ForEach(repoSections, id: \.repoName) { section in
                         NavigationLink(destination: RepoMergedPRsListView(repoName: section.repoName, prs: section.prs)) {
                             LabeledContent(section.repoName) {
@@ -86,8 +106,9 @@ struct MergedPRsYesterdayView: View {
         .task { await loadData() }
     }
 
-    // MARK: - Private
+    // MARK: - Helpers
 
+    /// Fetches merged PRs for all saved repositories on yesterday's date and updates view state.
     @MainActor
     private func loadData() async {
         guard !isLoading else { return }
@@ -113,12 +134,23 @@ struct MergedPRsYesterdayView: View {
 
 // MARK: - RepoMergedPRsListView
 
+/// Displays a list of merged pull requests for a single repository, each linking to the PR on GitHub.
 private struct RepoMergedPRsListView: View {
-    @Environment(\.openURL) private var openURL
 
+    // MARK: - Properties
+
+    /// The display name of the repository whose PRs are shown.
     let repoName: String
+
+    /// The pull requests to display, in the order provided by the caller.
     let prs: [MergedPR]
 
+    /// The environment action used to open a PR URL in the default browser.
+    @Environment(\.openURL) private var openURL
+
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List(prs) { pr in
             Button {
