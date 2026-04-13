@@ -1,14 +1,21 @@
 import Testing
 @testable import Focus
 
+/// Tests for `GraphQLClient`.
 @Suite("GraphQLClient Tests")
 struct GraphQLClientTests {
     let mockHTTP = MockHTTPClient()
 
+    // MARK: - Setup
+
+    /// Creates a `GraphQLClient` wired to the shared `MockHTTPClient`.
     private func makeClient() -> GraphQLClient {
         GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
     }
 
+    // MARK: - execute
+
+    /// Verifies that the client sends a POST request with the correct Authorization and Content-Type headers.
     @Test func sendsCorrectRequestFormat() async throws {
         mockHTTP.setSuccess(json: """
             {"data": {"viewer": {"login": "octocat"}}}
@@ -30,6 +37,7 @@ struct GraphQLClientTests {
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
     }
 
+    /// Verifies that the client decodes a `data` envelope into the expected response type.
     @Test func decodesSuccessfulResponse() async throws {
         mockHTTP.setSuccess(json: """
             {"data": {"viewer": {"login": "octocat", "name": "The Octocat"}}}
@@ -52,6 +60,7 @@ struct GraphQLClientTests {
         #expect(result.viewer.name == "The Octocat")
     }
 
+    /// Verifies that a response containing GraphQL errors throws a `GitHubError`.
     @Test func throwsOnGraphQLErrors() async throws {
         mockHTTP.setSuccess(json: """
             {"data": null, "errors": [{"message": "Not found", "path": ["user"]}]}
@@ -69,6 +78,7 @@ struct GraphQLClientTests {
         }
     }
 
+    /// Verifies that a 401 HTTP response throws a `GitHubError`.
     @Test func throwsUnauthorizedOn401() async throws {
         mockHTTP.setSuccess(json: "{}", statusCode: 401)
 
