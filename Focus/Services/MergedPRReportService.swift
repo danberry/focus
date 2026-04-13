@@ -2,9 +2,27 @@ import Foundation
 
 // MARK: - MergedPRReportService
 
+/// Fetches merged pull request data across repositories using the GitHub GraphQL API.
+///
+/// `MergedPRReportService` supports two query modes:
+/// - **Single date**: fetches all PRs merged on a specific calendar day
+/// - **Date range**: fetches all PRs merged within an inclusive date range
+///
+/// Results are keyed by `owner/name` and sorted by merge time ascending.
+/// Pagination is handled automatically using GraphQL cursor-based paging.
+/// All network calls go through the injected ``GraphQLClient``.
 struct MergedPRReportService: Sendable {
+
+    // MARK: - Properties
+
+    /// The GraphQL client used to query the GitHub API.
     private let graphQL: GraphQLClient
 
+    // MARK: - Init
+
+    /// Creates a new service with the given GraphQL client.
+    ///
+    /// - Parameter graphQL: The client used to execute GitHub GraphQL queries.
     init(graphQL: GraphQLClient) {
         self.graphQL = graphQL
     }
@@ -12,8 +30,14 @@ struct MergedPRReportService: Sendable {
     // MARK: - Fetch
 
     /// Fetches all PRs merged on the given date across the provided repositories.
-    /// Returns a dictionary keyed by `owner/name`, with PRs sorted by mergedAt ascending.
+    ///
     /// Returns an empty dictionary immediately if `repositories` is empty.
+    ///
+    /// - Parameters:
+    ///   - repositories: The repositories to query, each identified by owner and name.
+    ///   - date: The calendar day (UTC) for which to fetch merged PRs.
+    /// - Returns: A dictionary keyed by `owner/name`, with PRs sorted by mergedAt ascending.
+    /// - Throws: Any GraphQL or network error encountered during fetching.
     func fetchMergedPRs(for repositories: [(owner: String, name: String)], on date: Date) async throws -> [String: [MergedPR]] {
         guard !repositories.isEmpty else { return [:] }
 
@@ -28,8 +52,15 @@ struct MergedPRReportService: Sendable {
     }
 
     /// Fetches all PRs merged within the given date range (inclusive) across the provided repositories.
-    /// Returns a dictionary keyed by `owner/name`, with PRs sorted by mergedAt ascending.
+    ///
     /// Returns an empty dictionary immediately if `repositories` is empty.
+    ///
+    /// - Parameters:
+    ///   - repositories: The repositories to query, each identified by owner and name.
+    ///   - startDate: The first calendar day (UTC) of the range, inclusive.
+    ///   - endDate: The last calendar day (UTC) of the range, inclusive.
+    /// - Returns: A dictionary keyed by `owner/name`, with PRs sorted by mergedAt ascending.
+    /// - Throws: Any GraphQL or network error encountered during fetching.
     func fetchMergedPRs(for repositories: [(owner: String, name: String)], from startDate: Date, to endDate: Date) async throws -> [String: [MergedPR]] {
         guard !repositories.isEmpty else { return [:] }
 
@@ -47,6 +78,10 @@ struct MergedPRReportService: Sendable {
     // MARK: - Private
 
     /// Pages through all results for the given search query, returning every node.
+    ///
+    /// - Parameter q: A GitHub search query string.
+    /// - Returns: All search result nodes across all pages.
+    /// - Throws: Any GraphQL or network error encountered during fetching.
     private func fetchAllNodes(q: String) async throws -> [SearchResponse.SearchNode] {
         var allNodes: [SearchResponse.SearchNode] = []
         var after: String? = nil
@@ -103,6 +138,7 @@ struct MergedPRReportService: Sendable {
         return result
     }
 
+    /// Formats a date as `yyyy-MM-dd` in UTC for use in GitHub search queries.
     private func formattedDate(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
@@ -111,36 +147,69 @@ struct MergedPRReportService: Sendable {
     }
 }
 
-// MARK: - Response Types
+// MARK: - API Response Types
 
+/// A GitHub GraphQL search response containing pull request nodes.
 private struct SearchResponse: Decodable, Sendable {
+
+    /// The search connection containing result nodes and pagination info.
     let search: SearchConnection
 
+    /// A paginated collection of search result nodes.
     struct SearchConnection: Decodable, Sendable {
+
+        /// The search result nodes for the current page.
         let nodes: [SearchNode]
+
+        /// Pagination metadata for the current page.
         let pageInfo: PageInfo
     }
 
+    /// Cursor-based pagination metadata for a search result page.
     struct PageInfo: Decodable, Sendable {
+
+        /// The cursor for the last result on the current page, used to fetch the next page.
         let endCursor: String?
+
+        /// Whether additional pages of results are available.
         let hasNextPage: Bool
     }
 
-    // All fields are optional: the `... on PullRequest` inline fragment returns
-    // nil for non-PR search results (e.g. Issues). The service filters these out.
+    /// A single search result node, representing a potential pull request.
+    ///
+    /// All fields are optional: the `... on PullRequest` inline fragment returns
+    /// `nil` for non-PR search results (e.g. Issues). The service filters these out.
     struct SearchNode: Decodable, Sendable {
+
+        /// The pull request number within its repository.
         let number: Int?
+
+        /// The pull request title.
         let title: String?
+
+        /// The ISO 8601 timestamp when this pull request was merged, or `nil` if not merged.
         let mergedAt: String?
+
+        /// The author of the pull request, or `nil` if the author account is unavailable.
         let author: Author?
+
+        /// The URL of the pull request on GitHub.
         let url: String?
+
+        /// The repository this pull request belongs to, or `nil` if unavailable.
         let repository: Repo?
 
+        /// The GitHub user who authored a pull request.
         struct Author: Decodable, Sendable {
+
+            /// The GitHub login of the pull request author.
             let login: String
         }
 
+        /// A repository reference within a search result node.
         struct Repo: Decodable, Sendable {
+
+            /// The repository's full name in `owner/name` format.
             let nameWithOwner: String
         }
     }
