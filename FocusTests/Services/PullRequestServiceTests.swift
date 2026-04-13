@@ -3,16 +3,21 @@ import Testing
 import SwiftData
 @testable import Focus
 
+/// Tests for `PullRequestService`.
 @Suite("PullRequestService Tests")
-@MainActor
+@MainActor // Required because sync methods are @MainActor
 struct PullRequestServiceTests {
     let mockHTTP = MockHTTPClient()
 
+    // MARK: - Setup
+
+    /// Creates a `PullRequestService` wired to the shared `MockHTTPClient`.
     private func makeService() -> PullRequestService {
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return PullRequestService(graphQL: graphQL)
     }
 
+    /// Creates an in-memory `ModelContainer` with `SavedRepository` and `OpenPullRequest` registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
@@ -21,6 +26,7 @@ struct PullRequestServiceTests {
         )
     }
 
+    /// Builds a GraphQL-shaped JSON response string containing the given pull request stubs.
     private func makeResponse(prs: [(number: Int, title: String, createdAt: String, login: String, url: String)]) -> String {
         let nodes = prs.map { pr in
             """
@@ -47,8 +53,9 @@ struct PullRequestServiceTests {
         """
     }
 
-    // MARK: - Successful fetch inserts records
+    // MARK: - syncOpenPullRequests
 
+    /// Verifies that a successful sync inserts one `OpenPullRequest` record per returned node.
     @Test func syncCreatesPRRecords() async throws {
         mockHTTP.setSuccess(json: makeResponse(prs: [
             (1, "Fix login bug", "2026-01-01T00:00:00Z", "alice", "https://github.com/acme/widget/pull/1"),
@@ -67,8 +74,7 @@ struct PullRequestServiceTests {
         #expect(numbers == [1, 2])
     }
 
-    // MARK: - Fields are stored correctly
-
+    /// Verifies that all scalar fields are decoded and persisted correctly from the GraphQL response.
     @Test func syncStoresFieldsCorrectly() async throws {
         mockHTTP.setSuccess(json: makeResponse(prs: [
             (42, "Refactor networking", "2026-03-15T12:00:00Z", "carol", "https://github.com/acme/widget/pull/42")
@@ -96,8 +102,7 @@ struct PullRequestServiceTests {
         #expect(components.day == 15)
     }
 
-    // MARK: - Full-replace sync
-
+    /// Verifies that a second sync replaces previously persisted pull requests rather than appending.
     @Test func syncFullReplaces() async throws {
         mockHTTP.setSuccess(json: makeResponse(prs: [
             (1, "First PR", "2026-01-01T00:00:00Z", "alice", "https://github.com/acme/widget/pull/1")
@@ -124,8 +129,7 @@ struct PullRequestServiceTests {
         #expect(numbers == [2, 3])
     }
 
-    // MARK: - Empty response
-
+    /// Verifies that an empty node list results in zero persisted pull requests.
     @Test func syncEmptyResponse() async throws {
         mockHTTP.setSuccess(json: makeResponse(prs: []))
 
@@ -139,8 +143,7 @@ struct PullRequestServiceTests {
         #expect(repo.openPullRequests.isEmpty)
     }
 
-    // MARK: - Silent failure preserves existing data
-
+    /// Verifies that a network error leaves previously synced pull requests untouched.
     @Test func syncSilentlyFailsOnError() async throws {
         mockHTTP.setSuccess(json: makeResponse(prs: [
             (1, "Existing PR", "2026-01-01T00:00:00Z", "alice", "https://github.com/acme/widget/pull/1")
