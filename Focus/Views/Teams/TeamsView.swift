@@ -3,12 +3,23 @@ import SwiftData
 
 // MARK: - TeamsView
 
+/// Displays the list of GitHub teams and provides navigation to team detail views.
 struct TeamsView: View {
-    @Query(sort: [SortDescriptor(\Team.name, comparator: .localizedStandard)]) private var teams: [Team]
+
+    // MARK: - Properties
+
+    /// The SwiftData model context, injected from the root ``ModelContainer``.
     @Environment(\.modelContext) private var modelContext
 
+    /// All teams fetched from the local store, sorted alphabetically by name.
+    @Query(sort: [SortDescriptor(\Team.name, comparator: .localizedStandard)]) private var teams: [Team]
+
+    /// Controls whether the add-team sheet is presented.
     @State private var isAddingTeam = false
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         NavigationStack {
             Group {
@@ -51,8 +62,9 @@ struct TeamsView: View {
         }
     }
 
-    // MARK: - Private
+    // MARK: - Helpers
 
+    /// Deletes the teams at the given offsets from the model context.
     private func delete(at offsets: IndexSet) {
         for index in offsets {
             modelContext.delete(teams[index])
