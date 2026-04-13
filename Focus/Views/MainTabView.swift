@@ -2,7 +2,12 @@ import SwiftUI
 
 // MARK: - MainTabView
 
+/// The root tab bar interface, providing navigation to Repositories, Teams, Reports, and Settings.
 struct MainTabView: View {
+
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         TabView {
             Tab("Repositories", systemImage: "books.vertical") {
