@@ -1,15 +1,22 @@
 import Testing
 @testable import Focus
 
+/// Tests for `UserService`.
 @Suite("UserService Tests")
 struct UserServiceTests {
+
+    /// The mock HTTP client shared across all test cases.
     let mockHTTP = MockHTTPClient()
 
+    /// Creates a `UserService` wired to the shared `MockHTTPClient`.
     private func makeService() -> UserService {
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return UserService(graphQL: graphQL)
     }
 
+    // MARK: - fetchViewer
+
+    /// Verifies that a successful response is decoded into a `GitHubUser` with the expected fields.
     @Test func fetchViewerReturnsUser() async throws {
         mockHTTP.setSuccess(json: """
             {
@@ -39,6 +46,9 @@ struct UserServiceTests {
         #expect(user.followers == 100)
     }
 
+    // MARK: - fetchUser(login:)
+
+    /// Verifies that a successful response is decoded into a `GitHubUser` with the expected fields.
     @Test func fetchUserByLoginReturnsUser() async throws {
         mockHTTP.setSuccess(json: """
             {
