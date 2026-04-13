@@ -2,9 +2,17 @@ import SwiftUI
 
 // MARK: - PullRequestDetailView
 
+/// Displays detail information for a single open pull request.
 struct PullRequestDetailView: View {
+
+    // MARK: - Properties
+
+    /// The pull request whose detail data this view displays.
     let pullRequest: OpenPullRequest
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List {
             // MARK: Overview
@@ -37,8 +45,9 @@ struct PullRequestDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Private
+    // MARK: - Helpers
 
+    /// The number of days the pull request has been open.
     private var daysOpen: Int {
         Calendar.current.dateComponents([.day], from: pullRequest.createdAt, to: .now).day ?? 0
     }
