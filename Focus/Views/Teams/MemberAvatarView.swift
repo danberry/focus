@@ -3,11 +3,20 @@ import SwiftData
 
 // MARK: - MemberAvatarView
 
+/// Displays a member's GitHub avatar, falling back to an initials circle when no GitHub ID is set.
 struct MemberAvatarView: View {
+
+    // MARK: - Properties
+
+    /// The member whose avatar this view displays.
     let member: Member
 
+    /// The diameter of the avatar circle in points.
     private let size: CGFloat = 36
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         if let githubId = member.githubId {
             avatarImage(githubId: githubId)
@@ -16,8 +25,9 @@ struct MemberAvatarView: View {
         }
     }
 
-    // MARK: - Private
+    // MARK: - Helpers
 
+    /// Returns an async-loaded GitHub avatar image for the given user ID.
     private func avatarImage(githubId: Int) -> some View {
         let url = URL(string: "https://avatars.githubusercontent.com/u/\(githubId)")
         return AsyncImage(url: url) { phase in
@@ -37,6 +47,7 @@ struct MemberAvatarView: View {
         .frame(width: size, height: size)
     }
 
+    /// A circle filled with accent color displaying the member's initials.
     private var initialsCircle: some View {
         Circle()
             .fill(Color.accentColor.opacity(0.2))
@@ -48,6 +59,7 @@ struct MemberAvatarView: View {
             )
     }
 
+    /// The one- or two-character initials derived from the member's name.
     private var initials: String {
         let parts = member.name
             .trimmingCharacters(in: .whitespaces)
