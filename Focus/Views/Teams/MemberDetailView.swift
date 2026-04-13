@@ -3,11 +3,18 @@ import SwiftData
 
 // MARK: - MemberDetailView
 
+/// Displays contribution history and summary statistics for a single team member.
 struct MemberDetailView: View {
+
+    // MARK: - Properties
+
+    /// The team member whose contribution data this view displays.
     let member: Member
 
+    /// The currently selected time range, controlling which contributions are shown.
     @State private var selectedRange: TimeRange = .oneYear
 
+    /// The contributions for the selected time range, sorted chronologically.
     private var filteredDays: [DailyContribution] {
         let cutoff = selectedRange.cutoffDate
         return member.dailyContributions
@@ -15,6 +22,9 @@ struct MemberDetailView: View {
             .sorted { $0.date < $1.date }
     }
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         // Compute expensive values once per render instead of once per cell
         let days = filteredDays
@@ -25,6 +35,7 @@ struct MemberDetailView: View {
         let stats = summaryStats(from: days)
 
         List {
+            // MARK: Contributions
             Section {
                 if days.isEmpty {
                     Text("No contribution data available.")
@@ -74,7 +85,8 @@ struct MemberDetailView: View {
             }
             .listRowSeparator(.hidden)
             .listSectionSpacing(18)
-            
+
+            // MARK: Contribution Grid
             Section {
                 contributionGridView(rows: rows, maxCount: maxCount)
             }
@@ -85,8 +97,9 @@ struct MemberDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Subviews
+    // MARK: - Helpers
 
+    /// Builds a grid of contribution cells from the given days, arranged in rows of ten.
     private func contributionGridView(rows: [[GridCell]], maxCount: Int) -> some View {
         return VStack(alignment: .leading, spacing: 4) {
             ForEach(rows.indices, id: \.self) { rowIndex in
@@ -114,8 +127,7 @@ struct MemberDetailView: View {
         }
     }
 
-    // MARK: - Helpers
-
+    /// Computes total contributions, active day count, and peak day count in a single pass.
     private func summaryStats(from days: [DailyContribution]) -> (total: Int, activeDays: Int, peak: Int) {
         var total = 0
         var activeDays = 0
@@ -128,6 +140,7 @@ struct MemberDetailView: View {
         return (total, activeDays, peak)
     }
 
+    /// Builds rows of grid cells covering every day from the cutoff date through today.
     private func buildGridRows(from days: [DailyContribution]) -> [[GridCell]] {
         guard !days.isEmpty else { return [] }
 
@@ -155,18 +168,19 @@ struct MemberDetailView: View {
         }
     }
 
+    /// Returns the fill color for a contribution cell based on count, date, and the period's maximum.
     private func contributionColor(for count: Int, date: Date, maxCount: Int) -> Color {
         let weekday = Calendar.current.component(.weekday, from: date)
         let isWeekend = weekday == 1 || weekday == 7
         let baseColor: Color
-        
+
         if isWeekend && count > 0 {
             baseColor = .accentedRed
         }
         else {
             baseColor = .accentedGreen
         }
-        
+
         let mixAmount: CGFloat
         let ratio = Double(count) / Double(maxCount)
         switch ratio {
@@ -183,10 +197,11 @@ struct MemberDetailView: View {
         default:
             mixAmount = 0
         }
-        
+
         return baseColor.mix(with: Color(.systemBackground), by: mixAmount)
     }
 
+    /// Returns a labeled row displaying a summary statistic.
     private func summaryRow(label: String, value: Int) -> some View {
         HStack {
             Text(label)
@@ -199,22 +214,32 @@ struct MemberDetailView: View {
 
 // MARK: - GridCell
 
+/// A single cell in the contribution grid, pairing a calendar date with its contribution count.
 private struct GridCell {
+    /// The calendar date this cell represents.
     let date: Date
+    /// The number of contributions on this date.
     let count: Int
 }
 
 // MARK: - TimeRange
 
+/// The selectable time windows for filtering contribution history.
 private enum TimeRange: String, CaseIterable, Identifiable {
+    /// The trailing 30-day window.
     case thirtyDays = "30D"
+    /// The trailing 90-day window.
     case ninetyDays = "90D"
+    /// The trailing one-year window.
     case oneYear = "1Y"
 
+    /// The stable identifier for this range.
     var id: String { rawValue }
 
+    /// The human-readable label for this range.
     var label: String { rawValue }
 
+    /// The earliest date included in this time range.
     var cutoffDate: Date {
         let days: Int
         switch self {
