@@ -3,10 +3,20 @@ import SwiftData
 
 // MARK: - RepositoryDetailView
 
+/// Displays velocity, pull requests, code owners, and security alerts for a saved repository.
 struct RepositoryDetailView: View {
+
+    // MARK: - Properties
+
+    /// The repository whose detail data this view displays.
     let repository: SavedRepository
+
+    /// The currently selected velocity period, controlling which metric is shown in the hero row.
     @State private var selectedPeriod: VelocityPeriod = .yearToDate
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         List {
             // MARK: Velocity
@@ -182,6 +192,7 @@ struct RepositoryDetailView: View {
 
     // MARK: - Helpers
 
+    /// Returns a human-readable label for how long a pull request has been open.
     private func daysOpenLabel(_ createdAt: Date) -> String {
         let days = Calendar.current.dateComponents([.day], from: createdAt, to: .now).day ?? 0
         return days == 1 ? "1 day open" : "\(days) days open"
@@ -190,9 +201,17 @@ struct RepositoryDetailView: View {
 
 // MARK: - VelocityHeroRow
 
+/// A hero-style row displaying merged PR count and year-over-year trend for a velocity period.
 private struct VelocityHeroRow: View {
+
+    // MARK: - Properties
+
+    /// The velocity comparison data to render.
     let comparison: VelocityComparison
 
+    // MARK: - Body
+
+    /// The view's content.
     var body: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
@@ -228,6 +247,9 @@ private struct VelocityHeroRow: View {
         .animation(.easeInOut(duration: 0.25), value: comparison.current)
     }
 
+    // MARK: - Helpers
+
+    /// Returns the SF Symbol name for the given trend direction.
     private func trendIcon(_ trend: VelocityComparison.Trend) -> String {
         switch trend {
         case .up:   return "arrow.up.right"
@@ -236,6 +258,7 @@ private struct VelocityHeroRow: View {
         }
     }
 
+    /// Returns the foreground color for the given trend direction.
     private func trendColor(_ trend: VelocityComparison.Trend) -> Color {
         switch trend {
         case .up:   return .green
@@ -244,6 +267,7 @@ private struct VelocityHeroRow: View {
         }
     }
 
+    /// Returns a formatted percentage or delta string for the badge label.
     private func badgeText(_ c: VelocityComparison) -> String {
         if let pct = c.percentChange {
             return "\(Int(abs(pct.rounded())))%"
