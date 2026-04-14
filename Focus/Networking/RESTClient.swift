@@ -65,28 +65,37 @@ struct RESTClient: Sendable {
         path: String,
         queryItems: [URLQueryItem] = []
     ) async throws -> T {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
-        if !queryItems.isEmpty {
-            components.queryItems = queryItems
+        let url = buildURL(path: path, queryItems: queryItems)
+        return try await decodedResponse(from: url)
+    }
+
+    // MARK: - GET (Paginated)
+
+    /// Fetches all pages of a decodable array from the given API path.
+    ///
+    /// Follows GitHub's `Link: rel="next"` response header to retrieve every page,
+    /// accumulating results into a single array. The initial request uses `path` and
+    /// `queryItems`; subsequent requests use the URLs embedded in the `Link` header.
+    ///
+    /// - Parameters:
+    ///   - path: The API path relative to `baseURL` (e.g., `"/repos/owner/repo/dependabot/alerts"`).
+    ///   - queryItems: Optional query parameters appended to the first-page URL (e.g., `state=open`, `per_page=100`).
+    /// - Returns: All elements across all pages as a single array.
+    /// - Throws: ``GitHubError`` on any HTTP error or decoding failure; partial results are discarded.
+    func getAll<T: Decodable & Sendable>(
+        path: String,
+        queryItems: [URLQueryItem] = []
+    ) async throws -> [T] {
+        var accumulated: [T] = []
+        var nextURL: URL? = buildURL(path: path, queryItems: queryItems)
+
+        while let currentURL = nextURL {
+            let (page, response): ([T], HTTPURLResponse) = try await decodedResponseWithMeta(from: currentURL)
+            accumulated.append(contentsOf: page)
+            nextURL = parseNextURL(from: response)
         }
 
-        var request = URLRequest(url: components.url!)
-        request.httpMethod = "GET"
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-
-        if let token = tokenProvider() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        let (data, httpResponse) = try await execute(request)
-        try mapHTTPErrors(httpResponse)
-
-        do {
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw GitHubError.decodingError(underlying: error)
-        }
+        return accumulated
     }
 
     // MARK: - PATCH
@@ -169,6 +178,66 @@ struct RESTClient: Sendable {
         encoder.keyEncodingStrategy = .convertToSnakeCase
         return encoder
     }()
+
+    /// Constructs a URL from `path` (relative to `baseURL`) with optional query parameters.
+    private func buildURL(path: String, queryItems: [URLQueryItem]) -> URL {
+        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        if !queryItems.isEmpty {
+            components.queryItems = queryItems
+        }
+        return components.url!
+    }
+
+    /// Builds a GET `URLRequest` for `url` with the standard GitHub API headers.
+    private func getRequest(for url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        if let token = tokenProvider() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        return request
+    }
+
+    /// Executes a GET request for `url`, maps HTTP errors, and returns the decoded value.
+    private func decodedResponse<T: Decodable & Sendable>(from url: URL) async throws -> T {
+        let (value, _): (T, HTTPURLResponse) = try await decodedResponseWithMeta(from: url)
+        return value
+    }
+
+    /// Executes a GET request for `url`, maps HTTP errors, and returns the decoded value alongside the raw HTTP response.
+    private func decodedResponseWithMeta<T: Decodable & Sendable>(from url: URL) async throws -> (T, HTTPURLResponse) {
+        let request = getRequest(for: url)
+        let (data, httpResponse) = try await execute(request)
+        try mapHTTPErrors(httpResponse)
+        do {
+            return (try decoder.decode(T.self, from: data), httpResponse)
+        } catch {
+            throw GitHubError.decodingError(underlying: error)
+        }
+    }
+
+    /// Parses the `Link` response header and returns the URL for the next page, or `nil` if none exists.
+    ///
+    /// GitHub pagination uses the RFC 5988 `Link` header format:
+    /// ```
+    /// Link: <https://api.github.com/...?page=2>; rel="next", <...>; rel="last"
+    /// ```
+    private func parseNextURL(from response: HTTPURLResponse) -> URL? {
+        guard let linkHeader = response.value(forHTTPHeaderField: "Link") else { return nil }
+        for part in linkHeader.components(separatedBy: ", ") {
+            let pieces = part.components(separatedBy: "; ")
+            guard let first = pieces.first,
+                  pieces.dropFirst().contains(where: { $0.trimmingCharacters(in: .whitespaces) == #"rel="next""# })
+            else { continue }
+            let urlString = first
+                .trimmingCharacters(in: .whitespaces)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "<>"))
+            return URL(string: urlString)
+        }
+        return nil
+    }
 
     /// Executes a URL request via the underlying ``HTTPClient``, wrapping transport errors.
     ///

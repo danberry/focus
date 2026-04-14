@@ -45,7 +45,7 @@ struct SecurityService: Sendable {
         ]
 
         do {
-            let alerts: [DependabotAlertResponse] = try await rest.get(
+            let alerts: [DependabotAlertResponse] = try await rest.getAll(
                 path: Endpoint.dependabotAlerts(owner: owner, repo: repo).path,
                 queryItems: queryItems
             )
@@ -97,7 +97,7 @@ struct SecurityService: Sendable {
         ]
         let alerts: [CodeScanningAlertResponse]
         do {
-            alerts = try await rest.get(
+            alerts = try await rest.getAll(
                 path: Endpoint.codeScanningAlerts(owner: owner, repo: repo).path,
                 queryItems: queryItems
             )
@@ -144,7 +144,7 @@ struct SecurityService: Sendable {
         ]
         let responses: [SecretScanningAlertResponse]
         do {
-            responses = try await rest.get(
+            responses = try await rest.getAll(
                 path: Endpoint.secretScanningAlerts(owner: owner, repo: repo).path,
                 queryItems: queryItems
             )
@@ -238,10 +238,10 @@ struct SecurityService: Sendable {
 
     // MARK: - Private
 
-    /// Fetches alerts from `path`, returning `nil` on any error.
+    /// Fetches all pages of alerts from `path`, returning `nil` on any error.
     private func fetch(path: String, queryItems: [URLQueryItem]) async -> [AlertStub]? {
         do {
-            return try await rest.get(path: path, queryItems: queryItems)
+            return try await rest.getAll(path: path, queryItems: queryItems)
         } catch {
             return nil
         }
