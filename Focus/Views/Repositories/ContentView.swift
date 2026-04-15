@@ -183,6 +183,11 @@ struct ContentView: View {
     /// Returns a subtitle reflecting the current sync state for the navigation bar.
     private var syncSubtitle: String {
         if syncManager.isSyncing {
+            let total = syncManager.syncTotal
+            let current = syncManager.syncCurrent
+            if total > 0 && current > 0 {
+                return "Loading \(current)/\(total)"
+            }
             return "Loading..."
         }
         guard let date = syncManager.lastSyncedAt else {

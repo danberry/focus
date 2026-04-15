@@ -30,6 +30,20 @@ struct BackgroundSyncManagerTests {
 
     // MARK: - Initial state
 
+    /// Verifies that `syncCurrent` starts at zero on a freshly created manager.
+    @Test("syncCurrent starts at zero")
+    func syncCurrentStartsAtZero() {
+        let manager = BackgroundSyncManager()
+        #expect(manager.syncCurrent == 0)
+    }
+
+    /// Verifies that `syncTotal` starts at zero on a freshly created manager.
+    @Test("syncTotal starts at zero")
+    func syncTotalStartsAtZero() {
+        let manager = BackgroundSyncManager()
+        #expect(manager.syncTotal == 0)
+    }
+
     /// Verifies that `lastContributionSyncedAt` is `nil` when no value is stored in `UserDefaults`.
     @Test("lastContributionSyncedAt starts nil when no UserDefaults value")
     func lastContributionSyncedAtStartsNil() {

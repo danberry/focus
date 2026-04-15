@@ -36,6 +36,12 @@ final class BackgroundSyncManager {
     /// Whether a sync operation is currently in progress.
     private(set) var isSyncing = false
 
+    /// The number of repositories that have completed syncing in the current pass.
+    private(set) var syncCurrent: Int = 0
+
+    /// The total number of repositories to sync in the current pass.
+    private(set) var syncTotal: Int = 0
+
     /// The date of the most recent completed security sync, or `nil` if never synced.
     private(set) var lastSyncedAt: Date?
 
@@ -114,6 +120,8 @@ final class BackgroundSyncManager {
     private func sync(context: ModelContext) async {
         guard let tokenProvider, !isSyncing else { return }
         isSyncing = true
+        syncCurrent = 0
+        syncTotal = 0
         defer { isSyncing = false }
 
         // Security + codeowners + velocity — always sync on every invocation.
@@ -125,7 +133,10 @@ final class BackgroundSyncManager {
             velocityService: VelocityService(graphQL: graphQL),
             pullRequestService: PullRequestService(graphQL: graphQL)
         )
-        await syncService.syncAll(in: context)
+        await syncService.syncAll(in: context) { current, total in
+            self.syncCurrent = current
+            self.syncTotal = total
+        }
         lastSyncedAt = .now
         UserDefaults.standard.set(lastSyncedAt, forKey: Self.lastSyncedAtKey)
 

@@ -45,8 +45,11 @@ struct SyncService: Sendable {
     /// method returns without syncing. Individual sub-service errors are handled
     /// within each service.
     ///
-    /// - Parameter context: The SwiftData model context used to fetch and persist repositories.
-    func syncAll(in context: ModelContext) async {
+    /// - Parameters:
+    ///   - context: The SwiftData model context used to fetch and persist repositories.
+    ///   - onProgress: An optional closure called after each repository finishes syncing.
+    ///     Receives the number of repositories completed so far and the total count.
+    func syncAll(in context: ModelContext, onProgress: ((Int, Int) -> Void)? = nil) async {
         let repositories: [SavedRepository]
         do {
             repositories = try context.fetch(FetchDescriptor<SavedRepository>())
@@ -54,8 +57,12 @@ struct SyncService: Sendable {
             return
         }
 
-        for repo in repositories {
+        let total = repositories.count
+        onProgress?(0, total)
+
+        for (index, repo) in repositories.enumerated() {
             await sync(repo, in: context)
+            onProgress?(index + 1, total)
         }
 
         try? context.save()
