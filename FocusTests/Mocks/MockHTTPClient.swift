@@ -5,7 +5,7 @@ import Foundation
 
 /// A test double for `HTTPClient` that returns programmer-supplied results.
 ///
-/// Configure `result` for a single fixed response, or use `enqueueSuccess(json:statusCode:)`
+/// Configure `result` for a single fixed response, or use `enqueueSuccess(json:statusCode:headers:)`
 /// to set up a FIFO sequence of responses for multi-call tests.
 final class MockHTTPClient: HTTPClient, @unchecked Sendable {
 
@@ -45,12 +45,13 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
     /// - Parameters:
     ///   - data: The raw response body.
     ///   - statusCode: The HTTP status code; defaults to `200`.
-    func setSuccess(data: Data, statusCode: Int = 200) {
+    ///   - headers: Optional HTTP response headers; defaults to `nil`.
+    func setSuccess(data: Data, statusCode: Int = 200, headers: [String: String]? = nil) {
         let response = HTTPURLResponse(
             url: URL(string: "https://api.github.com")!,
             statusCode: statusCode,
             httpVersion: nil,
-            headerFields: nil
+            headerFields: headers
         )!
         result = .success((data, response))
     }
@@ -60,8 +61,9 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
     /// - Parameters:
     ///   - json: A UTF-8 JSON string to use as the response body.
     ///   - statusCode: The HTTP status code; defaults to `200`.
-    func setSuccess(json: String, statusCode: Int = 200) {
-        setSuccess(data: json.data(using: .utf8)!, statusCode: statusCode)
+    ///   - headers: Optional HTTP response headers; defaults to `nil`.
+    func setSuccess(json: String, statusCode: Int = 200, headers: [String: String]? = nil) {
+        setSuccess(data: json.data(using: .utf8)!, statusCode: statusCode, headers: headers)
     }
 
     /// Configures `result` to fail with the given error.
@@ -78,12 +80,13 @@ final class MockHTTPClient: HTTPClient, @unchecked Sendable {
     /// - Parameters:
     ///   - json: A UTF-8 JSON string to use as the response body.
     ///   - statusCode: The HTTP status code; defaults to `200`.
-    func enqueueSuccess(json: String, statusCode: Int = 200) {
+    ///   - headers: Optional HTTP response headers; defaults to `nil`.
+    func enqueueSuccess(json: String, statusCode: Int = 200, headers: [String: String]? = nil) {
         let response = HTTPURLResponse(
             url: URL(string: "https://api.github.com")!,
             statusCode: statusCode,
             httpVersion: nil,
-            headerFields: nil
+            headerFields: headers
         )!
         resultQueue.append(.success((json.data(using: .utf8)!, response)))
     }

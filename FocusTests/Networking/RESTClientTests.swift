@@ -46,4 +46,90 @@ struct RESTClientTests {
             let _: [GitHubTeam] = try await makeClient().get(path: "/orgs/nonexistent/teams")
         }
     }
+
+    // MARK: - getAll
+
+    /// Verifies that `getAll` returns all items when the response has no `Link` header (single page).
+    @Test func getAllReturnsSinglePageWhenNoLinkHeader() async throws {
+        mockHTTP.setSuccess(json: """
+            [
+              {"id": 1, "name": "Team A", "slug": "team-a", "description": "", "privacy": "closed", "members_count": 1, "repos_count": 0},
+              {"id": 2, "name": "Team B", "slug": "team-b", "description": "", "privacy": "closed", "members_count": 2, "repos_count": 0}
+            ]
+            """)
+
+        let teams: [GitHubTeam] = try await makeClient().getAll(path: "/orgs/test/teams")
+
+        #expect(teams.count == 2)
+        #expect(teams[0].name == "Team A")
+        #expect(teams[1].name == "Team B")
+    }
+
+    /// Verifies that `getAll` follows the `Link: rel="next"` header and accumulates all pages.
+    @Test func getAllFollowsLinkHeaderAcrossPages() async throws {
+        // Page 1: one team, Link header pointing to page 2
+        mockHTTP.enqueueSuccess(
+            json: """
+            [{"id": 1, "name": "Team A", "slug": "team-a", "description": "", "privacy": "closed", "members_count": 1, "repos_count": 0}]
+            """,
+            headers: ["Link": "<https://api.github.com/orgs/test/teams?page=2>; rel=\"next\""]
+        )
+        // Page 2: one team, no Link header
+        mockHTTP.enqueueSuccess(
+            json: """
+            [{"id": 2, "name": "Team B", "slug": "team-b", "description": "", "privacy": "closed", "members_count": 2, "repos_count": 0}]
+            """
+        )
+
+        let teams: [GitHubTeam] = try await makeClient().getAll(path: "/orgs/test/teams")
+
+        #expect(teams.count == 2)
+        #expect(teams[0].name == "Team A")
+        #expect(teams[1].name == "Team B")
+    }
+
+    /// Verifies that `getAll` accumulates all items across three pages.
+    @Test func getAllAccumulatesThreePages() async throws {
+        let linkToPage2 = ["Link": "<https://api.github.com/orgs/test/teams?page=2>; rel=\"next\", <https://api.github.com/orgs/test/teams?page=3>; rel=\"last\""]
+        let linkToPage3 = ["Link": "<https://api.github.com/orgs/test/teams?page=3>; rel=\"next\""]
+        let teamA = "[{\"id\": 1, \"name\": \"Team A\", \"slug\": \"team-a\", \"description\": \"\", \"privacy\": \"closed\", \"members_count\": 0, \"repos_count\": 0}]"
+        let teamB = "[{\"id\": 2, \"name\": \"Team B\", \"slug\": \"team-b\", \"description\": \"\", \"privacy\": \"closed\", \"members_count\": 0, \"repos_count\": 0}]"
+        let teamC = "[{\"id\": 3, \"name\": \"Team C\", \"slug\": \"team-c\", \"description\": \"\", \"privacy\": \"closed\", \"members_count\": 0, \"repos_count\": 0}]"
+
+        mockHTTP.enqueueSuccess(json: teamA, headers: linkToPage2)
+        mockHTTP.enqueueSuccess(json: teamB, headers: linkToPage3)
+        mockHTTP.enqueueSuccess(json: teamC)
+
+        let teams: [GitHubTeam] = try await makeClient().getAll(path: "/orgs/test/teams")
+
+        #expect(teams.count == 3)
+        #expect(teams.map(\.name) == ["Team A", "Team B", "Team C"])
+    }
+
+    /// Verifies that `getAll` throws on a non-2xx response and does not return partial results.
+    @Test func getAllThrowsOnHTTPError() async throws {
+        mockHTTP.setSuccess(json: "{}", statusCode: 403)
+
+        await #expect(throws: GitHubError.self) {
+            let _: [GitHubTeam] = try await makeClient().getAll(path: "/orgs/test/teams")
+        }
+    }
+
+    /// Verifies that `getAll` sends the correct headers on paginated follow-up requests.
+    @Test func getAllSendsAuthHeaderOnFollowUpPages() async throws {
+        let teamA = "[{\"id\": 1, \"name\": \"Team A\", \"slug\": \"team-a\", \"description\": \"\", \"privacy\": \"closed\", \"members_count\": 0, \"repos_count\": 0}]"
+        let teamB = "[{\"id\": 2, \"name\": \"Team B\", \"slug\": \"team-b\", \"description\": \"\", \"privacy\": \"closed\", \"members_count\": 0, \"repos_count\": 0}]"
+        mockHTTP.enqueueSuccess(
+            json: teamA,
+            headers: ["Link": "<https://api.github.com/orgs/test/teams?page=2>; rel=\"next\""]
+        )
+        mockHTTP.enqueueSuccess(json: teamB)
+
+        let _: [GitHubTeam] = try await makeClient().getAll(path: "/orgs/test/teams")
+
+        // lastRequest is the final request (page 2) — verify it still carries auth
+        let request = try #require(mockHTTP.lastRequest)
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
+        #expect(request.value(forHTTPHeaderField: "Accept") == "application/vnd.github+json")
+    }
 }

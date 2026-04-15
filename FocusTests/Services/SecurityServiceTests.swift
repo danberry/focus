@@ -205,6 +205,79 @@ struct SecurityServiceTests {
         #expect(alert.packageName == "new-pkg")
     }
 
+    /// Verifies that alerts from multiple pages are all persisted when the API returns a `Link: rel="next"` header.
+    @Test func syncDependabotAlertsFetchesAllPages() async throws {
+        let page1 = """
+        [
+          {
+            "number": 1,
+            "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/1",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0001-0001-0001",
+              "cve_id": null,
+              "summary": "Page 1 alert",
+              "description": "Description.",
+              "severity": "low",
+              "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "npm", "name": "pkg-a" },
+              "first_patched_version": null,
+              "vulnerable_version_range": ">= 1.0, < 2.0"
+            },
+            "dependency": { "manifest_path": "package.json" },
+            "assignees": []
+          }
+        ]
+        """
+        let page2 = """
+        [
+          {
+            "number": 2,
+            "created_at": "2024-02-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/2",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0002-0002-0002",
+              "cve_id": null,
+              "summary": "Page 2 alert",
+              "description": "Description.",
+              "severity": "high",
+              "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "pip", "name": "pkg-b" },
+              "first_patched_version": null,
+              "vulnerable_version_range": ">= 0.1, < 1.0"
+            },
+            "dependency": { "manifest_path": "requirements.txt" },
+            "assignees": []
+          }
+        ]
+        """
+
+        // Page 1 comes with a Link header; page 2 has no Link header (last page)
+        mockHTTP.enqueueSuccess(
+            json: page1,
+            headers: ["Link": "<https://api.github.com/repos/apple/swift/dependabot/alerts?state=open&per_page=100&page=2>; rel=\"next\""]
+        )
+        mockHTTP.enqueueSuccess(json: page2)
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+        #expect(alerts[0].alertNumber == 1)
+        #expect(alerts[0].packageName == "pkg-a")
+        #expect(alerts[1].alertNumber == 2)
+        #expect(alerts[1].packageName == "pkg-b")
+    }
+
     /// Verifies that existing alerts are preserved when the network call returns an error.
     @Test func syncDependabotAlertsKeepsExistingOnError() async throws {
         let container = try makeContainer()
