@@ -24,7 +24,65 @@ struct PullRequestService: Sendable {
         self.graphQL = graphQL
     }
 
-    // MARK: - Sync
+    // MARK: - Fetch (non-isolated, Sendable result)
+
+    /// Fetches open pull requests for a repository from the GitHub GraphQL API.
+    ///
+    /// Returns `nil` on any network or decoding error; does not write to SwiftData.
+    func fetchOpenPRs(owner: String, repo: String) async -> [OpenPRData]? {
+        let variables: [String: any Sendable] = ["owner": owner, "name": repo]
+        do {
+            let response: PRResponse = try await graphQL.execute(
+                query: RepositoryQueries.openPullRequests,
+                variables: variables,
+                responseType: PRResponse.self
+            )
+            return response.repository.pullRequests.nodes.map { node in
+                OpenPRData(
+                    number: node.number,
+                    title: node.title,
+                    createdAt: node.createdAt,
+                    authorLogin: node.author?.login,
+                    url: node.url
+                )
+            }
+        } catch {
+            return nil
+        }
+    }
+
+    // MARK: - Apply (@MainActor, writes to SwiftData)
+
+    /// Persists fetched pull requests to SwiftData, replacing any existing records.
+    ///
+    /// Does nothing when `prs` is `nil` (preserving any existing data).
+    @MainActor
+    func applyOpenPRs(_ prs: [OpenPRData]?, to repository: SavedRepository, in context: ModelContext) {
+        guard let prs else { return }
+
+        for existing in repository.openPullRequests {
+            existing.repository = nil
+            context.delete(existing)
+        }
+
+        let iso = ISO8601DateFormatter()
+        for data in prs {
+            let createdAt = iso.date(from: data.createdAt) ?? Date()
+            let pr = OpenPullRequest(
+                number: data.number,
+                title: data.title,
+                createdAt: createdAt,
+                authorLogin: data.authorLogin ?? "",
+                url: data.url
+            )
+            pr.repository = repository
+            context.insert(pr)
+        }
+
+        try? context.save()
+    }
+
+    // MARK: - Sync (fetch + apply, used by tests and legacy call sites)
 
     /// Fetches open pull requests for a repository and replaces any existing records in SwiftData.
     ///
@@ -39,44 +97,21 @@ struct PullRequestService: Sendable {
     ///   - context: The SwiftData model context used for persistence.
     @MainActor
     func syncOpenPullRequests(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
-        let variables: [String: any Sendable] = [
-            "owner": owner,
-            "name": repo
-        ]
-
-        do {
-            let response: PRResponse = try await graphQL.execute(
-                query: RepositoryQueries.openPullRequests,
-                variables: variables,
-                responseType: PRResponse.self
-            )
-
-            // Full-replace sync: remove existing open PR records for this repository.
-            for existing in repository.openPullRequests {
-                existing.repository = nil
-                context.delete(existing)
-            }
-
-            let iso = ISO8601DateFormatter()
-
-            for node in response.repository.pullRequests.nodes {
-                let createdAt = iso.date(from: node.createdAt) ?? Date()
-                let pr = OpenPullRequest(
-                    number: node.number,
-                    title: node.title,
-                    createdAt: createdAt,
-                    authorLogin: node.author?.login ?? "",
-                    url: node.url
-                )
-                pr.repository = repository
-                context.insert(pr)
-            }
-
-            try? context.save()
-        } catch {
-            // Silently fail — keeps any existing data intact
-        }
+        let prs = await fetchOpenPRs(owner: owner, repo: repo)
+        applyOpenPRs(prs, to: repository, in: context)
     }
+}
+
+// MARK: - OpenPRData
+
+/// Sendable transfer type carrying the fields needed to create an ``OpenPullRequest`` SwiftData record.
+struct OpenPRData: Sendable {
+    let number: Int
+    let title: String
+    /// ISO 8601 creation timestamp string, parsed to `Date` during apply.
+    let createdAt: String
+    let authorLogin: String?
+    let url: String
 }
 
 // MARK: - API Response Types

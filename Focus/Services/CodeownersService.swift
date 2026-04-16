@@ -26,23 +26,36 @@ struct CodeownersService: Sendable {
         self.rest = rest
     }
 
-    // MARK: - Sync
+    // MARK: - Fetch (non-isolated, Sendable result)
 
-    /// Fetches CODEOWNERS entries for a repository and replaces all persisted codeowners.
+    /// Tries each canonical CODEOWNERS path in order, returning parsed entries from the first that succeeds.
     ///
-    /// Tries the three canonical CODEOWNERS file locations in order, using the first
-    /// one that returns content. All previously persisted ``Codeowner`` objects for
-    /// the repository are deleted before the new entries are inserted.
+    /// Returns an empty array when no CODEOWNERS file is found or all requests fail.
+    func fetchEntries(owner: String, repo: String) async -> [(pattern: String, handle: String)] {
+        let candidates = [
+            Endpoint.repoContents(owner: owner, repo: repo, path: "CODEOWNERS").path,
+            Endpoint.repoContents(owner: owner, repo: repo, path: ".github/CODEOWNERS").path,
+            Endpoint.repoContents(owner: owner, repo: repo, path: "docs/CODEOWNERS").path
+        ]
+
+        for path in candidates {
+            if let content = await fetchFileContent(path: path) {
+                return parseCodeowners(content)
+            }
+        }
+        return []
+    }
+
+    // MARK: - Apply (@MainActor, writes to SwiftData)
+
+    /// Persists CODEOWNERS entries to SwiftData, replacing any existing records for the repository.
     ///
     /// - Parameters:
-    ///   - owner: The repository owner login (user or organization).
-    ///   - repo: The repository name.
+    ///   - entries: The `(pattern, handle)` pairs to persist.
     ///   - repository: The ``SavedRepository`` whose codeowners to replace.
     ///   - context: The SwiftData model context used for persistence.
     @MainActor
-    func syncCodeowners(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
-        let entries = await fetchEntries(owner: owner, repo: repo)
-
+    func applyCodeowners(_ entries: [(pattern: String, handle: String)], to repository: SavedRepository, in context: ModelContext) {
         let existing = repository.codeowners
         for codeowner in existing {
             codeowner.repository = nil
@@ -58,23 +71,26 @@ struct CodeownersService: Sendable {
         try? context.save()
     }
 
-    // MARK: - Private
+    // MARK: - Sync (fetch + apply, used by tests and legacy call sites)
 
-    /// Tries each canonical CODEOWNERS path in order, returning parsed entries from the first that succeeds.
-    private func fetchEntries(owner: String, repo: String) async -> [(pattern: String, handle: String)] {
-        let candidates = [
-            Endpoint.repoContents(owner: owner, repo: repo, path: "CODEOWNERS").path,
-            Endpoint.repoContents(owner: owner, repo: repo, path: ".github/CODEOWNERS").path,
-            Endpoint.repoContents(owner: owner, repo: repo, path: "docs/CODEOWNERS").path
-        ]
-
-        for path in candidates {
-            if let content = await fetchFileContent(path: path) {
-                return parseCodeowners(content)
-            }
-        }
-        return []
+    /// Fetches CODEOWNERS entries for a repository and replaces all persisted codeowners.
+    ///
+    /// Tries the three canonical CODEOWNERS file locations in order, using the first
+    /// one that returns content. All previously persisted ``Codeowner`` objects for
+    /// the repository are deleted before the new entries are inserted.
+    ///
+    /// - Parameters:
+    ///   - owner: The repository owner login (user or organization).
+    ///   - repo: The repository name.
+    ///   - repository: The ``SavedRepository`` whose codeowners to replace.
+    ///   - context: The SwiftData model context used for persistence.
+    @MainActor
+    func syncCodeowners(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let entries = await fetchEntries(owner: owner, repo: repo)
+        applyCodeowners(entries, to: repository, in: context)
     }
+
+    // MARK: - Private
 
     /// Fetches and base64-decodes a file from `path`, returning `nil` on any error.
     private func fetchFileContent(path: String) async -> String? {
