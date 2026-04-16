@@ -160,11 +160,8 @@ struct RepositoryDetailView: View {
                     EmptyContentView("No Secret Scanning Alerts", systemImage: "key.slash")
                 } else {
                     ForEach(sortedSecretScanning.prefix(6)) { alert in
-                        HStack {
-                            Text(alert.secretTypeDisplayName)
-                            Spacer()
-                            Text(alert.validity)
-                                .foregroundStyle(.secondary)
+                        NavigationLink(destination: SecretScanningAlertDetailView(alert: alert)) {
+                            LabeledContent(alert.secretTypeDisplayName, value: alert.validity)
                         }
                     }
                     if sortedSecretScanning.count > 6 {

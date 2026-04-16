@@ -152,7 +152,10 @@ struct SecurityService: Sendable {
                 secretTypeDisplayName: response.secretTypeDisplayName,
                 validity: response.validity,
                 publiclyLeaked: response.publiclyLeaked,
-                createdAt: response.createdAt
+                createdAt: response.createdAt,
+                htmlUrl: response.htmlUrl,
+                pushProtectionBypassed: response.pushProtectionBypassed ?? false,
+                multiRepo: response.multiRepo ?? false
             )
             alert.repository = repository
             context.insert(alert)
@@ -432,4 +435,13 @@ struct SecretScanningAlertResponse: Decodable, Sendable {
 
     /// The date and time when this alert was created.
     let createdAt: Date
+
+    /// The URL of the alert on GitHub.com.
+    let htmlUrl: String
+
+    /// Whether push protection was bypassed to introduce this secret. Nil means not applicable.
+    let pushProtectionBypassed: Bool?
+
+    /// Whether this secret has been detected in more than one repository. Nil means not applicable.
+    let multiRepo: Bool?
 }

@@ -16,11 +16,8 @@ struct AllSecretScanningAlertsView: View {
     var body: some View {
         List {
             ForEach(alerts) { alert in
-                HStack {
-                    Text(alert.secretTypeDisplayName)
-                    Spacer()
-                    Text(alert.validity)
-                        .foregroundStyle(.secondary)
+                NavigationLink(destination: SecretScanningAlertDetailView(alert: alert)) {
+                    LabeledContent(alert.secretTypeDisplayName, value: alert.validity)
                 }
             }
         }
