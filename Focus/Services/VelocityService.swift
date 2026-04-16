@@ -26,23 +26,14 @@ struct VelocityService: Sendable {
         self.graphQL = graphQL
     }
 
-    // MARK: - Sync
+    // MARK: - Fetch (non-isolated, Sendable result)
 
-    /// Fetches merged PR counts for all velocity periods and persists them to SwiftData.
+    /// Fetches merged PR counts for all velocity periods.
     ///
-    /// Performs a single batched GraphQL query covering eight search windows (four periods × current/prior).
-    /// On success, replaces any existing ``RepositoryVelocity`` records for the repository with fresh data.
-    /// On failure, exits silently — any previously persisted data is left intact.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login (user or organization).
-    ///   - repo: The repository name.
-    ///   - repository: The SwiftData object to associate new velocity records with.
-    ///   - context: The SwiftData model context used to insert and delete records.
-    @MainActor
-    func syncVelocity(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+    /// Returns `nil` on any network or decoding error; does not write to SwiftData.
+    func fetchVelocityData(owner: String, repo: String) async -> VelocityFetchResult? {
         let today = Date()
-        guard let windows = buildDateWindows(today: today) else { return }
+        guard let windows = buildDateWindows(today: today) else { return nil }
 
         let base = "repo:\(owner)/\(repo) is:pr is:merged"
 
@@ -63,43 +54,83 @@ struct VelocityService: Sendable {
                 variables: variables,
                 responseType: VelocityResponse.self
             )
-
-            // Full-replace sync: remove existing velocity records for this repository.
-            for existing in repository.velocityMetrics {
-                existing.repository = nil
-                context.delete(existing)
-            }
-
-            let entries: [(VelocityPeriod, DateWindow, Int, Int)] = [
-                (.sevenDays,   windows.w7,  response.w7Current.issueCount,  response.w7Prior.issueCount),
-                (.thirtyDays,  windows.w30, response.d30Current.issueCount, response.d30Prior.issueCount),
-                (.ninetyDays,  windows.w90, response.d90Current.issueCount, response.d90Prior.issueCount),
-                (.yearToDate,  windows.ytd, response.ytdCurrent.issueCount, response.ytdPrior.issueCount)
-            ]
-
-            for (period, window, current, prior) in entries {
-                let velocity = RepositoryVelocity(
-                    periodType: period.rawValue,
-                    currentCount: current,
-                    priorCount: prior,
-                    periodStart: window.currentStart,
-                    periodEnd: today,
-                    fetchedAt: today
-                )
-                velocity.repository = repository
-                context.insert(velocity)
-            }
-
-            try? context.save()
+            return VelocityFetchResult(
+                today: today,
+                windows: windows,
+                w7Current:  response.w7Current.issueCount,
+                w7Prior:    response.w7Prior.issueCount,
+                d30Current: response.d30Current.issueCount,
+                d30Prior:   response.d30Prior.issueCount,
+                d90Current: response.d90Current.issueCount,
+                d90Prior:   response.d90Prior.issueCount,
+                ytdCurrent: response.ytdCurrent.issueCount,
+                ytdPrior:   response.ytdPrior.issueCount
+            )
         } catch {
-            // Silently fail — keeps any existing data intact
+            return nil
         }
+    }
+
+    // MARK: - Apply (@MainActor, writes to SwiftData)
+
+    /// Persists fetched velocity metrics to SwiftData, replacing any existing records.
+    ///
+    /// Does nothing when `data` is `nil` (preserving any existing records).
+    @MainActor
+    func applyVelocityData(_ data: VelocityFetchResult?, to repository: SavedRepository, in context: ModelContext) {
+        guard let data else { return }
+
+        for existing in repository.velocityMetrics {
+            existing.repository = nil
+            context.delete(existing)
+        }
+
+        let entries: [(VelocityPeriod, Date, Int, Int)] = [
+            (.sevenDays,  data.windows.w7.currentStart,  data.w7Current,  data.w7Prior),
+            (.thirtyDays, data.windows.w30.currentStart, data.d30Current, data.d30Prior),
+            (.ninetyDays, data.windows.w90.currentStart, data.d90Current, data.d90Prior),
+            (.yearToDate, data.windows.ytd.currentStart, data.ytdCurrent, data.ytdPrior)
+        ]
+
+        for (period, periodStart, current, prior) in entries {
+            let velocity = RepositoryVelocity(
+                periodType: period.rawValue,
+                currentCount: current,
+                priorCount: prior,
+                periodStart: periodStart,
+                periodEnd: data.today,
+                fetchedAt: data.today
+            )
+            velocity.repository = repository
+            context.insert(velocity)
+        }
+
+        try? context.save()
+    }
+
+    // MARK: - Sync (fetch + apply, used by tests and legacy call sites)
+
+    /// Fetches merged PR counts for all velocity periods and persists them to SwiftData.
+    ///
+    /// Performs a single batched GraphQL query covering eight search windows (four periods × current/prior).
+    /// On success, replaces any existing ``RepositoryVelocity`` records for the repository with fresh data.
+    /// On failure, exits silently — any previously persisted data is left intact.
+    ///
+    /// - Parameters:
+    ///   - owner: The repository owner login (user or organization).
+    ///   - repo: The repository name.
+    ///   - repository: The SwiftData object to associate new velocity records with.
+    ///   - context: The SwiftData model context used to insert and delete records.
+    @MainActor
+    func syncVelocity(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let data = await fetchVelocityData(owner: owner, repo: repo)
+        applyVelocityData(data, to: repository, in: context)
     }
 
     // MARK: - Date Windows
 
     /// A date range window expressed as GitHub search-compatible strings and a concrete start `Date`.
-    struct DateWindow {
+    struct DateWindow: Sendable {
         /// A GitHub search-compatible date range string in `YYYY-MM-DD..YYYY-MM-DD` format for the current period.
         let current: String
         /// A GitHub search-compatible date range string for the equivalent prior-year period.
@@ -109,7 +140,7 @@ struct VelocityService: Sendable {
     }
 
     /// The complete set of date windows for all four velocity periods.
-    struct AllDateWindows {
+    struct AllDateWindows: Sendable {
         /// The 7-day rolling window.
         let w7: DateWindow
         /// The 30-day rolling window.
@@ -179,6 +210,24 @@ struct VelocityService: Sendable {
             )
         )
     }
+}
+
+// MARK: - VelocityFetchResult
+
+/// The fetched velocity data for a single repository, ready to be written to SwiftData.
+struct VelocityFetchResult: Sendable {
+    /// The reference date used as the period end and fetch timestamp.
+    let today: Date
+    /// The date windows used to compute each period's start date.
+    let windows: VelocityService.AllDateWindows
+    let w7Current: Int
+    let w7Prior: Int
+    let d30Current: Int
+    let d30Prior: Int
+    let d90Current: Int
+    let d90Prior: Int
+    let ytdCurrent: Int
+    let ytdPrior: Int
 }
 
 // MARK: - API Response Types

@@ -5,9 +5,14 @@ import SwiftData
 
 /// Orchestrates a full data sync for every saved repository.
 ///
-/// `SyncService` sequences calls to ``SecurityService``, ``CodeownersService``,
+/// `SyncService` coordinates ``SecurityService``, ``CodeownersService``,
 /// ``VelocityService``, and ``PullRequestService``, then derives badge counts
 /// from the freshly written SwiftData relationships.
+///
+/// Repositories are synced in parallel (up to ``maxConcurrentRepos`` at once).
+/// Within each repository all six sub-service calls are issued concurrently via
+/// `async let`. Network I/O for up to `maxConcurrentRepos × 6` requests runs in
+/// parallel; all SwiftData writes are serialized on the main actor.
 ///
 /// All operations run on the main actor.
 @MainActor
@@ -39,11 +44,16 @@ struct SyncService: Sendable {
 
     // MARK: - Sync
 
-    /// Syncs all saved repositories sequentially, then saves the model context.
+    /// The maximum number of repositories synced concurrently.
+    static let maxConcurrentRepos = 8
+
+    /// Syncs all saved repositories concurrently (up to ``maxConcurrentRepos`` at once),
+    /// then saves the model context.
     ///
-    /// A failure to fetch the repository list is silently discarded and the
-    /// method returns without syncing. Individual sub-service errors are handled
-    /// within each service.
+    /// Each repository's six sub-service network requests run in parallel. A sliding
+    /// window ensures at most ``maxConcurrentRepos`` repositories are in-flight simultaneously.
+    /// A failure to fetch the repository list is silently discarded and the method returns
+    /// without syncing. Individual sub-service errors are handled within each service.
     ///
     /// - Parameters:
     ///   - context: The SwiftData model context used to fetch and persist repositories.
@@ -60,9 +70,40 @@ struct SyncService: Sendable {
         let total = repositories.count
         onProgress?(0, total)
 
-        for (index, repo) in repositories.enumerated() {
-            await sync(repo, in: context)
-            onProgress?(index + 1, total)
+        // Build a lookup so the draining loop can find the right model by owner/name.
+        let repoMap = Dictionary(
+            uniqueKeysWithValues: repositories.map { ("\($0.owner)/\($0.name)", $0) }
+        )
+
+        var completed = 0
+
+        await withTaskGroup(of: RepoSyncFetch.self) { group in
+            var submitted = 0
+
+            // Seed the initial batch.
+            while submitted < Self.maxConcurrentRepos && submitted < total {
+                let r = repositories[submitted]
+                let owner = r.owner, name = r.name
+                group.addTask { await self.fetchAll(owner: owner, name: name) }
+                submitted += 1
+            }
+
+            // As each repo finishes its fetch, apply the results and submit the next.
+            for await result in group {
+                completed += 1
+                onProgress?(completed, total)
+
+                if let repo = repoMap["\(result.owner)/\(result.name)"] {
+                    applyAll(result, to: repo, in: context)
+                }
+
+                if submitted < total {
+                    let r = repositories[submitted]
+                    let owner = r.owner, name = r.name
+                    group.addTask { await self.fetchAll(owner: owner, name: name) }
+                    submitted += 1
+                }
+            }
         }
 
         try? context.save()
@@ -70,28 +111,60 @@ struct SyncService: Sendable {
 
     // MARK: - Private
 
-    /// Syncs security alerts, codeowners, velocity, and open pull requests for a single repository.
+    /// Fires all six sub-service network fetches for a single repository concurrently.
     ///
-    /// After all sub-service syncs complete, derives badge counts from the freshly written
-    /// SwiftData relationship arrays.
-    ///
-    /// - Parameters:
-    ///   - repository: The saved repository to sync.
-    ///   - context: The SwiftData model context for persistence.
-    private func sync(_ repository: SavedRepository, in context: ModelContext) async {
-        let owner = repository.owner
-        let name = repository.name
+    /// This method is `nonisolated` so it can be called directly from `withTaskGroup`
+    /// task closures without requiring a main-actor hop. All parameters and return values
+    /// are `Sendable`.
+    nonisolated private func fetchAll(owner: String, name: String) async -> RepoSyncFetch {
+        async let dependabotAlerts = securityService.fetchDependabotAlerts(owner: owner, repo: name)
+        async let codeScanningAlerts = securityService.fetchCodeScanningAlerts(owner: owner, repo: name)
+        async let secretScanningAlerts = securityService.fetchSecretScanningAlerts(owner: owner, repo: name)
+        async let codeownersEntries = codeownersService.fetchEntries(owner: owner, repo: name)
+        async let velocityData = velocityService.fetchVelocityData(owner: owner, repo: name)
+        async let openPRs = pullRequestService.fetchOpenPRs(owner: owner, repo: name)
 
-        await securityService.syncDependabotAlerts(owner: owner, repo: name, repository: repository, in: context)
-        await securityService.syncCodeScanningAlerts(owner: owner, repo: name, repository: repository, in: context)
-        await securityService.syncSecretScanningAlerts(owner: owner, repo: name, repository: repository, in: context)
-        await codeownersService.syncCodeowners(owner: owner, repo: name, repository: repository, in: context)
-        await velocityService.syncVelocity(owner: owner, repo: name, repository: repository, in: context)
-        await pullRequestService.syncOpenPullRequests(owner: owner, repo: name, repository: repository, in: context)
+        let (dep, cs, ss, co, vel, prs) = await (
+            dependabotAlerts, codeScanningAlerts, secretScanningAlerts,
+            codeownersEntries, velocityData, openPRs
+        )
+
+        return RepoSyncFetch(
+            owner: owner, name: name,
+            dependabotAlerts: dep, codeScanningAlerts: cs, secretScanningAlerts: ss,
+            codeownersEntries: co, velocityData: vel, openPRs: prs
+        )
+    }
+
+    /// Writes a completed ``RepoSyncFetch`` to SwiftData and updates badge counts.
+    private func applyAll(_ fetch: RepoSyncFetch, to repository: SavedRepository, in context: ModelContext) {
+        securityService.applyDependabotAlerts(fetch.dependabotAlerts, to: repository, in: context)
+        securityService.applyCodeScanningAlerts(fetch.codeScanningAlerts, to: repository, in: context)
+        securityService.applySecretScanningAlerts(fetch.secretScanningAlerts, to: repository, in: context)
+        codeownersService.applyCodeowners(fetch.codeownersEntries, to: repository, in: context)
+        velocityService.applyVelocityData(fetch.velocityData, to: repository, in: context)
+        pullRequestService.applyOpenPRs(fetch.openPRs, to: repository, in: context)
 
         // Derive badge counts from the freshly synced relationship arrays.
         repository.dependabotAlerts = repository.dependabotAlertDetails.count
         repository.codeScanningAlerts = repository.codeScanningAlertDetails.count
         repository.secretScanningAlerts = repository.secretScanningAlertDetails.count
     }
+}
+
+// MARK: - RepoSyncFetch
+
+/// All network-fetched data for a single repository, ready to be applied to SwiftData.
+///
+/// All stored properties are `Sendable` so this type can cross actor boundaries as the
+/// result of a `withTaskGroup` task.
+private struct RepoSyncFetch: Sendable {
+    let owner: String
+    let name: String
+    let dependabotAlerts: [DependabotAlertResponse]?
+    let codeScanningAlerts: [CodeScanningAlertResponse]?
+    let secretScanningAlerts: [SecretScanningAlertResponse]?
+    let codeownersEntries: [(pattern: String, handle: String)]
+    let velocityData: VelocityFetchResult?
+    let openPRs: [OpenPRData]?
 }

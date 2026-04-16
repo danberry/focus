@@ -9,6 +9,10 @@ import SwiftData
 /// - **Metrics**: count-only fetches for badge display (``fetchMetrics(owner:repo:)``)
 /// - **Sync**: full alert fetches that write rich objects to SwiftData
 ///
+/// Each alert type is split into a non-isolated `fetch*` method that returns Sendable
+/// data and an `@MainActor apply*` method that writes to SwiftData. The combined
+/// `sync*` methods delegate to both and are preserved for direct use (e.g. in tests).
+///
 /// All network calls go through the injected ``RESTClient``.
 struct SecurityService: Sendable {
 
@@ -24,89 +28,92 @@ struct SecurityService: Sendable {
         self.rest = rest
     }
 
-    // MARK: - Sync Alert Details
+    // MARK: - Fetch (non-isolated, Sendable results)
 
-    /// Fetches open Dependabot alerts and persists them to SwiftData for the given repository.
+    /// Fetches open Dependabot alerts from the GitHub REST API.
     ///
-    /// Performs a full-replace sync: all existing ``DependabotAlert`` records for `repository`
-    /// are deleted before new alerts are inserted.
-    /// Silently discards errors to preserve any existing data.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login (user or organization).
-    ///   - repo: The repository name.
-    ///   - repository: The ``SavedRepository`` to associate new alerts with.
-    ///   - context: The SwiftData model context to insert and delete alerts in.
-    @MainActor
-    func syncDependabotAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+    /// Returns `nil` on any network or decoding error; does not write to SwiftData.
+    func fetchDependabotAlerts(owner: String, repo: String) async -> [DependabotAlertResponse]? {
         let queryItems = [
             URLQueryItem(name: "state", value: "open"),
             URLQueryItem(name: "per_page", value: "100")
         ]
-
-        do {
-            let alerts: [DependabotAlertResponse] = try await rest.getAll(
-                path: Endpoint.dependabotAlerts(owner: owner, repo: repo).path,
-                queryItems: queryItems
-            )
-
-            repository.dependabotAlertDetails.forEach { context.delete($0) }
-
-            for alert in alerts {
-                let model = DependabotAlert(
-                    alertNumber: alert.number,
-                    packageName: alert.securityVulnerability.package.name,
-                    severity: alert.securityAdvisory.severity,
-                    fixVersion: alert.securityVulnerability.firstPatchedVersion?.identifier,
-                    createdAt: alert.createdAt,
-                    summary: alert.securityAdvisory.summary,
-                    advisoryDescription: alert.securityAdvisory.description,
-                    ecosystem: alert.securityVulnerability.package.ecosystem,
-                    vulnerableVersionRange: alert.securityVulnerability.vulnerableVersionRange,
-                    ghsaId: alert.securityAdvisory.ghsaId,
-                    cveId: alert.securityAdvisory.cveId,
-                    cvssScore: alert.securityAdvisory.cvss?.score,
-                    htmlUrl: alert.htmlUrl,
-                    manifestPath: alert.dependency.manifestPath
-                )
-                model.assignedLogins = alert.assignees.map(\.login)
-                model.repository = repository
-                context.insert(model)
-            }
-            try? context.save()
-        } catch {
-            // Silently fail — keeps any existing data intact
-        }
+        return try? await rest.getAll(
+            path: Endpoint.dependabotAlerts(owner: owner, repo: repo).path,
+            queryItems: queryItems
+        )
     }
 
-    /// Fetches open code scanning alerts and persists them to SwiftData for the given repository.
+    /// Fetches open code scanning alerts from the GitHub REST API.
     ///
-    /// Performs a full-replace sync: all existing ``CodeScanningAlert`` records for `repository`
-    /// are deleted before new alerts are inserted. Returns without writing on any network error.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login (user or organization).
-    ///   - repo: The repository name.
-    ///   - repository: The ``SavedRepository`` to associate new alerts with.
-    ///   - context: The SwiftData model context to insert and delete alerts in.
-    @MainActor
-    func syncCodeScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+    /// Returns `nil` on any network or decoding error; does not write to SwiftData.
+    func fetchCodeScanningAlerts(owner: String, repo: String) async -> [CodeScanningAlertResponse]? {
         let queryItems = [
             URLQueryItem(name: "state", value: "open"),
             URLQueryItem(name: "per_page", value: "100")
         ]
-        let alerts: [CodeScanningAlertResponse]
-        do {
-            alerts = try await rest.getAll(
-                path: Endpoint.codeScanningAlerts(owner: owner, repo: repo).path,
-                queryItems: queryItems
-            )
-        } catch {
-            return
-        }
+        return try? await rest.getAll(
+            path: Endpoint.codeScanningAlerts(owner: owner, repo: repo).path,
+            queryItems: queryItems
+        )
+    }
 
-        // Full replace sync: delete existing alerts for this repository.
-        // Nil out the inverse relationship first so SwiftData updates the array synchronously.
+    /// Fetches open secret scanning alerts from the GitHub REST API.
+    ///
+    /// Returns `nil` on any network or decoding error; does not write to SwiftData.
+    func fetchSecretScanningAlerts(owner: String, repo: String) async -> [SecretScanningAlertResponse]? {
+        let queryItems = [
+            URLQueryItem(name: "state", value: "open"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        return try? await rest.getAll(
+            path: Endpoint.secretScanningAlerts(owner: owner, repo: repo).path,
+            queryItems: queryItems
+        )
+    }
+
+    // MARK: - Apply (@MainActor, writes to SwiftData)
+
+    /// Persists fetched Dependabot alerts to SwiftData, replacing any existing records.
+    ///
+    /// Does nothing when `alerts` is `nil` (preserving any existing data).
+    @MainActor
+    func applyDependabotAlerts(_ alerts: [DependabotAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
+        guard let alerts else { return }
+
+        repository.dependabotAlertDetails.forEach { context.delete($0) }
+
+        for alert in alerts {
+            let model = DependabotAlert(
+                alertNumber: alert.number,
+                packageName: alert.securityVulnerability.package.name,
+                severity: alert.securityAdvisory.severity,
+                fixVersion: alert.securityVulnerability.firstPatchedVersion?.identifier,
+                createdAt: alert.createdAt,
+                summary: alert.securityAdvisory.summary,
+                advisoryDescription: alert.securityAdvisory.description,
+                ecosystem: alert.securityVulnerability.package.ecosystem,
+                vulnerableVersionRange: alert.securityVulnerability.vulnerableVersionRange,
+                ghsaId: alert.securityAdvisory.ghsaId,
+                cveId: alert.securityAdvisory.cveId,
+                cvssScore: alert.securityAdvisory.cvss?.score,
+                htmlUrl: alert.htmlUrl,
+                manifestPath: alert.dependency.manifestPath
+            )
+            model.assignedLogins = alert.assignees.map(\.login)
+            model.repository = repository
+            context.insert(model)
+        }
+        try? context.save()
+    }
+
+    /// Persists fetched code scanning alerts to SwiftData, replacing any existing records.
+    ///
+    /// Does nothing when `alerts` is `nil` (preserving any existing data).
+    @MainActor
+    func applyCodeScanningAlerts(_ alerts: [CodeScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
+        guard let alerts else { return }
+
         let toDelete = repository.codeScanningAlertDetails
         for existing in toDelete {
             existing.repository = nil
@@ -126,41 +133,20 @@ struct SecurityService: Sendable {
         }
     }
 
-    /// Fetches open secret scanning alerts and persists them to SwiftData for the given repository.
+    /// Persists fetched secret scanning alerts to SwiftData, replacing any existing records.
     ///
-    /// Performs a full-replace sync: all existing ``SecretScanningAlert`` records for `repository`
-    /// are deleted before new alerts are inserted. Returns without writing on any network error.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login (user or organization).
-    ///   - repo: The repository name.
-    ///   - repository: The ``SavedRepository`` to associate new alerts with.
-    ///   - context: The SwiftData model context to insert and delete alerts in.
+    /// Does nothing when `alerts` is `nil` (preserving any existing data).
     @MainActor
-    func syncSecretScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
-        let queryItems = [
-            URLQueryItem(name: "state", value: "open"),
-            URLQueryItem(name: "per_page", value: "100")
-        ]
-        let responses: [SecretScanningAlertResponse]
-        do {
-            responses = try await rest.getAll(
-                path: Endpoint.secretScanningAlerts(owner: owner, repo: repo).path,
-                queryItems: queryItems
-            )
-        } catch {
-            return
-        }
+    func applySecretScanningAlerts(_ alerts: [SecretScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
+        guard let alerts else { return }
 
-        // Full replace sync: delete existing alerts for this repository.
-        // Nil out the inverse relationship first so SwiftData updates the array synchronously.
         let existing = repository.secretScanningAlertDetails
         for alert in existing {
             alert.repository = nil
             context.delete(alert)
         }
 
-        for response in responses {
+        for response in alerts {
             let alert = SecretScanningAlert(
                 alertNumber: response.number,
                 secretTypeDisplayName: response.secretTypeDisplayName,
@@ -171,6 +157,39 @@ struct SecurityService: Sendable {
             alert.repository = repository
             context.insert(alert)
         }
+    }
+
+    // MARK: - Sync (fetch + apply, used by tests and legacy call sites)
+
+    /// Fetches open Dependabot alerts and persists them to SwiftData for the given repository.
+    ///
+    /// Performs a full-replace sync: all existing ``DependabotAlert`` records for `repository`
+    /// are deleted before new alerts are inserted.
+    /// Silently discards errors to preserve any existing data.
+    @MainActor
+    func syncDependabotAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let alerts = await fetchDependabotAlerts(owner: owner, repo: repo)
+        applyDependabotAlerts(alerts, to: repository, in: context)
+    }
+
+    /// Fetches open code scanning alerts and persists them to SwiftData for the given repository.
+    ///
+    /// Performs a full-replace sync: all existing ``CodeScanningAlert`` records for `repository`
+    /// are deleted before new alerts are inserted. Returns without writing on any network error.
+    @MainActor
+    func syncCodeScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let alerts = await fetchCodeScanningAlerts(owner: owner, repo: repo)
+        applyCodeScanningAlerts(alerts, to: repository, in: context)
+    }
+
+    /// Fetches open secret scanning alerts and persists them to SwiftData for the given repository.
+    ///
+    /// Performs a full-replace sync: all existing ``SecretScanningAlert`` records for `repository`
+    /// are deleted before new alerts are inserted. Returns without writing on any network error.
+    @MainActor
+    func syncSecretScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let alerts = await fetchSecretScanningAlerts(owner: owner, repo: repo)
+        applySecretScanningAlerts(alerts, to: repository, in: context)
     }
 
     // MARK: - Update Assignees
@@ -215,15 +234,15 @@ struct SecurityService: Sendable {
             URLQueryItem(name: "per_page", value: "100")
         ]
 
-        async let dependabot: [AlertStub]? = fetch(
+        async let dependabot: [AlertStub]? = fetchStubs(
             path: Endpoint.dependabotAlerts(owner: owner, repo: repo).path,
             queryItems: queryItems
         )
-        async let codeScanning: [AlertStub]? = fetch(
+        async let codeScanning: [AlertStub]? = fetchStubs(
             path: Endpoint.codeScanningAlerts(owner: owner, repo: repo).path,
             queryItems: queryItems
         )
-        async let secretScanning: [AlertStub]? = fetch(
+        async let secretScanning: [AlertStub]? = fetchStubs(
             path: Endpoint.secretScanningAlerts(owner: owner, repo: repo).path,
             queryItems: queryItems
         )
@@ -238,8 +257,8 @@ struct SecurityService: Sendable {
 
     // MARK: - Private
 
-    /// Fetches all pages of alerts from `path`, returning `nil` on any error.
-    private func fetch(path: String, queryItems: [URLQueryItem]) async -> [AlertStub]? {
+    /// Fetches all pages of alert stubs from `path`, returning `nil` on any error.
+    private func fetchStubs(path: String, queryItems: [URLQueryItem]) async -> [AlertStub]? {
         do {
             return try await rest.getAll(path: path, queryItems: queryItems)
         } catch {
@@ -259,7 +278,7 @@ private struct AlertStub: Decodable, Sendable {}
 // MARK: - DependabotAlertResponse
 
 /// A GitHub REST API response for a single Dependabot alert.
-private struct DependabotAlertResponse: Decodable, Sendable {
+struct DependabotAlertResponse: Decodable, Sendable {
 
     /// The GitHub-assigned alert number.
     let number: Int
@@ -372,7 +391,7 @@ private struct AssigneesResponse: Decodable, Sendable {
 // MARK: - CodeScanningAlertResponse
 
 /// A GitHub REST API response for a single code scanning alert.
-private struct CodeScanningAlertResponse: Decodable, Sendable {
+struct CodeScanningAlertResponse: Decodable, Sendable {
     /// The GitHub-assigned alert number.
     let number: Int
 
@@ -398,7 +417,7 @@ private struct CodeScanningAlertResponse: Decodable, Sendable {
 // MARK: - SecretScanningAlertResponse
 
 /// A GitHub REST API response for a single secret scanning alert.
-private struct SecretScanningAlertResponse: Decodable, Sendable {
+struct SecretScanningAlertResponse: Decodable, Sendable {
     /// The GitHub-assigned alert number.
     let number: Int
 
