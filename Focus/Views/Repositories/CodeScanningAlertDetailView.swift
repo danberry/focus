@@ -19,10 +19,37 @@ struct CodeScanningAlertDetailView: View {
 
             Section("Overview") {
                 LabeledContent("Rule", value: alert.ruleName)
+                if let ruleId = alert.ruleId {
+                    LabeledContent("Rule ID", value: ruleId)
+                }
                 if let severity = alert.securitySeverityLevel {
                     LabeledContent("Severity", value: severity.capitalized)
                 }
-                LabeledContent("Alert Number", value: "#\(alert.alertNumber)")
+                if let toolName = alert.toolName {
+                    LabeledContent("Tool", value: toolName)
+                }
+                LabeledContent("Alert", value: "#\(alert.alertNumber)")
+            }
+
+            // MARK: Finding
+
+            if let messageText = alert.messageText {
+                Section("Finding") {
+                    Text(messageText)
+                        .font(.callout)
+                }
+            }
+
+            // MARK: Location
+
+            if let path = alert.locationPath {
+                Section("Location") {
+                    if let line = alert.locationStartLine {
+                        LabeledContent("File", value: "\(path):\(line)")
+                    } else {
+                        LabeledContent("File", value: path)
+                    }
+                }
             }
 
             // MARK: Details
