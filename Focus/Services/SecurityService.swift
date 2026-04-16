@@ -119,7 +119,13 @@ struct SecurityService: Sendable {
                 ruleName: response.rule.name,
                 securitySeverityLevel: response.rule.securitySeverityLevel,
                 createdAt: response.createdAt,
-                htmlUrl: response.htmlUrl
+                htmlUrl: response.htmlUrl,
+                ruleId: response.rule.id,
+                ruleDescription: response.rule.description,
+                toolName: response.tool?.name,
+                locationPath: response.mostRecentInstance?.location?.path,
+                locationStartLine: response.mostRecentInstance?.location?.startLine,
+                messageText: response.mostRecentInstance?.message?.text
             )
             alert.repository = repository
             context.insert(alert)
@@ -385,13 +391,55 @@ private struct CodeScanningAlertResponse: Decodable, Sendable {
     /// The code scanning rule that triggered this alert.
     let rule: Rule
 
+    /// The analysis tool that produced this alert, or `nil` if not provided.
+    let tool: Tool?
+
+    /// The most recent instance of this alert, or `nil` if not provided.
+    let mostRecentInstance: Instance?
+
     /// A code scanning rule that produced an alert.
     struct Rule: Decodable, Sendable {
+        /// The stable identifier for the rule (e.g., `"js/sql-injection"`).
+        let id: String?
+
         /// The human-readable name of the rule.
         let name: String
 
+        /// A short description of what the rule checks for, or `nil` if not provided.
+        let description: String?
+
         /// The security severity level of the rule, or `nil` if not classified.
         let securitySeverityLevel: String?
+    }
+
+    /// The analysis tool that generated a code scanning alert.
+    struct Tool: Decodable, Sendable {
+        /// The name of the tool (e.g., `"CodeQL"`).
+        let name: String
+    }
+
+    /// A single instance of a code scanning alert in the repository.
+    struct Instance: Decodable, Sendable {
+        /// The location within the file where the issue was found, or `nil` if not provided.
+        let location: Location?
+
+        /// The human-readable message describing the specific finding, or `nil` if not provided.
+        let message: Message?
+
+        /// The file location of a code scanning alert instance.
+        struct Location: Decodable, Sendable {
+            /// The path to the file relative to the repository root.
+            let path: String?
+
+            /// The first line of the flagged code region.
+            let startLine: Int?
+        }
+
+        /// The descriptive message for a code scanning alert instance.
+        struct Message: Decodable, Sendable {
+            /// The human-readable text of the finding.
+            let text: String?
+        }
     }
 }
 
