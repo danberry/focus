@@ -27,6 +27,15 @@ final class SecretScanningAlert {
     /// The date the alert was created on GitHub.
     var createdAt: Date
 
+    /// The URL of the alert on GitHub.com; empty string until synced.
+    var htmlUrl: String = ""
+
+    /// Whether push protection was bypassed to introduce this secret.
+    var pushProtectionBypassed: Bool = false
+
+    /// Whether this secret has been detected in more than one repository.
+    var multiRepo: Bool = false
+
     // MARK: - Init
 
     /// Creates a new secret scanning alert.
@@ -37,18 +46,27 @@ final class SecretScanningAlert {
     ///   - validity: The validity state reported by GitHub.
     ///   - publiclyLeaked: Whether the secret has been publicly exposed outside the repository.
     ///   - createdAt: The date the alert was created on GitHub.
+    ///   - htmlUrl: The URL of the alert on GitHub.com.
+    ///   - pushProtectionBypassed: Whether push protection was bypassed to introduce this secret.
+    ///   - multiRepo: Whether this secret has been detected in more than one repository.
     init(
         alertNumber: Int,
         secretTypeDisplayName: String,
         validity: String,
         publiclyLeaked: Bool,
-        createdAt: Date
+        createdAt: Date,
+        htmlUrl: String = "",
+        pushProtectionBypassed: Bool = false,
+        multiRepo: Bool = false
     ) {
         self.alertNumber = alertNumber
         self.secretTypeDisplayName = secretTypeDisplayName
         self.validity = validity
         self.publiclyLeaked = publiclyLeaked
         self.createdAt = createdAt
+        self.htmlUrl = htmlUrl
+        self.pushProtectionBypassed = pushProtectionBypassed
+        self.multiRepo = multiRepo
     }
 
     // MARK: - Relationships
