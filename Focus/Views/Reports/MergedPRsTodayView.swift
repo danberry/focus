@@ -26,11 +26,9 @@ struct MergedPRsTodayView: View {
     /// All merged PRs across every repository, as a flat list.
     private var allPRs: [MergedPR] { prsByRepo.values.flatMap { $0 } }
 
-    /// The start of today in UTC.
+    /// The start of today in the device's local timezone.
     private var today: Date {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        return cal.startOfDay(for: Date())
+        Calendar.current.startOfDay(for: Date())
     }
 
     /// A formatted long-style date string for today, used as the report subtitle.
@@ -38,7 +36,6 @@ struct MergedPRsTodayView: View {
         let fmt = DateFormatter()
         fmt.dateStyle = .long
         fmt.timeStyle = .none
-        fmt.timeZone = TimeZone(identifier: "UTC")
         return fmt.string(from: today)
     }
 
