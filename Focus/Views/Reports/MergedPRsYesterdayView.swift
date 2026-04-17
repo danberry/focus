@@ -26,11 +26,10 @@ struct MergedPRsYesterdayView: View {
     /// All merged PRs across every repository, flattened into a single array.
     private var allPRs: [MergedPR] { prsByRepo.values.flatMap { $0 } }
 
-    /// Yesterday's date in UTC.
+    /// Yesterday's date in the device's local timezone.
     private var yesterday: Date {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        return cal.date(byAdding: .day, value: -1, to: Date())!
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: .day, value: -1, to: startOfToday)!
     }
 
     /// A formatted long-style date string for yesterday, used as the navigation subtitle detail.

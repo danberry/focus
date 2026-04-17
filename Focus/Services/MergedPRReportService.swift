@@ -138,11 +138,10 @@ struct MergedPRReportService: Sendable {
         return result
     }
 
-    /// Formats a date as `yyyy-MM-dd` in UTC for use in GitHub search queries.
+    /// Formats a date as `yyyy-MM-dd` in the device's local timezone for use in GitHub search queries.
     private func formattedDate(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
-        fmt.timeZone = TimeZone(identifier: "UTC")
         return fmt.string(from: date)
     }
 }

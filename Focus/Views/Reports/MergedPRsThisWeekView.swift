@@ -26,30 +26,28 @@ struct MergedPRsThisWeekView: View {
     /// All merged PRs across every repository, unsorted.
     private var allPRs: [MergedPR] { prsByRepo.values.flatMap { $0 } }
 
-    /// A UTC-based Gregorian calendar with Monday as the first weekday.
-    private var utcCalendar: Calendar {
+    /// A local-timezone Gregorian calendar with Monday as the first weekday.
+    private var localCalendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
         cal.firstWeekday = 2 // Monday
         return cal
     }
 
-    /// The start of the current ISO week in UTC (Monday at 00:00:00 UTC).
+    /// The start of the current ISO week in the device's local timezone (Monday at midnight local).
     private var weekStart: Date {
-        utcCalendar.dateComponents([.calendar, .yearForWeekOfYear, .weekOfYear], from: Date()).date!
+        localCalendar.dateComponents([.calendar, .yearForWeekOfYear, .weekOfYear], from: Date()).date!
     }
 
-    /// The start of today in UTC.
+    /// The start of today in the device's local timezone.
     private var today: Date {
-        utcCalendar.startOfDay(for: Date())
+        localCalendar.startOfDay(for: Date())
     }
 
     /// A formatted date range string spanning from the week start through today (e.g. "Apr 7 – 13, 2026").
     private var dateSubtitle: String {
         let fmt = DateFormatter()
-        fmt.timeZone = TimeZone(identifier: "UTC")
-        let startComponents = utcCalendar.dateComponents([.month, .day], from: weekStart)
-        let endComponents = utcCalendar.dateComponents([.year, .month, .day], from: today)
+        let startComponents = localCalendar.dateComponents([.month, .day], from: weekStart)
+        let endComponents = localCalendar.dateComponents([.year, .month, .day], from: today)
 
         fmt.dateFormat = "MMM d"
         let startStr = fmt.string(from: weekStart)
