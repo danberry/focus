@@ -1,0 +1,31 @@
+// MARK: - BriefingQueries
+
+/// GraphQL query strings for assembling the weekly Focus Briefing.
+///
+/// `BriefingQueries` is an enum namespace — it cannot be instantiated.
+///
+/// Queries in this namespace use the GitHub GraphQL Search API with `issueCount`
+/// to return totals without fetching or paginating result nodes.
+enum BriefingQueries {
+
+    // MARK: - Properties
+
+    /// Fetches a single merged PR count for one repository and date range.
+    ///
+    /// The `$q` variable is a GitHub Search query string, for example:
+    /// ```
+    /// "repo:owner/name is:pr is:merged merged:2026-04-13..2026-04-19"
+    /// ```
+    ///
+    /// - Note: `first: 1` is required by the GitHub Search API even when only
+    ///   `issueCount` is needed. The single returned node is never read.
+    ///
+    /// - Important: GitHub's Search API has a rate limit of 30 requests per minute for
+    ///   authenticated requests. Each repository fires one request.
+    // TODO: Batch multiple repositories into a single aliased query — the current fan-out wastes up to N search calls per briefing render.
+    static let weeklyMergedPRCount = """
+        query BriefingWeeklyPRs($q: String!) {
+            search(query: $q, type: ISSUE, first: 1) { issueCount }
+        }
+        """
+}
