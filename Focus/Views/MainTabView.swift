@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - MainTabView
 
-/// The root tab bar interface, providing navigation to Repositories, Teams, Reports, and Settings.
+/// The root tab bar interface, providing navigation to Repositories, Teams, Focus, Reports, and Settings.
 struct MainTabView: View {
 
     // MARK: - Body
@@ -16,6 +16,11 @@ struct MainTabView: View {
             Tab("Teams", systemImage: "person.2") {
                 TeamsView()
             }
+            Tab("Focus", systemImage: "newspaper") {
+                NavigationStack {
+                    BriefingView()
+                }
+            }
             Tab("Reports", systemImage: "chart.bar.doc.horizontal") {
                 ReportsView()
             }
@@ -28,5 +33,5 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
-        .modelContainer(for: [SavedRepository.self, Team.self, Member.self, MemberContribution.self, Discipline.self, JobTitle.self], inMemory: true)
+        .modelContainer(for: [SavedRepository.self, Team.self, Member.self, MemberContribution.self, Discipline.self, JobTitle.self, DailyContribution.self, DependabotAlert.self, RepositoryVelocity.self, OpenPullRequest.self], inMemory: true)
 }
