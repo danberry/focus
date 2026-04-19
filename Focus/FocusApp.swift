@@ -16,9 +16,6 @@ struct FocusApp: App {
     /// The SwiftData model container, created once and shared with `BackgroundSyncManager`.
     private let modelContainer = try! ModelContainer(for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self, Discipline.self, JobTitle.self, RepositoryVelocity.self, SavedOrganization.self)
 
-    /// The horizontal size class, used to select the appropriate root interface for the current device.
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
     /// The current scene phase, used to trigger a sync when the app becomes active.
     @Environment(\.scenePhase) private var scenePhase
 
@@ -36,7 +33,7 @@ struct FocusApp: App {
             Group {
                 switch authService.authState {
                 case .unauthenticated, .authenticated:
-                    if horizontalSizeClass == .regular {
+                    if UIDevice.current.userInterfaceIdiom == .pad {
                         MainSplitView()
                     } else {
                         MainTabView()
