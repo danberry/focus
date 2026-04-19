@@ -37,7 +37,7 @@ struct BriefingServiceTests {
         let container = try makeContainer()
         let context = container.mainContext
 
-        let briefing = await makeService().generate(in: context)
+        let briefing = await makeService().generate(scope: .all, in: context)
 
         #expect(briefing.kpis.shipping.value == 0)
     }
@@ -69,7 +69,7 @@ struct BriefingServiceTests {
         repo.dependabotAlertDetails.append(critical2)
         repo.dependabotAlertDetails.append(high)
 
-        let briefing = await makeService().generate(in: context)
+        let briefing = await makeService().generate(scope: .all, in: context)
 
         #expect(briefing.kpis.security.critical == 2)
     }
@@ -82,7 +82,7 @@ struct BriefingServiceTests {
         let member = Member(name: "Priya Shah", githubId: 42, githubLogin: "priyashah")
         context.insert(member)
 
-        let briefing = await makeService().generate(in: context)
+        let briefing = await makeService().generate(scope: .all, in: context)
 
         #expect(briefing.blocked.members.contains { $0.name == "Priya Shah" })
     }
@@ -95,7 +95,7 @@ struct BriefingServiceTests {
         let repo = SavedRepository(githubId: "1", owner: "acme", name: "widget", displayName: "Widget")
         context.insert(repo)
 
-        let briefing = await makeService(issueCount: 7).generate(in: context)
+        let briefing = await makeService(issueCount: 7).generate(scope: .all, in: context)
 
         #expect(briefing.kpis.shipping.value == 7)
     }
@@ -105,8 +105,62 @@ struct BriefingServiceTests {
         let container = try makeContainer()
         let context = container.mainContext
 
-        let briefing = await makeService().generate(in: context)
+        let briefing = await makeService().generate(scope: .all, in: context)
 
         #expect(briefing.weekRange.contains("—"))
+    }
+
+    // MARK: - scope
+
+    /// Verifies that a team-scoped briefing only counts merged PRs for repositories assigned to that team.
+    ///
+    /// Creates one repo assigned to the team and one unassigned. The stubbed GraphQL response
+    /// returns `issueCount == 5` for every search, so the shipping total equals the number of
+    /// repos whose PRs actually get counted (5 for the assigned repo, nothing for the unassigned one).
+    @Test func scopedToTeamFiltersRepos() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let team = Team(name: "Platform", teamDescription: "")
+        context.insert(team)
+
+        let assignedRepo = SavedRepository(githubId: "1", owner: "acme", name: "assigned", displayName: "Assigned")
+        assignedRepo.team = team
+        context.insert(assignedRepo)
+
+        let unassignedRepo = SavedRepository(githubId: "2", owner: "acme", name: "loose", displayName: "Loose")
+        context.insert(unassignedRepo)
+
+        let briefing = await makeService(issueCount: 5).generate(scope: .team(team), in: context)
+
+        #expect(briefing.kpis.shipping.value == 5)
+    }
+
+    /// Verifies that a department-scoped briefing only includes idle members whose team rolls up to that department.
+    ///
+    /// Creates a member on a team inside the target department and a second member with no team.
+    /// Only the in-department member should appear in `blocked.members`.
+    @Test func scopedToDepartmentFiltersMembers() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let dept = Department(name: "Engineering")
+        context.insert(dept)
+
+        let team = Team(name: "Infra", teamDescription: "")
+        team.department = dept
+        context.insert(team)
+
+        let inDept = Member(name: "Ada Lovelace", githubId: 1, githubLogin: "ada")
+        inDept.team = team
+        context.insert(inDept)
+
+        let outOfDept = Member(name: "Grace Hopper", githubId: 2, githubLogin: "grace")
+        context.insert(outOfDept)
+
+        let briefing = await makeService().generate(scope: .department(dept), in: context)
+
+        #expect(briefing.blocked.members.contains { $0.name == "Ada Lovelace" })
+        #expect(!briefing.blocked.members.contains { $0.name == "Grace Hopper" })
     }
 }

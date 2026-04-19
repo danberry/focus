@@ -32,17 +32,21 @@ struct BriefingService: Sendable {
 
     // MARK: - Generation
 
-    /// Builds a ``Briefing`` for the previous calendar week.
+    /// Builds a ``Briefing`` for the previous calendar week, optionally filtered by scope.
     ///
     /// The returned briefing combines fresh merged PR counts (fetched in parallel) with
     /// security alerts and member contributions read from the supplied SwiftData context.
+    /// When `scope` is not ``BriefingScope/all``, the fetched repositories and members are
+    /// filtered to the matching team, department, or organization before any aggregation.
     ///
     /// If week computation or repository fetching fails, returns ``Briefing/placeholder``.
     ///
-    /// - Parameter context: The SwiftData model context used to read the local graph.
+    /// - Parameters:
+    ///   - scope: The filter that restricts the data graph read from `context`; defaults to ``BriefingScope/all``.
+    ///   - context: The SwiftData model context used to read the local graph.
     /// - Returns: An assembled ``Briefing`` for the previous week.
     @MainActor
-    func generate(in context: ModelContext) async -> Briefing {
+    func generate(scope: BriefingScope = .all, in context: ModelContext) async -> Briefing {
         guard let weekInterval = previousWeekInterval() else {
             return Briefing.placeholder
         }
@@ -57,8 +61,13 @@ struct BriefingService: Sendable {
             return Briefing.placeholder
         }
 
+        let members = (try? context.fetch(FetchDescriptor<Member>())) ?? []
+
+        let scopedRepos = filter(repositories: repositories, by: scope)
+        let scopedMembers = filter(members: members, by: scope)
+
         // Snapshot Sendable (owner, repo) pairs for the non-isolated fetch fan-out.
-        let repoKeys: [(owner: String, name: String)] = repositories.map { ($0.owner, $0.name) }
+        let repoKeys: [(owner: String, name: String)] = scopedRepos.map { ($0.owner, $0.name) }
         let prCounts = await fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
@@ -66,16 +75,64 @@ struct BriefingService: Sendable {
         )
         let criticalAlerts = (try? context.fetch(criticalDescriptor)) ?? []
 
-        let members = (try? context.fetch(FetchDescriptor<Member>())) ?? []
-
         return assemble(
             weekInterval: weekInterval,
             weekRange: weekRange,
-            repositories: repositories,
+            repositories: scopedRepos,
             prCounts: prCounts,
             criticalAlerts: criticalAlerts,
-            members: members
+            members: scopedMembers
         )
+    }
+
+    // MARK: - Scope Filtering
+
+    /// Filters a flat list of saved repositories down to those matching the given scope.
+    ///
+    /// Team and department membership are resolved through the repository's `team` →
+    /// `department` chain. The organization case uses the ``SavedRepository/organizationLogin``
+    /// soft foreign key rather than a direct relationship.
+    ///
+    /// - Parameters:
+    ///   - repositories: The full set of saved repositories fetched from SwiftData.
+    ///   - scope: The scope to filter by. ``BriefingScope/all`` returns the input unchanged.
+    /// - Returns: The subset of `repositories` that belong to the scope.
+    @MainActor
+    private func filter(repositories: [SavedRepository], by scope: BriefingScope) -> [SavedRepository] {
+        switch scope {
+        case .all:
+            return repositories
+        case .team(let team):
+            return repositories.filter { $0.team?.persistentModelID == team.persistentModelID }
+        case .department(let dept):
+            return repositories.filter { $0.team?.department?.persistentModelID == dept.persistentModelID }
+        case .organization(let org):
+            return repositories.filter { $0.organizationLogin == org.login }
+        }
+    }
+
+    /// Filters a flat list of members down to those matching the given scope.
+    ///
+    /// Members without a team never match a team, department, or organization scope.
+    /// Department and organization membership are resolved by traversing the member's
+    /// `team` → `department`/`organization` chain.
+    ///
+    /// - Parameters:
+    ///   - members: The full set of members fetched from SwiftData.
+    ///   - scope: The scope to filter by. ``BriefingScope/all`` returns the input unchanged.
+    /// - Returns: The subset of `members` that belong to the scope.
+    @MainActor
+    private func filter(members: [Member], by scope: BriefingScope) -> [Member] {
+        switch scope {
+        case .all:
+            return members
+        case .team(let team):
+            return members.filter { $0.team?.persistentModelID == team.persistentModelID }
+        case .department(let dept):
+            return members.filter { $0.team?.department?.persistentModelID == dept.persistentModelID }
+        case .organization(let org):
+            return members.filter { $0.team?.organization?.persistentModelID == org.persistentModelID }
+        }
     }
 
     // MARK: - Week Computation
