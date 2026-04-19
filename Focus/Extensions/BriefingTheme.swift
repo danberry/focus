@@ -19,6 +19,36 @@ enum BriefingTone: Hashable {
 
     /// Neutral tone — paper surfaces with hairline borders.
     case neutral
+    
+    /// The button background fill for the current tone.
+    var background: Color {
+        switch self {
+        case .red: return BriefingColor.red
+        case .blue: return BriefingColor.blue
+        case .neutral: return BriefingColor.paper
+        }
+    }
+
+    /// The label foreground color for the current tone.
+    var foreground: Color {
+        switch self {
+        case .red, .blue: return .white
+        case .neutral: return BriefingColor.ink
+        }
+    }
+    
+}
+
+extension ShapeStyle where Self == Color {
+    
+    static func background(_ tone: BriefingTone) -> Self {
+        tone.background
+    }
+    
+    static func foreground(_ tone: BriefingTone) -> Self {
+        tone.foreground
+    }
+    
 }
 
 // MARK: - BriefingColor
