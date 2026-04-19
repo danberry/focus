@@ -21,7 +21,7 @@ struct PullRequestServiceTests {
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
-            for: SavedRepository.self, OpenPullRequest.self,
+            for: SavedRepository.self, OpenPullRequest.self, Team.self, Department.self, SavedOrganization.self,
             configurations: config
         )
     }

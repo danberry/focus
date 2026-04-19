@@ -25,7 +25,7 @@ struct BriefingServiceTests {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
             for: SavedRepository.self, DependabotAlert.self,
-            Member.self, DailyContribution.self,
+            Member.self, DailyContribution.self, Team.self, Department.self, SavedOrganization.self,
             configurations: config
         )
     }

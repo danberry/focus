@@ -15,6 +15,7 @@ struct SavedRepositoryTests {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
             for: SavedRepository.self, DependabotAlert.self, CodeScanningAlert.self, SecretScanningAlert.self,
+            Team.self, Department.self, SavedOrganization.self,
             configurations: config
         )
     }

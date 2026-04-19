@@ -16,7 +16,7 @@ struct DependabotAlertAssignmentTests {
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
-            for: SavedRepository.self, DependabotAlert.self,
+            for: SavedRepository.self, DependabotAlert.self, Team.self, Department.self, SavedOrganization.self,
             configurations: config
         )
     }
