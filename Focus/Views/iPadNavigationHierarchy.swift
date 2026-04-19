@@ -21,8 +21,8 @@ struct iPadNavigationHierarchy: View {
         HStack(spacing: 6) {
             ForEach(Array(coordinator.stack.enumerated()), id: \.offset) { index, destination in
                 if index > 0 {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .medium))
+                    Text("/")
+                        .font(.system(size: 11))
                         .foregroundStyle(BriefingColor.ink4)
                 }
 
