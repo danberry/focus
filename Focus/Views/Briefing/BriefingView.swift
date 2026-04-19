@@ -35,6 +35,11 @@ struct BriefingView: View {
     /// Whether the briefing generation task is currently in flight.
     @State private var isLoading = false
 
+    /// Closure invoked when an attention card's action button is tapped.
+    ///
+    /// Defaults to a no-op — on iPad, `iPadContentView` injects a push action.
+    var onAttentionAction: (BriefingAttentionItem) -> Void = { _ in }
+
     /// The currently selected scope used to filter the briefing.
     @State private var scope: BriefingScope = .all
 
@@ -52,7 +57,7 @@ struct BriefingView: View {
                         attention: briefing.attention,
                         weekRange: briefing.weekRange,
                         volume: briefing.volume,
-                        onAttentionAction: { _ in }
+                        onAttentionAction: onAttentionAction
                     )
 
                     sectionDivider

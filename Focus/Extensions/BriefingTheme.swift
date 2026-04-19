@@ -9,7 +9,7 @@ import UIKit
 ///
 /// `BriefingTone` selects matching fill, border, and foreground colors when
 /// applied via ``BriefingCardModifier`` or ``BriefingChipView``.
-enum BriefingTone {
+enum BriefingTone: Hashable {
 
     /// Red tone — reserved for security alerts, critical counts, and the security section header.
     case red
