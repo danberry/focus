@@ -136,13 +136,13 @@ enum BriefingFont {
     static let kpiSupporting: Font = .system(size: 24, weight: .medium).monospacedDigit()
 
     /// 15pt medium — attention card titles.
-    static let attentionTitle: Font = .system(size: 15, weight: .medium)
+    static let attentionTitle: Font = .system(size: 18, weight: .medium)
 
     /// 14pt body — primary card body copy.
     static let body: Font = .system(size: 14)
 
     /// 10pt monospaced — eyebrow labels above section headers and chips.
-    static let eyebrow: Font = .system(size: 10, design: .monospaced)
+    static let eyebrow: Font = .system(size: 13, weight: .medium, design: .monospaced)
 
     /// 11pt monospaced — meta lines (timestamps, evidence, idle labels).
     static let meta: Font = .system(size: 11, design: .monospaced)
@@ -252,7 +252,7 @@ struct BriefingCardModifier: ViewModifier {
         switch tone {
         case .red: return BriefingColor.redBg
         case .blue: return BriefingColor.blueBg
-        case .neutral: return BriefingColor.paper2
+        case .neutral: return BriefingColor.paper
         }
     }
 
@@ -261,7 +261,7 @@ struct BriefingCardModifier: ViewModifier {
         switch tone {
         case .red: return BriefingColor.redBd
         case .blue: return BriefingColor.blueBd
-        case .neutral: return BriefingColor.rule2
+        case .neutral: return BriefingColor.rule
         }
     }
 

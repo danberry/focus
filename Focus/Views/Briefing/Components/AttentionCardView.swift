@@ -4,7 +4,7 @@ import SwiftUI
 
 /// A full-width attention card shown in the briefing's hero ranked list.
 ///
-/// Each card surfaces one ``BriefingAttentionItem`` with a tone-matched chip,
+/// Each card surfaces one ``BriefingAttentionItem`` with a tone-colored eyebrow,
 /// title, meta line, and a tone-matched call-to-action button.
 struct AttentionCardView: View {
 
@@ -16,30 +16,48 @@ struct AttentionCardView: View {
     /// Closure invoked when the action button is tapped. Defaults to a no-op.
     var onAction: () -> Void = {}
 
+    // MARK: - Helpers
+
+    private var toneColor: Color {
+        switch item.tone {
+        case .red: return BriefingColor.red2
+        case .blue: return BriefingColor.blue2
+        case .neutral: return BriefingColor.ink2
+        }
+    }
+
     // MARK: - Body
 
     /// The view's content.
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            BriefingChipView(label: "§ \(item.n)", tone: item.tone)
+        HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 20) {
+                Text(item.n)
+                    .font(BriefingFont.eyebrow)
+                    .foregroundStyle(toneColor)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title)
+                        .font(BriefingFont.attentionTitle)
+                        .foregroundStyle(BriefingColor.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(item.title)
-                .font(BriefingFont.attentionTitle)
-                .foregroundStyle(BriefingColor.ink)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(item.meta)
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(item.meta)
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(toneColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
 
             Button(action: onAction) {
                 Text(item.actionLabel)
-                    .padding(.vertical, 9)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 14)
             }
             .buttonStyle(BriefingActionButtonStyle(tone: item.tone))
         }
-        .padding(16)
+        .padding(.vertical, 18)
+        .padding(.horizontal, 22)
         .briefingCard(tone: item.tone)
     }
 }
@@ -59,11 +77,8 @@ private struct BriefingActionButtonStyle: ButtonStyle {
     /// Builds the styled button label.
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(BriefingFont.meta)
-            .textCase(.uppercase)
-            .tracking(0.5)
+            .font(BriefingFont.eyebrow)
             .foregroundStyle(foreground)
-            .frame(maxWidth: .infinity)
             .background(Capsule().fill(background))
             .overlay(
                 Capsule().strokeBorder(borderColor, lineWidth: borderWidth)

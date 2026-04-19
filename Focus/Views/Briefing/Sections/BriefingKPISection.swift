@@ -17,10 +17,8 @@ struct BriefingKPISection: View {
 
     /// The view's content.
     var body: some View {
-        VStack(spacing: 12) {
-
-            // MARK: Hero row
-            HStack(spacing: 12) {
+        Grid(horizontalSpacing: 0) {
+            GridRow(alignment: .top) {
                 KPICardView(
                     title: "Shipping",
                     value: "\(kpis.shipping.value)",
@@ -30,6 +28,10 @@ struct BriefingKPISection: View {
                     isHero: true
                 )
                 .frame(maxWidth: .infinity)
+                
+                Divider()
+                    .frame(maxWidth: 1, maxHeight:.infinity)
+                    .background(BriefingColor.rule)
 
                 KPICardView(
                     title: "Security Debt",
@@ -40,25 +42,38 @@ struct BriefingKPISection: View {
                     isHero: true
                 )
                 .frame(maxWidth: .infinity)
-            }
-
-            // MARK: Supporting grid
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                
+                Divider()
+                    .frame(maxWidth: 1, maxHeight:.infinity)
+                    .background(BriefingColor.rule)
+                
                 KPICardView(
                     title: "Idle",
                     value: "\(kpis.idle.value)",
                     deltaLabel: idleDeltaLabel
                 )
+                
+                Divider()
+                    .frame(maxWidth: 1, maxHeight:.infinity)
+                    .background(BriefingColor.rule)
 
                 KPICardView(
                     title: "Review Median",
                     value: kpis.reviewMedianHours.map { "\($0)h" } ?? "—"
                 )
+                
+                Divider()
+                    .frame(maxWidth: 1, maxHeight:.infinity)
+                    .background(BriefingColor.rule)
 
                 KPICardView(
                     title: "CI Pass",
                     value: kpis.ciPassPct.map { "\($0)%" } ?? "—"
                 )
+                
+                Divider()
+                    .frame(maxWidth: 1, maxHeight:.infinity)
+                    .background(BriefingColor.rule)
 
                 KPICardView(
                     title: "Deploys",
@@ -66,7 +81,6 @@ struct BriefingKPISection: View {
                 )
             }
         }
-        .padding(.horizontal, BriefingLayout.gutter)
     }
 
     // MARK: - Helpers
