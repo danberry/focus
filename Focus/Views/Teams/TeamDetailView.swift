@@ -9,13 +9,19 @@ struct TeamDetailView: View {
     // MARK: - Properties
 
     /// The team whose detail data this view displays.
-    let team: Team
+    @Bindable var team: Team
 
     /// The SwiftData model context, injected from the root `ModelContainer`.
     @Environment(\.modelContext) private var modelContext
 
     /// The authentication service used to construct clients for member management.
     @Environment(AuthenticationService.self) private var authService
+
+    /// All saved organizations, used to populate the organization picker.
+    @Query(sort: \SavedOrganization.login) private var organizations: [SavedOrganization]
+
+    /// All departments, used to populate the department picker.
+    @Query(sort: \Department.name) private var departments: [Department]
 
     /// Tracks whether the add-member sheet is presented.
     @State private var isAddingMember = false
@@ -57,10 +63,40 @@ struct TeamDetailView: View {
                     .onDelete(perform: deleteMember)
                 }
             }
+
+            Section("Assignment") {
+                Picker("Organization", selection: $team.organization) {
+                    Text("None").tag(Optional<SavedOrganization>.none)
+                    ForEach(organizations) { org in
+                        Text(org.name ?? org.login).tag(Optional(org))
+                    }
+                }
+                .pickerStyle(.menu)
+
+                let availableDepartments: [Department] = team.organization == nil
+                    ? departments
+                    : departments.filter { $0.organization?.login == team.organization?.login }
+
+                Picker("Department", selection: $team.department) {
+                    Text("None").tag(Optional<Department>.none)
+                    ForEach(availableDepartments) { dept in
+                        Text(dept.name).tag(Optional(dept))
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(departments.isEmpty)
+            }
         }
         .listStyle(.plain)
         .navigationTitle(team.name)
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: team.organization) { _, newOrg in
+            if let dept = team.department, let newOrg {
+                if dept.organization?.login != newOrg.login {
+                    team.department = nil
+                }
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

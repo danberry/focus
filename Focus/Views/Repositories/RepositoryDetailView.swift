@@ -9,7 +9,10 @@ struct RepositoryDetailView: View {
     // MARK: - Properties
 
     /// The repository whose detail data this view displays.
-    let repository: SavedRepository
+    @Bindable var repository: SavedRepository
+
+    /// All teams, used to populate the ownership picker.
+    @Query(sort: [SortDescriptor(\Team.name, comparator: .localizedStandard)]) private var teams: [Team]
 
     /// The currently selected velocity period, controlling which metric is shown in the hero row.
     @State private var selectedPeriod: VelocityPeriod = .yearToDate
@@ -105,6 +108,18 @@ struct RepositoryDetailView: View {
                         LabeledContent(isTeam ? "Team" : "User", value: displayHandle)
                     }
                 }
+            }
+
+            // MARK: Ownership
+
+            Section("Ownership") {
+                Picker("Team", selection: $repository.team) {
+                    Text("Unassigned").tag(Optional<Team>.none)
+                    ForEach(teams) { team in
+                        Text(team.name).tag(Optional(team))
+                    }
+                }
+                .pickerStyle(.menu)
             }
 
             // MARK: Security Alerts

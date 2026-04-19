@@ -82,6 +82,9 @@ struct SettingsView: View {
                     NavigationLink("Organizations") {
                         OrganizationsView()
                     }
+                    NavigationLink("Departments") {
+                        DepartmentsView()
+                    }
                     NavigationLink("Disciplines") {
                         DisciplinesView()
                     }
