@@ -48,12 +48,20 @@ final class iPadNavigationCoordinator {
     func navigate(to destination: iPadNavigationDestination) {
         stack = [destination]
     }
+
+    /// Truncates the stack so that the destination at `index` becomes the current one.
+    ///
+    /// Has no effect when `index` is out of bounds.
+    func popTo(index: Int) {
+        guard index < stack.count else { return }
+        stack = Array(stack.prefix(index + 1))
+    }
 }
 
 // MARK: - iPadNavigationDestination
 
 /// A destination that can be pushed onto the ``iPadNavigationCoordinator`` stack.
-enum iPadNavigationDestination: CaseIterable {
+enum iPadNavigationDestination: Equatable, Hashable {
 
     /// The Focus briefing dashboard.
     case briefing
@@ -70,16 +78,23 @@ enum iPadNavigationDestination: CaseIterable {
     /// The settings screen.
     case settings
 
+    /// The detail view for a briefing attention card.
+    case attentionDetail(BriefingAttentionItem)
+
     // MARK: - Properties
+
+    /// The top-level destinations shown in the navigation hierarchy menu.
+    static let rootDestinations: [Self] = [.briefing, .repositories, .teams, .reports, .settings]
 
     /// The display title for this destination, shown in the navigation hierarchy.
     var title: String {
         switch self {
-        case .briefing:      "The Brief"
-        case .repositories:  "Repositories"
-        case .teams:         "Teams"
-        case .reports:       "Reports"
-        case .settings:      "Settings"
+        case .briefing:                    "The Brief"
+        case .repositories:               "Repositories"
+        case .teams:                      "Teams"
+        case .reports:                    "Reports"
+        case .settings:                   "Settings"
+        case .attentionDetail(let item):  item.actionLabel.replacingOccurrences(of: " →", with: "")
         }
     }
 }

@@ -172,7 +172,7 @@ struct BriefingHero: Sendable {
 // MARK: - BriefingAttentionItem
 
 /// One ranked attention card shown beneath the hero verdict.
-struct BriefingAttentionItem: Sendable {
+struct BriefingAttentionItem: Sendable, Equatable, Hashable {
 
     /// The section number chip, e.g. `"01"`.
     let n: String
