@@ -5,7 +5,7 @@ import SwiftUI
 /// The editorial hero block at the top of the Focus Briefing.
 ///
 /// Renders the volume eyebrow, two-line serif verdict (with a tone-matched
-/// highlight band on the second line), and the three ranked attention cards.
+/// underline on the emphasis word in the second line), and the three ranked attention cards.
 struct BriefingHeroSection: View {
 
     // MARK: - Properties
@@ -42,18 +42,10 @@ struct BriefingHeroSection: View {
             .foregroundStyle(BriefingColor.ink3)
 
             // MARK: Verdict
-            VStack(alignment: .leading, spacing: 4) {
-                Text(hero.verdictA)
-                    .font(BriefingFont.hero)
-                    .foregroundStyle(BriefingColor.ink)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                Text(hero.verdictB)
-                    .font(BriefingFont.hero)
-                    .foregroundStyle(BriefingColor.ink)
-                    .briefingHighlight(highlightColor)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            Text(verdictAttributed)
+                .font(BriefingFont.hero)
+                .foregroundStyle(BriefingColor.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             // MARK: Attention cards
             VStack(spacing: 10) {
@@ -64,18 +56,26 @@ struct BriefingHeroSection: View {
                 }
             }
         }
-        .padding(.horizontal, BriefingLayout.gutter)
     }
 
     // MARK: - Helpers
 
-    /// The highlight band color derived from `hero.highlight`.
-    private var highlightColor: Color {
+    /// The tone-matched underline color for the emphasis word.
+    private var emphasisColor: Color {
         switch hero.highlight {
         case .red: return BriefingColor.red
         case .blue: return BriefingColor.blue
         case .neutral: return BriefingColor.ink4
         }
+    }
+
+    /// Both verdict lines joined by a newline, with `highlightWord` underlined in the tone color.
+    private var verdictAttributed: AttributedString {
+        var str = AttributedString(hero.verdictA + "\n" + hero.verdictB)
+        if let range = str.range(of: hero.highlightWord, options: .caseInsensitive) {
+            str[range].underlineStyle = Text.LineStyle(pattern: .solid, color: emphasisColor)
+        }
+        return str
     }
 }
 

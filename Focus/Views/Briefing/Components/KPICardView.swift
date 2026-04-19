@@ -55,8 +55,8 @@ struct KPICardView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .briefingCard(tone: tone)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 4)
     }
 }
 

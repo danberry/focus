@@ -59,11 +59,15 @@ struct BriefingView: View {
                         volume: briefing.volume,
                         onAttentionAction: onAttentionAction
                     )
+                    .padding(.horizontal, 36)
+                    .padding(.bottom, 56)
 
                     sectionDivider
 
                     // MARK: KPIs
                     BriefingKPISection(kpis: briefing.kpis)
+                        .padding(.horizontal, 36)
+                        .padding(.vertical, 33)
 
                     sectionDivider
 
@@ -93,8 +97,7 @@ struct BriefingView: View {
                 }
             }
         }
-        .contentMargins(.horizontal, 16)
-        .contentMargins(.top, 50)
+        .contentMargins(.top, 64)
         .background(BriefingColor.paper)
         .navigationTitle("Briefing")
         .navigationBarTitleDisplayMode(.large)
