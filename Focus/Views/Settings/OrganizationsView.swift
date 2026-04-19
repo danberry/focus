@@ -34,15 +34,17 @@ struct OrganizationsView: View {
             } else {
                 List {
                     ForEach(organizations) { org in
-                        HStack(spacing: 12) {
-                            OrgAvatarView(organization: org)
-                            VStack(alignment: .leading) {
-                                Text(org.name ?? org.login)
-                                    .font(.body)
-                                if org.name != nil {
-                                    Text(org.login)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                        NavigationLink(destination: OrganizationDetailView(organization: org)) {
+                            HStack(spacing: 12) {
+                                OrgAvatarView(organization: org)
+                                VStack(alignment: .leading) {
+                                    Text(org.name ?? org.login)
+                                        .font(.body)
+                                    if org.name != nil {
+                                        Text(org.login)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         }
