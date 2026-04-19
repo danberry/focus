@@ -21,7 +21,7 @@ struct VelocityServiceTests {
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
-            for: SavedRepository.self, RepositoryVelocity.self,
+            for: SavedRepository.self, RepositoryVelocity.self, Team.self, Department.self, SavedOrganization.self,
             configurations: config
         )
     }

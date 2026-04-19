@@ -10,7 +10,10 @@ struct ContentViewTests {
     /// Verifies that `ContentView` can be instantiated with an in-memory model container.
     @Test func contentViewExists() throws {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: SavedRepository.self, configurations: config)
+        let container = try ModelContainer(
+            for: SavedRepository.self, Team.self, Department.self, SavedOrganization.self,
+            configurations: config
+        )
         let view = ContentView()
             .modelContainer(container)
         #expect(view != nil)

@@ -20,6 +20,7 @@ struct ContributionServiceTests {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
             for: Team.self, Member.self, MemberContribution.self, DailyContribution.self,
+            Department.self, SavedOrganization.self, SavedRepository.self,
             configurations: config
         )
     }

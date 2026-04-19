@@ -37,6 +37,12 @@ final class SavedRepository {
     /// The current count of open secret scanning alerts.
     var secretScanningAlerts: Int
 
+    /// The login of the GitHub organization that owns this repository, or `nil` if the owner is a user account.
+    ///
+    /// Stored as a string rather than a relationship to ``SavedOrganization`` because the
+    /// repository owner may not be a watched organization.
+    var organizationLogin: String?
+
     // MARK: - Init
 
     /// Creates a new saved repository.
@@ -107,6 +113,11 @@ final class SavedRepository {
     /// Cascade-deleted when the repository is removed. Inverse of ``OpenPullRequest/repository``.
     @Relationship(deleteRule: .cascade, inverse: \OpenPullRequest.repository)
     var openPullRequests: [OpenPullRequest] = []
+
+    /// The team that owns this repository, or `nil` if no team has been assigned.
+    ///
+    /// Nullified when the team is removed. Inverse of ``Team/repositories``.
+    var team: Team?
 
     // MARK: - Computed
 

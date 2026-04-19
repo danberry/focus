@@ -13,7 +13,11 @@ struct MemberTests {
     /// Creates an in-memory `ModelContainer` with the Member graph model types registered.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(for: Team.self, Member.self, Discipline.self, JobTitle.self, configurations: config)
+        return try ModelContainer(
+            for: Team.self, Member.self, Discipline.self, JobTitle.self,
+            Department.self, SavedOrganization.self, SavedRepository.self,
+            configurations: config
+        )
     }
 
     // MARK: - init
