@@ -124,7 +124,7 @@ enum BriefingFont {
     // MARK: - Properties
 
     /// 44pt serif — the hero verdict on the briefing landing page.
-    static let hero: Font = .system(size: 44, weight: .medium, design: .serif)
+    static let hero: Font = .system(size: 88, weight: .medium, design: .serif)
 
     /// 22pt serif — verdicts shown beneath each section header.
     static let sectionVerdict: Font = .system(size: 22, weight: .medium, design: .serif)
