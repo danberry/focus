@@ -33,7 +33,11 @@ struct FocusApp: App {
             Group {
                 switch authService.authState {
                 case .unauthenticated, .authenticated:
-                    MainTabView()
+                    if UIDevice.current.userInterfaceIdiom == .pad {
+                        MainSplitView()
+                    } else {
+                        MainTabView()
+                    }
                 case .locked:
                     LockView()
                 }
