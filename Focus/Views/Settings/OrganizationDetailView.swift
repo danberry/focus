@@ -23,6 +23,13 @@ struct OrganizationDetailView: View {
     /// The view's content.
     var body: some View {
         List {
+            // Dashboard link
+            Section {
+                NavigationLink("Dashboard") {
+                    OrgDashboardView(organization: organization)
+                }
+            }
+
             // Departments section
             if !sortedDepartments.isEmpty {
                 Section("Departments") {
