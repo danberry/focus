@@ -33,17 +33,13 @@ struct BriefingHeroSection: View {
 
             // MARK: Eyebrow
             HStack {
-                Text("The Briefing · Vol. \(volume)")
-                    .font(BriefingFont.eyebrow)
-                    .textCase(.uppercase)
-                    .foregroundStyle(BriefingColor.ink3)
-
+                Text("The Brief · Vol. \(volume)")
                 Spacer()
-
-                Text(weekRange)
-                    .font(BriefingFont.eyebrow)
-                    .foregroundStyle(BriefingColor.ink4)
+                Text("Week of " + weekRange)
             }
+            .font(BriefingFont.eyebrow)
+            .textCase(.uppercase)
+            .foregroundStyle(BriefingColor.ink3)
 
             // MARK: Verdict
             VStack(alignment: .leading, spacing: 4) {

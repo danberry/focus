@@ -21,7 +21,9 @@ struct iPadNavigationHierarchy: View {
             Menu {
                 ForEach(iPadNavigationDestination.allCases, id: \.title) { destination in
                     Button {
-                        coordinator.navigate(to: destination)
+                        withAnimation(.easeOut(duration: 0.35)) {
+                            coordinator.navigate(to: destination)
+                        }
                     } label: {
                         Label(destination.title, systemImage: destination == coordinator.stack.last ? "checkmark" : "")
                     }

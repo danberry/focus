@@ -88,6 +88,8 @@ struct BriefingView: View {
                 }
             }
         }
+        .contentMargins(.horizontal, 16)
+        .contentMargins(.top, 50)
         .background(BriefingColor.paper)
         .navigationTitle("Briefing")
         .navigationBarTitleDisplayMode(.large)
