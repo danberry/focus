@@ -5,7 +5,7 @@ import SwiftUI
 /// The KPI strip shown between the hero verdict and the first editorial section.
 ///
 /// Composes two hero KPI cards (Shipping, Security Debt) above a 2×2 grid of
-/// supporting KPI cards (Idle, Review Median, CI Pass, Deploys).
+/// supporting KPI cards (Idle, Review Median, CI Pass, Releases).
 struct BriefingKPISection: View {
 
     // MARK: - Properties
@@ -76,8 +76,8 @@ struct BriefingKPISection: View {
                     .background(BriefingColor.rule)
 
                 KPICardView(
-                    title: "Deploys",
-                    value: kpis.deploys.map { "\($0)" } ?? "—"
+                    title: "Releases",
+                    value: kpis.releases.map { "\($0)" } ?? "—"
                 )
             }
         }

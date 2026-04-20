@@ -71,7 +71,8 @@ struct BriefingService: Sendable {
 
         async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
         async let medianFetch = fetchMedianMergeHours(repoKeys: repoKeys, interval: weekInterval)
-        let (prCounts, medianMergeHours) = await (prCountsFetch, medianFetch)
+        async let releasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: weekInterval.start)
+        let (prCounts, medianMergeHours, releaseCount) = await (prCountsFetch, medianFetch, releasesFetch)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
@@ -84,6 +85,7 @@ struct BriefingService: Sendable {
             repositories: scopedRepos,
             prCounts: prCounts,
             medianMergeHours: medianMergeHours,
+            releaseCount: releaseCount,
             criticalAlerts: criticalAlerts,
             members: scopedMembers
         )
@@ -261,6 +263,60 @@ struct BriefingService: Sendable {
         return try? await service.fetchMedianMergeHours(for: repoKeys, from: interval.start, to: endDate)
     }
 
+    // MARK: - Release Fetch
+
+    /// Fans out release-count requests across all repositories in parallel and sums the results.
+    ///
+    /// - Parameters:
+    ///   - repoKeys: The `(owner, name)` pairs to query.
+    ///   - since: Only releases published on or after this date are counted.
+    /// - Returns: Total release count across all repos, or `nil` if there are no repos.
+    func fetchReleaseCount(
+        repoKeys: [(owner: String, name: String)],
+        since: Date
+    ) async -> Int? {
+        guard !repoKeys.isEmpty else { return nil }
+        return await withTaskGroup(of: Int.self) { group in
+            for key in repoKeys {
+                let owner = key.owner
+                let name = key.name
+                group.addTask {
+                    await self.fetchRepoReleaseCount(owner: owner, name: name, since: since)
+                }
+            }
+            var total = 0
+            for await count in group {
+                total += count
+            }
+            return total
+        }
+    }
+
+    /// Fetches the release count for a single repository published on or after `since`.
+    ///
+    /// Drafts are excluded because their `publishedAt` is null. Returns `0` on any error.
+    ///
+    /// - Parameters:
+    ///   - owner: The repository owner login.
+    ///   - name: The repository name.
+    ///   - since: Releases published before this date are ignored.
+    /// - Returns: The number of qualifying releases, or `0` on failure.
+    func fetchRepoReleaseCount(owner: String, name: String, since: Date) async -> Int {
+        do {
+            let response: WeeklyReleasesResponse = try await graphQL.execute(
+                query: BriefingQueries.recentReleases,
+                variables: ["owner": owner, "name": name],
+                responseType: WeeklyReleasesResponse.self
+            )
+            return response.repository?.releases.nodes
+                .compactMap(\.publishedAt)
+                .filter { $0 >= since }
+                .count ?? 0
+        } catch {
+            return 0
+        }
+    }
+
     // MARK: - Assembly
 
     /// Builds a ``Briefing`` from pre-collected SwiftData entities and API counts.
@@ -284,6 +340,7 @@ struct BriefingService: Sendable {
         repositories: [SavedRepository],
         prCounts: [String: Int],
         medianMergeHours: Int?,
+        releaseCount: Int?,
         criticalAlerts: [DependabotAlert],
         members: [Member]
     ) -> Briefing {
@@ -548,7 +605,7 @@ struct BriefingService: Sendable {
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
                 medianMergeHours: medianMergeHours,
                 ciPassPct: nil,
-                deploys: nil
+                releases: releaseCount
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,
@@ -598,6 +655,25 @@ struct BriefingService: Sendable {
         let joined = letters.joined().uppercased()
         return joined.isEmpty ? "—" : joined
     }
+}
+
+// MARK: - WeeklyReleasesResponse
+
+/// The decoded response for a single ``BriefingQueries/recentReleases`` query.
+private struct WeeklyReleasesResponse: Decodable, Sendable {
+
+    struct Repository: Decodable, Sendable {
+        struct Releases: Decodable, Sendable {
+            struct Node: Decodable, Sendable {
+                /// Null for draft releases; the decoder's `.iso8601` strategy parses this directly.
+                let publishedAt: Date?
+            }
+            let nodes: [Node]
+        }
+        let releases: Releases
+    }
+
+    let repository: Repository?
 }
 
 // MARK: - WeeklyPRCountResponse

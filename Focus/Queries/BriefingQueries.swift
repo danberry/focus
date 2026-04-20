@@ -28,4 +28,20 @@ enum BriefingQueries {
             search(query: $q, type: ISSUE, first: 1) { issueCount }
         }
         """
+
+    /// Fetches the 20 most-recently-created releases for one repository.
+    ///
+    /// The response nodes include `publishedAt` (null for drafts) so the caller can
+    /// filter to releases published within a specific window without extra queries.
+    static let recentReleases = """
+        query BriefingRecentReleases($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                releases(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
+                    nodes {
+                        publishedAt
+                    }
+                }
+            }
+        }
+        """
 }
