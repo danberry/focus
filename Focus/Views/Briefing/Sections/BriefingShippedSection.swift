@@ -26,7 +26,7 @@ struct BriefingShippedSection: View {
             SectionHeaderView(
                 number: "01",
                 verdict: shipped.verdict,
-                summary: "Summary placeholder",
+                summary: shipped.summary,
                 actionLabel: "See all →",
                 onAction: onSeeAll
             )

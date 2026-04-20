@@ -97,6 +97,7 @@ struct Briefing: Sendable {
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
+            summary: "The top repo represents 33% of all merged PRs this week · 0 repos with no PRs",
             repos: [
                 BriefingRepoCount(name: "payments-api", count: 24, flag: true),
                 BriefingRepoCount(name: "web-app", count: 18, flag: false),
@@ -262,6 +263,9 @@ struct BriefingShipped: Sendable {
 
     /// The editorial verdict shown under the section header.
     let verdict: String
+
+    /// Supporting summary line shown beneath the verdict (e.g. "73 PRs across 5 repos — 3 contributors").
+    let summary: String
 
     /// Per-repo merged PR counts, ordered with the leading repo first.
     let repos: [BriefingRepoCount]
