@@ -24,14 +24,14 @@ struct BriefingSparkBarView: View {
 
     var body: some View {
         let clipped = Array(values.prefix(14))
-        let peakIndex = clipped.indices.max(by: { clipped[$0] < clipped[$1] })
+        let peakValue = clipped.max() ?? 0
         GeometryReader { geo in
             let count = CGFloat(clipped.count)
             let barWidth = max(1, (geo.size.width - spacing * (count - 1)) / count)
             HStack(alignment: .bottom, spacing: spacing) {
                 ForEach(Array(clipped.enumerated()), id: \.offset) { index, value in
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(index == peakIndex && value > 0 ? highlightColor : BriefingColor.ink4)
+                        .fill(peakValue > 0 && value == peakValue ? highlightColor : BriefingColor.ink4)
                         .frame(width: barWidth, height: max(2, value * maxHeight))
                 }
             }
