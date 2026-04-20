@@ -93,7 +93,7 @@ struct Briefing: Sendable {
             idle: BriefingKPIIdle(value: 2, delta: 1),
             medianMergeHours: nil,
             ciPassPct: nil,
-            deploys: nil
+            releases: nil
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -212,8 +212,8 @@ struct BriefingKPIs: Sendable {
     /// CI pass rate as a percent (0–100), or `nil` if not tracked.
     let ciPassPct: Int?
 
-    /// Deploy count for the week, or `nil` if not tracked.
-    let deploys: Int?
+    /// GitHub release count across all tracked repos in the last 7 days, or `nil` if not tracked.
+    let releases: Int?
 }
 
 // MARK: - BriefingKPIShipping
