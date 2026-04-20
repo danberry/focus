@@ -158,6 +158,26 @@ struct BriefingServiceTests {
         #expect(briefing.kpis.shipping.value == 5)
     }
 
+    /// Verifies that a repository marked `isInMaintenance` is not surfaced as the lowest-volume
+    /// repo in the attention items, even when it has fewer merged PRs than active repos.
+    @Test func maintenanceRepoIsExcludedFromLowestVolumeAttention() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let activeRepo = SavedRepository(githubId: "1", owner: "acme", name: "active", displayName: "Active")
+        context.insert(activeRepo)
+
+        let maintenanceRepo = SavedRepository(githubId: "2", owner: "acme", name: "legacy", displayName: "Legacy")
+        maintenanceRepo.isInMaintenance = true
+        context.insert(maintenanceRepo)
+
+        // Stub returns issueCount=10 for every repo query; the maintenance repo should not appear
+        // as the low-volume repo in attention[2] despite being tied with the active repo's count.
+        let briefing = await makeService(issueCount: 10).generate(scope: .all, in: context)
+
+        #expect(!briefing.attention[2].title.contains("Legacy"))
+    }
+
     /// Verifies that a department-scoped briefing only includes idle members whose team rolls up to that department.
     ///
     /// Creates a member on a team inside the target department and a second member with no team.

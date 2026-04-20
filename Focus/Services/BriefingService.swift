@@ -327,7 +327,10 @@ struct BriefingService: Sendable {
 
         let topRepoName = repoCounts.first?.name ?? "—"
         let topRepoCount = repoCounts.first?.count ?? 0
-        let lowestRepo = repoCounts.min { $0.count < $1.count }
+        let lowestRepo = repoRanking
+            .filter { !$0.repo.isInMaintenance }
+            .min { $0.count < $1.count }
+            .map { BriefingRepoCount(name: $0.repo.displayName, count: $0.count, flag: false) }
 
         // MARK: Shipped — contributors (derived from Members' weekly contribution sums)
         var memberWeeklyCounts: [(member: Member, count: Int)] = []

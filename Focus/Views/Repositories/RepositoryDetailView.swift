@@ -120,6 +120,7 @@ struct RepositoryDetailView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                Toggle("In Maintenance", isOn: $repository.isInMaintenance)
             }
 
             // MARK: Security Alerts
