@@ -417,15 +417,57 @@ struct BriefingService: Sendable {
         }()
 
         let attention02: BriefingAttentionItem = {
-            if let first = blockedMembers.first {
+            let unlinked = blockedMembers.filter { $0.neverContributed }
+            let idle = blockedMembers.filter { !$0.neverContributed }
+
+            // Unlinked: zero contributions on record — likely GitHub account not connected.
+            if !unlinked.isEmpty {
+                if unlinked.count == 1, let only = unlinked.first {
+                    let firstName = only.name.split(separator: " ").first.map(String.init) ?? only.name
+                    return BriefingAttentionItem(
+                        n: "02",
+                        tone: .red,
+                        title: "**\(only.name)** may not have GitHub linked.",
+                        meta: "\(only.team) — no contributions on record",
+                        actionLabel: "DM \(firstName) →"
+                    )
+                }
+                return BriefingAttentionItem(
+                    n: "02",
+                    tone: .red,
+                    title: "**\(unlinked.count) members** may not have GitHub linked.",
+                    meta: "No contributions detected — check account connections",
+                    actionLabel: "Review members →"
+                )
+            }
+
+            // Many idle: 3 or more members with past activity but nothing this week.
+            if idle.count >= 3 {
+                let longest = idle.max {
+                    (Int($0.idleLabel.dropLast()) ?? 0) < (Int($1.idleLabel.dropLast()) ?? 0)
+                }
+                let longestDesc = longest.map { "\($0.name), \($0.idleLabel)" } ?? "—"
+                return BriefingAttentionItem(
+                    n: "02",
+                    tone: .blue,
+                    title: "**\(idle.count) members** haven't shipped this week.",
+                    meta: "Longest idle: \(longestDesc)",
+                    actionLabel: "View team →"
+                )
+            }
+
+            // Single idle: 1–2 members quiet this week.
+            if let first = idle.first {
+                let firstName = first.name.split(separator: " ").first.map(String.init) ?? first.name
                 return BriefingAttentionItem(
                     n: "02",
                     tone: .blue,
                     title: "\(first.name) idle \(first.idleLabel).",
                     meta: "\(first.team) team",
-                    actionLabel: "DM \(first.name.split(separator: " ").first.map(String.init) ?? first.name) →"
+                    actionLabel: "DM \(firstName) →"
                 )
             }
+
             return BriefingAttentionItem(
                 n: "02",
                 tone: .neutral,
