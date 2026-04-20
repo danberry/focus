@@ -35,6 +35,18 @@ struct MemberDetailView: View {
         let stats = summaryStats(from: days)
 
         List {
+            // MARK: Details
+            if member.jobTitle != nil || member.manager != nil {
+                Section("Details") {
+                    if let title = member.jobTitle {
+                        LabeledContent("Job Title", value: title.name)
+                    }
+                    if let manager = member.manager {
+                        LabeledContent("Manager", value: manager.name)
+                    }
+                }
+            }
+
             // MARK: Contributions
             Section {
                 if days.isEmpty {
