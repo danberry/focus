@@ -136,7 +136,7 @@ private struct ContributorRow: View {
     /// The view's content.
     var body: some View {
         HStack(spacing: 8) {
-            BriefingAvatarView(initials: contributor.initials, size: 28)
+            BriefingAvatarView(initials: contributor.initials, githubLogin: contributor.githubLogin, size: 28)
 
             Text(contributor.name)
                 .font(BriefingFont.body)
