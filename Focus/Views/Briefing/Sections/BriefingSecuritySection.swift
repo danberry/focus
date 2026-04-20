@@ -33,7 +33,7 @@ struct BriefingSecuritySection: View {
             )
 
             // MARK: Security buckets
-            VStack(spacing: 10) {
+            HStack(spacing: 10) {
                 ForEach(Array(security.buckets.enumerated()), id: \.offset) { _, bucket in
                     KPICardView(
                         title: bucket.name,
