@@ -40,7 +40,7 @@ struct BriefingShippedSection: View {
                     .padding(.bottom, 6)
 
                 VStack(spacing: 6) {
-                    ForEach(Array(shipped.repos.enumerated()), id: \.offset) { _, repo in
+                    ForEach(Array(shipped.repos.prefix(6).enumerated()), id: \.offset) { _, repo in
                         RepoBarRow(repo: repo, maxCount: maxRepoCount)
                     }
                 }
@@ -68,7 +68,7 @@ struct BriefingShippedSection: View {
 
     /// The largest per-repo merge count, used as the bar-width denominator.
     private var maxRepoCount: Int {
-        shipped.repos.map(\.count).max() ?? 1
+        shipped.repos.prefix(6).map(\.count).max() ?? 1
     }
 }
 
