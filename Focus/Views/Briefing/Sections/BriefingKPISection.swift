@@ -23,7 +23,8 @@ struct BriefingKPISection: View {
                     title: "Shipping",
                     value: "\(kpis.shipping.value)",
                     deltaLabel: nil,
-                    spark: kpis.shipping.spark,
+                    spark: normalizedShippingSpark,
+                    highlightPeak: true,
                     tone: .neutral,
                     isHero: true
                 )
@@ -84,6 +85,13 @@ struct BriefingKPISection: View {
     }
 
     // MARK: - Helpers
+
+    /// Normalizes the shipping daily counts to `0.0`–`1.0` for the spark bar view.
+    private var normalizedShippingSpark: [Double] {
+        let counts = kpis.shipping.dailyCounts
+        guard let peak = counts.max(), peak > 0 else { return counts.map { _ in 0.0 } }
+        return counts.map { Double($0) / Double(peak) }
+    }
 
     /// Returns the formatted delta label for the idle KPI, or `nil` when the delta is zero.
     private var idleDeltaLabel: String? {

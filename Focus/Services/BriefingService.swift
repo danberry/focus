@@ -348,8 +348,8 @@ struct BriefingService: Sendable {
 
         // MARK: Shipping
         let shippingTotal = prCounts.values.reduce(0, +)
-        // TODO: Replace placeholder spark with real historical daily merge counts.
-        let shippingSpark: [Double] = [0.3, 0.5, 0.6, 0.4, 0.7, 0.8, 0.6, 0.9, 0.7, 1.0]
+        // TODO: Replace with real per-day merged PR counts from GitHub.
+        let shippingDailyCounts: [Int] = [0, 0, 0, 0, 0, 0, 0]
 
         // MARK: Security
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
@@ -622,7 +622,7 @@ struct BriefingService: Sendable {
             hero: hero,
             attention: [attention01, attention02, attention03],
             kpis: BriefingKPIs(
-                shipping: BriefingKPIShipping(value: shippingTotal, spark: shippingSpark),
+                shipping: BriefingKPIShipping(value: shippingTotal, dailyCounts: shippingDailyCounts),
                 security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, spark: securitySpark),
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
                 medianMergeHours: medianMergeHours,

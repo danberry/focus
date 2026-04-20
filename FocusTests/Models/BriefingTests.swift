@@ -18,9 +18,9 @@ struct BriefingTests {
         #expect(!Briefing.placeholder.weekRange.isEmpty)
     }
 
-    /// Verifies that the placeholder shipping sparkline contains at most ten values.
-    @Test func placeholderShippingSparkHasTenOrFewerValues() {
-        #expect(Briefing.placeholder.kpis.shipping.spark.count <= 10)
+    /// Verifies that the placeholder shipping daily counts contain exactly seven values (one per day).
+    @Test func placeholderShippingDailyCountsHasSevenValues() {
+        #expect(Briefing.placeholder.kpis.shipping.dailyCounts.count == 7)
     }
 
     /// Verifies that the placeholder security sparkline contains at most ten values.

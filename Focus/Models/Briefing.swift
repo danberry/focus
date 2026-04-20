@@ -83,7 +83,7 @@ struct Briefing: Sendable {
         kpis: BriefingKPIs(
             shipping: BriefingKPIShipping(
                 value: 73,
-                spark: [0.3, 0.5, 0.6, 0.4, 0.7, 0.8, 0.6, 0.9, 0.7, 1.0]
+                dailyCounts: [8, 12, 9, 15, 11, 14, 4]
             ),
             security: BriefingKPISecurity(
                 value: 48,
@@ -220,14 +220,14 @@ struct BriefingKPIs: Sendable {
 
 // MARK: - BriefingKPIShipping
 
-/// Shipping KPI (merged PR total + 10-bucket sparkline).
+/// Shipping KPI (merged PR total + 7-day bar chart).
 struct BriefingKPIShipping: Sendable {
 
     /// Total merged pull requests for the week across all tracked repos.
     let value: Int
 
-    /// A sparkline of up to 10 normalized values (`0.0`–`1.0`).
-    let spark: [Double]
+    /// Raw PR counts per day for the 7-day report period, ordered oldest to newest.
+    let dailyCounts: [Int]
 }
 
 // MARK: - BriefingKPISecurity
