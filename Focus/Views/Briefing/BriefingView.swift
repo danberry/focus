@@ -72,17 +72,36 @@ struct BriefingView: View {
                     sectionDivider
 
                     // MARK: Shipped
-                    BriefingShippedSection(shipped: briefing.shipped, onSeeAll: nil)
+                    BriefingShippedSection(
+                        shipped: briefing.shipped,
+                        onSeeAll: nil
+                    )
+                    .padding(.horizontal, 36)
+                    .padding(.top, 56)
+                    .padding(.bottom, 33)
 
                     sectionDivider
 
                     // MARK: Blocked
-                    BriefingBlockedSection(blocked: briefing.blocked, onDM: nil, onOpen: nil)
+                    BriefingBlockedSection(
+                        blocked: briefing.blocked,
+                        onDM: nil,
+                        onOpen: nil
+                    )
+                    .padding(.horizontal, 36)
+                    .padding(.top, 56)
+                    .padding(.bottom, 33)
 
                     sectionDivider
 
                     // MARK: Security
-                    BriefingSecuritySection(security: briefing.security, onTriage: nil)
+                    BriefingSecuritySection(
+                        security: briefing.security,
+                        onTriage: nil
+                    )
+                    .padding(.horizontal, 36)
+                    .padding(.top, 56)
+                    .padding(.bottom, 33)
 
                 } else {
 
