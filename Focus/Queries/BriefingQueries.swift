@@ -29,6 +29,39 @@ enum BriefingQueries {
         }
         """
 
+    /// Fetches merged PRs with their CI check state for one repository and date range.
+    ///
+    /// The `$q` variable is a GitHub Search query string, for example:
+    /// ```
+    /// "repo:owner/name is:pr is:merged merged:2026-04-13..2026-04-19"
+    /// ```
+    ///
+    /// Each PR node includes the `statusCheckRollup.state` of its head commit.
+    /// PRs whose head commit has no check rollup (`null`) are excluded by the caller
+    /// so they do not inflate or deflate the pass rate.
+    ///
+    /// - Note: `after` is an optional pagination cursor; omit it on the first page.
+    static let ciPassRate = """
+        query BriefingCIPassRate($q: String!, $after: String) {
+            search(query: $q, type: ISSUE, first: 100, after: $after) {
+                pageInfo { hasNextPage endCursor }
+                nodes {
+                    ... on PullRequest {
+                        commits(last: 1) {
+                            nodes {
+                                commit {
+                                    statusCheckRollup {
+                                        state
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+
     /// Fetches the 20 most-recently-created releases for one repository.
     ///
     /// The response nodes include `publishedAt` (null for drafts) so the caller can
