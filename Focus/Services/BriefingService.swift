@@ -408,18 +408,12 @@ struct BriefingService: Sendable {
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
         let criticalCount = criticalAlerts.count
 
-        var priorWeekCal = Calendar.current
-        priorWeekCal.firstWeekday = 2
-        let priorWeekStart = weekInterval.start.addingTimeInterval(-1)
-        let priorWeekInterval = priorWeekCal.dateInterval(of: .weekOfYear, for: priorWeekStart)
-
-        let securityDailyCounts = BriefingService.dailyAlertCounts(
+        let securityDailyOpenTotals = BriefingService.dailyOpenTotals(
             dates: allAlertDates,
             interval: weekInterval
         )
-        let securityPriorTotal: Int? = priorWeekInterval.map { interval in
-            allAlertDates.filter { interval.contains($0) }.count
-        }
+        // Open total at end of prior week = alerts created before the current week start.
+        let securityPriorTotal = allAlertDates.filter { $0 < weekInterval.start }.count
 
         // MARK: Members — idle detection
         let weekEnd = weekInterval.end
@@ -697,7 +691,7 @@ struct BriefingService: Sendable {
             attention: [attention01, attention02, attention03],
             kpis: BriefingKPIs(
                 shipping: BriefingKPIShipping(value: shippingTotal, dailyCounts: shippingDailyCounts, priorWeekValue: priorWeekPRTotal > 0 ? priorWeekPRTotal : nil),
-                security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, dailyCounts: securityDailyCounts, priorWeekTotal: securityPriorTotal),
+                security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, dailyOpenTotals: securityDailyOpenTotals, priorWeekTotal: securityPriorTotal > 0 ? securityPriorTotal : nil),
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
                 medianMergeHours: medianMergeHours,
                 ciPassPct: nil,
@@ -757,6 +751,23 @@ struct BriefingService: Sendable {
             }
         }
         return counts
+    }
+
+    /// Returns a 7-element array of cumulative open-alert totals for the given week interval.
+    ///
+    /// Index 0 is the running total at end of the first day; index 6 is the end of the last day.
+    /// The baseline is all alerts created before `interval.start` (i.e. already open at week start).
+    private static func dailyOpenTotals(dates: [Date], interval: DateInterval) -> [Int] {
+        let baseline = dates.filter { $0 < interval.start }.count
+        var totals = [Int](repeating: 0, count: 7)
+        var cumulative = baseline
+        for day in 0..<7 {
+            let dayStart = interval.start.addingTimeInterval(Double(day) * 86_400)
+            let dayEnd = interval.start.addingTimeInterval(Double(day + 1) * 86_400)
+            cumulative += dates.filter { $0 >= dayStart && $0 < dayEnd }.count
+            totals[day] = cumulative
+        }
+        return totals
     }
 
     /// Derives up-to-two uppercase initials from a display name.
