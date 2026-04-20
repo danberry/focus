@@ -37,7 +37,7 @@ struct AttentionCardView: View {
                     .foregroundStyle(toneColor)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title)
+                    Text(.init(item.title))
                         .font(BriefingFont.attentionTitle)
                         .foregroundStyle(BriefingColor.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)

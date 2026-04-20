@@ -49,7 +49,7 @@ struct SectionHeaderView: View {
                 }
             }
 
-            Text(verdict)
+            Text(.init(verdict))
                 .font(BriefingFont.sectionVerdict)
                 .foregroundStyle(BriefingColor.ink)
 
