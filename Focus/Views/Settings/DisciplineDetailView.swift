@@ -21,7 +21,13 @@ struct DisciplineDetailView: View {
 
     /// The view's content.
     var body: some View {
-        Group {
+        List {
+            Section {
+                Toggle("Tracks GitHub Activity", isOn: $discipline.tracksGitHubActivity)
+            } footer: {
+                Text("When off, members in this discipline are excluded from inactivity alerts in the Briefing.")
+            }
+
             if discipline.jobTitles.isEmpty {
                 ContentUnavailableView(
                     "No Job Titles",
@@ -29,7 +35,7 @@ struct DisciplineDetailView: View {
                     description: Text("Add a job title to this discipline.")
                 )
             } else {
-                List {
+                Section("Job Titles") {
                     ForEach(sortedJobTitles) { jobTitle in
                         NavigationLink(destination: JobTitleDetailView(jobTitle: jobTitle)) {
                             Text(jobTitle.name)
