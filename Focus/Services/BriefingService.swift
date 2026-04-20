@@ -70,9 +70,9 @@ struct BriefingService: Sendable {
         let repoKeys: [(owner: String, name: String)] = scopedRepos.map { ($0.owner, $0.name) }
 
         async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
-        async let medianFetch = fetchMedianMergeHours(repoKeys: repoKeys, interval: weekInterval)
+        async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
         async let releasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: weekInterval.start)
-        let (prCounts, medianMergeHours, releaseCount) = await (prCountsFetch, medianFetch, releasesFetch)
+        let (prCounts, metrics, releaseCount) = await (prCountsFetch, metricsFetch, releasesFetch)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
@@ -84,7 +84,8 @@ struct BriefingService: Sendable {
             weekRange: weekRange,
             repositories: scopedRepos,
             prCounts: prCounts,
-            medianMergeHours: medianMergeHours,
+            shippingDailyCounts: metrics.dailyCounts,
+            medianMergeHours: metrics.medianHours,
             releaseCount: releaseCount,
             criticalAlerts: criticalAlerts,
             members: scopedMembers
@@ -250,17 +251,53 @@ struct BriefingService: Sendable {
         }
     }
 
-    /// Fetches the median merge cycle time in hours for the given repositories and week interval.
+    /// Fetches merged PR data for the week and derives both the median cycle time and
+    /// per-day merged counts (Monday = index 0 … Sunday = index 6).
     ///
-    /// Returns `nil` when there are no repositories, no merged PRs, or on any error.
-    private func fetchMedianMergeHours(
+    /// Returns `medianHours == nil` when there are no repos, no PRs, or on error.
+    /// Returns `dailyCounts` as seven zeros on error.
+    private func fetchMergedPRMetrics(
         repoKeys: [(owner: String, name: String)],
         interval: DateInterval
-    ) async -> Int? {
-        guard !repoKeys.isEmpty else { return nil }
+    ) async -> (medianHours: Int?, dailyCounts: [Int]) {
+        guard !repoKeys.isEmpty else { return (nil, [Int](repeating: 0, count: 7)) }
         let service = MergedPRReportService(graphQL: graphQL)
         let endDate = interval.end.addingTimeInterval(-1)
-        return try? await service.fetchMedianMergeHours(for: repoKeys, from: interval.start, to: endDate)
+        guard let prsByRepo = try? await service.fetchMergedPRs(for: repoKeys, from: interval.start, to: endDate) else {
+            return (nil, [Int](repeating: 0, count: 7))
+        }
+        let medianHours = computeMedianMergeHours(from: prsByRepo)
+        let dailyCounts = computeDailyCounts(from: prsByRepo, interval: interval)
+        return (medianHours, dailyCounts)
+    }
+
+    /// Computes the median open-to-merge cycle time in whole hours from a repo-keyed PR dictionary.
+    private func computeMedianMergeHours(from prsByRepo: [String: [MergedPR]]) -> Int? {
+        let cycleTimes: [Double] = prsByRepo.values.flatMap { $0 }.compactMap { pr in
+            let hours = pr.mergedAt.timeIntervalSince(pr.createdAt) / 3600
+            return hours >= 0 ? hours : nil
+        }
+        guard !cycleTimes.isEmpty else { return nil }
+        let sorted = cycleTimes.sorted()
+        let mid = sorted.count / 2
+        let median = sorted.count % 2 == 0
+            ? (sorted[mid - 1] + sorted[mid]) / 2
+            : sorted[mid]
+        return Int(median.rounded())
+    }
+
+    /// Bins merged PRs by calendar day within the week, returning a 7-element array (Mon=0…Sun=6).
+    private func computeDailyCounts(from prsByRepo: [String: [MergedPR]], interval: DateInterval) -> [Int] {
+        var counts = [Int](repeating: 0, count: 7)
+        let cal = Calendar.current
+        let weekStart = cal.startOfDay(for: interval.start)
+        for pr in prsByRepo.values.flatMap({ $0 }) {
+            let dayIndex = cal.dateComponents([.day], from: weekStart, to: pr.mergedAt).day ?? -1
+            if dayIndex >= 0 && dayIndex < 7 {
+                counts[dayIndex] += 1
+            }
+        }
+        return counts
     }
 
     // MARK: - Release Fetch
@@ -339,6 +376,7 @@ struct BriefingService: Sendable {
         weekRange: String,
         repositories: [SavedRepository],
         prCounts: [String: Int],
+        shippingDailyCounts: [Int],
         medianMergeHours: Int?,
         releaseCount: Int?,
         criticalAlerts: [DependabotAlert],
@@ -348,8 +386,6 @@ struct BriefingService: Sendable {
 
         // MARK: Shipping
         let shippingTotal = prCounts.values.reduce(0, +)
-        // TODO: Replace with real per-day merged PR counts from GitHub.
-        let shippingDailyCounts: [Int] = [0, 0, 0, 0, 0, 0, 0]
 
         // MARK: Security
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
