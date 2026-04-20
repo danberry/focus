@@ -86,6 +86,12 @@ struct BriefingService: Sendable {
         )
         let criticalAlerts = (try? context.fetch(criticalDescriptor)) ?? []
 
+        // Collect createdAt dates from all three alert types for the security sparkline.
+        let dependabotDates = (try? context.fetch(FetchDescriptor<DependabotAlert>()))?.map(\.createdAt) ?? []
+        let codeScanningDates = (try? context.fetch(FetchDescriptor<CodeScanningAlert>()))?.map(\.createdAt) ?? []
+        let secretScanningDates = (try? context.fetch(FetchDescriptor<SecretScanningAlert>()))?.map(\.createdAt) ?? []
+        let allAlertDates = dependabotDates + codeScanningDates + secretScanningDates
+
         return assemble(
             weekInterval: weekInterval,
             weekRange: weekRange,
@@ -96,6 +102,7 @@ struct BriefingService: Sendable {
             medianMergeHours: metrics.medianHours,
             releaseCount: releaseCount,
             criticalAlerts: criticalAlerts,
+            allAlertDates: allAlertDates,
             members: scopedMembers
         )
     }
@@ -389,6 +396,7 @@ struct BriefingService: Sendable {
         medianMergeHours: Int?,
         releaseCount: Int?,
         criticalAlerts: [DependabotAlert],
+        allAlertDates: [Date],
         members: [Member]
     ) -> Briefing {
         let volume = Calendar.current.component(.weekOfYear, from: weekInterval.start)
@@ -399,8 +407,19 @@ struct BriefingService: Sendable {
         // MARK: Security
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
         let criticalCount = criticalAlerts.count
-        // TODO: Replace placeholder spark with real historical daily open-alert counts.
-        let securitySpark: [Double] = [0.4, 0.5, 0.5, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 1.0]
+
+        var priorWeekCal = Calendar.current
+        priorWeekCal.firstWeekday = 2
+        let priorWeekStart = weekInterval.start.addingTimeInterval(-1)
+        let priorWeekInterval = priorWeekCal.dateInterval(of: .weekOfYear, for: priorWeekStart)
+
+        let securityDailyCounts = BriefingService.dailyAlertCounts(
+            dates: allAlertDates,
+            interval: weekInterval
+        )
+        let securityPriorTotal: Int? = priorWeekInterval.map { interval in
+            allAlertDates.filter { interval.contains($0) }.count
+        }
 
         // MARK: Members — idle detection
         let weekEnd = weekInterval.end
@@ -678,7 +697,7 @@ struct BriefingService: Sendable {
             attention: [attention01, attention02, attention03],
             kpis: BriefingKPIs(
                 shipping: BriefingKPIShipping(value: shippingTotal, dailyCounts: shippingDailyCounts, priorWeekValue: priorWeekPRTotal > 0 ? priorWeekPRTotal : nil),
-                security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, spark: securitySpark),
+                security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, dailyCounts: securityDailyCounts, priorWeekTotal: securityPriorTotal),
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
                 medianMergeHours: medianMergeHours,
                 ciPassPct: nil,
@@ -723,6 +742,22 @@ struct BriefingService: Sendable {
     }
 
     // MARK: - Private
+
+    /// Returns a 7-element array of alert counts (one per day) for the given week interval.
+    ///
+    /// Each element is the number of alerts whose `createdAt` falls on that calendar day,
+    /// where index 0 is the first day of `interval` and index 6 is the last.
+    private static func dailyAlertCounts(dates: [Date], interval: DateInterval) -> [Int] {
+        var counts = [Int](repeating: 0, count: 7)
+        let cal = Calendar.current
+        for date in dates where interval.contains(date) {
+            let day = cal.dateComponents([.day], from: interval.start, to: date).day ?? 0
+            if day >= 0 && day < 7 {
+                counts[day] += 1
+            }
+        }
+        return counts
+    }
 
     /// Derives up-to-two uppercase initials from a display name.
     ///

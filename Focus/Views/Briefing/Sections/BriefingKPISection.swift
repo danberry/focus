@@ -26,14 +26,7 @@ struct BriefingKPISection: View {
                     .frame(maxWidth: 1, maxHeight:.infinity)
                     .background(BriefingColor.rule)
 
-                KPICardView(
-                    title: "Security Debt",
-                    value: "\(kpis.security.value)",
-                    deltaLabel: kpis.security.critical > 0 ? "\(kpis.security.critical) critical" : nil,
-                    spark: kpis.security.spark,
-                    tone: .red,
-                    isHero: true
-                )
+                SecurityDebtKPICardView(security: kpis.security)
                 .frame(maxWidth: .infinity)
                 
                 Divider()
