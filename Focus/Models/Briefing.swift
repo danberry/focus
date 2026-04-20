@@ -113,6 +113,7 @@ struct Briefing: Sendable {
         ),
         blocked: BriefingBlocked(
             verdict: "2 members went quiet this week.",
+            summary: "Heuristic: no commits this week · 2 of 34 people flagged",
             members: [
                 BriefingBlockedMember(
                     initials: "PS",
@@ -314,6 +315,9 @@ struct BriefingBlocked: Sendable {
 
     /// The editorial verdict shown under the section header.
     let verdict: String
+
+    /// A one-line heuristic description and flagged-vs-total count shown beneath the verdict.
+    let summary: String
 
     /// The list of idle or blocked members.
     let members: [BriefingBlockedMember]

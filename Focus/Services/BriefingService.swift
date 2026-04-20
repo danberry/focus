@@ -361,9 +361,11 @@ struct BriefingService: Sendable {
         let weekEnd = weekInterval.end
         var idleMembers: [Member] = []
         var memberIdleLabels: [ObjectIdentifier: String] = [:]
+        var totalTracked = 0
 
         for member in members {
             guard member.jobTitle?.discipline?.tracksGitHubActivity != false else { continue }
+            totalTracked += 1
 
             let weekSum = member.dailyContributions
                 .filter { weekInterval.contains($0.date) }
@@ -586,6 +588,8 @@ struct BriefingService: Sendable {
         default: "\(blockedMembers.count) members went quiet this week."
         }
 
+        let blockedSummary = "Heuristic: no commits this week · \(blockedMembers.count) of \(totalTracked) people flagged"
+
         let securityVerdict: String = criticalCount > 0
             ? "\(criticalCount) critical alerts need triage."
             : "Security is steady this week."
@@ -633,6 +637,7 @@ struct BriefingService: Sendable {
             ),
             blocked: BriefingBlocked(
                 verdict: blockedVerdict,
+                summary: blockedSummary,
                 members: blockedMembers
             ),
             security: BriefingSecurity(
