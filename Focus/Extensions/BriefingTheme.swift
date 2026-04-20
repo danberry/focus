@@ -197,7 +197,7 @@ enum BriefingLayout {
     static let flatRadius: CGFloat = 12
 
     /// The vertical gap between sibling sections, in points.
-    static let sectionGap: CGFloat = 14
+    static let sectionGap: CGFloat = 38
 }
 
 // MARK: - BriefingHighlight
