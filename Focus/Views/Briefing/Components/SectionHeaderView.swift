@@ -33,35 +33,35 @@ struct SectionHeaderView: View {
 
     /// The view's content.
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 32) {
-                Text("§ \(number)")
-                    .font(BriefingFont.eyebrow)
-                    .textCase(.uppercase)
-                    .foregroundStyle(BriefingColor.red)
+        HStack(alignment: .firstTextBaseline, spacing: 32) {
+            Text("§ \(number)")
+                .font(BriefingFont.eyebrow)
+                .textCase(.uppercase)
+                .foregroundStyle(BriefingColor.red)
 
+            VStack(alignment: .leading, spacing: 6) {
                 Text(.init(verdict))
                     .font(BriefingFont.sectionVerdict)
                     .foregroundStyle(BriefingColor.ink)
 
-                Spacer()
+                if let summary {
+                    Text(summary)
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(BriefingColor.ink3)
+                }
 
-                if let actionLabel, let onAction {
-                    Button(actionLabel, action: onAction)
-                        .font(BriefingFont.eyebrow)
+                if let evidenceLine {
+                    Text(evidenceLine)
+                        .font(BriefingFont.meta)
                         .foregroundStyle(BriefingColor.ink3)
                 }
             }
 
-            if let summary {
-                Text(summary)
-                    .font(BriefingFont.meta)
-                    .foregroundStyle(BriefingColor.ink3)
-            }
+            Spacer()
 
-            if let evidenceLine {
-                Text(evidenceLine)
-                    .font(BriefingFont.meta)
+            if let actionLabel, let onAction {
+                Button(actionLabel, action: onAction)
+                    .font(BriefingFont.eyebrow)
                     .foregroundStyle(BriefingColor.ink3)
             }
         }
