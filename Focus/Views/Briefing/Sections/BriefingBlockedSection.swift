@@ -44,7 +44,6 @@ struct BriefingBlockedSection: View {
                 }
             }
         }
-        .padding(.horizontal, BriefingLayout.gutter)
     }
 }
 

@@ -33,11 +33,12 @@ struct SectionHeaderView: View {
 
     /// The view's content.
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 32) {
+        HStack(alignment: .top, spacing: 32) {
             Text("§ \(number)")
                 .font(BriefingFont.eyebrow)
                 .textCase(.uppercase)
                 .foregroundStyle(BriefingColor.red)
+                .padding(.top, 6)
 
             VStack(alignment: .leading, spacing: 12) {
                 Text(.init(verdict))

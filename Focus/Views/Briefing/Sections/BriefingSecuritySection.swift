@@ -45,7 +45,6 @@ struct BriefingSecuritySection: View {
                 }
             }
         }
-        .padding(.horizontal, BriefingLayout.gutter)
     }
 
     // MARK: - Helpers
