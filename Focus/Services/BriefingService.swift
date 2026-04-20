@@ -562,6 +562,24 @@ struct BriefingService: Sendable {
             shippedVerdict = "No merges recorded this week."
         }
 
+        let activeRepoCount = repoCounts.filter { $0.count > 0 }.count
+        let quietRepoCount = repoCounts.count - activeRepoCount
+        let shippedSummary: String
+        if shippingTotal > 0 {
+            let showTop6 = activeRepoCount >= 6
+            let topSum = showTop6
+                ? repoCounts.prefix(6).reduce(0) { $0 + $1.count }
+                : topRepoCount
+            let topPct = Int((Double(topSum) / Double(shippingTotal) * 100).rounded())
+            let topPart = showTop6 ? "The top 6 repos represent \(topPct)%" : "The top repo represents \(topPct)%"
+            let quietPart = quietRepoCount == 0
+                ? "0 repos with no PRs"
+                : quietRepoCount == 1 ? "1 repo with no PRs" : "\(quietRepoCount) repos with no PRs"
+            shippedSummary = "\(topPart) of all merged PRs this week · \(quietPart)"
+        } else {
+            shippedSummary = "No activity this week"
+        }
+
         let blockedVerdict: String = switch blockedMembers.count {
         case 0: "Everyone shipped this week."
         case 1: "1 member went quiet this week."
@@ -609,6 +627,7 @@ struct BriefingService: Sendable {
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,
+                summary: shippedSummary,
                 repos: repoCounts,
                 contributors: contributors
             ),
