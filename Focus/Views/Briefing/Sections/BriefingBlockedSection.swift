@@ -70,7 +70,7 @@ private struct BlockedMemberCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                BriefingAvatarView(initials: member.initials, size: 36)
+                BriefingAvatarView(initials: member.initials, githubLogin: member.githubLogin, size: 36)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(member.name)
