@@ -91,7 +91,7 @@ struct Briefing: Sendable {
                 spark: [0.4, 0.5, 0.5, 0.6, 0.7, 0.7, 0.8, 0.8, 0.9, 1.0]
             ),
             idle: BriefingKPIIdle(value: 2, delta: 1),
-            reviewMedianHours: nil,
+            medianMergeHours: nil,
             ciPassPct: nil,
             deploys: nil
         ),
@@ -206,8 +206,8 @@ struct BriefingKPIs: Sendable {
     /// Idle-member totals and delta vs. the prior week.
     let idle: BriefingKPIIdle
 
-    /// Median review turnaround in hours, or `nil` if not tracked.
-    let reviewMedianHours: Int?
+    /// Median time from PR open to merge in hours, or `nil` if not tracked.
+    let medianMergeHours: Int?
 
     /// CI pass rate as a percent (0–100), or `nil` if not tracked.
     let ciPassPct: Int?

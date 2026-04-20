@@ -26,6 +26,7 @@ enum ReportQueries {
                     ... on PullRequest {
                         number
                         title
+                        createdAt
                         mergedAt
                         author { login }
                         url

@@ -58,8 +58,8 @@ struct BriefingKPISection: View {
                     .background(BriefingColor.rule)
 
                 KPICardView(
-                    title: "Review Median",
-                    value: kpis.reviewMedianHours.map { "\($0)h" } ?? "—"
+                    title: "Median Merge Time",
+                    value: kpis.medianMergeHours.map { "\($0)h" } ?? "—"
                 )
                 
                 Divider()

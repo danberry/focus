@@ -13,6 +13,9 @@ struct MergedPR: Identifiable, Sendable {
     /// The pull request title.
     let title: String
 
+    /// The date and time the pull request was opened.
+    let createdAt: Date
+
     /// The date and time the pull request was merged.
     let mergedAt: Date
 
