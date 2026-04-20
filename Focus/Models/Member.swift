@@ -33,6 +33,11 @@ final class Member {
     /// The team this member belongs to, or `nil` if the member has not been assigned to a team.
     var team: Team?
 
+    /// The member's direct manager, or `nil` if no manager has been assigned.
+    ///
+    /// Nullified when the manager is removed so direct reports survive their manager's deletion.
+    var manager: Member?
+
     // MARK: - Init
 
     /// Creates a new member with an optional GitHub account link.
@@ -48,6 +53,13 @@ final class Member {
     }
 
     // MARK: - Relationships
+
+    /// The members who report directly to this member.
+    ///
+    /// Nullified when this member is removed so direct reports are not deleted with their manager.
+    /// Inverse of ``Member/manager``.
+    @Relationship(deleteRule: .nullify, inverse: \Member.manager)
+    var directReports: [Member] = []
 
     /// Per-repository contribution records for this member.
     ///

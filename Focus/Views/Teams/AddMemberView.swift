@@ -38,6 +38,9 @@ struct AddMemberView: View {
     /// The job title selected for the new member.
     @State private var selectedJobTitle: JobTitle?
 
+    /// The manager selected for the new member.
+    @State private var selectedManager: Member?
+
     /// Whether the save operation is in progress.
     @State private var isLoading = false
 
@@ -71,6 +74,22 @@ struct AddMemberView: View {
                     Text("Job Title")
                 } footer: {
                     Text("Optional. Select from job titles defined in Disciplines.")
+                }
+
+                if !sortedTeamMembers.isEmpty {
+                    Section {
+                        Picker("Manager", selection: $selectedManager) {
+                            Text("None").tag(Optional<Member>.none)
+                            ForEach(sortedTeamMembers) { member in
+                                Text(member.name).tag(Optional(member))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    } header: {
+                        Text("Manager")
+                    } footer: {
+                        Text("Optional. Select from existing team members.")
+                    }
                 }
 
                 Section {
@@ -120,6 +139,11 @@ struct AddMemberView: View {
 
     // MARK: - Private
 
+    /// Existing team members sorted alphabetically, used to populate the manager picker.
+    private var sortedTeamMembers: [Member] {
+        team.members.sorted { $0.name < $1.name }
+    }
+
     /// Whether the form is in a valid state to be submitted.
     private var canSubmit: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !isLoading
@@ -166,6 +190,7 @@ struct AddMemberView: View {
             )
             member.team = team
             member.jobTitle = selectedJobTitle
+            member.manager = selectedManager
             modelContext.insert(member)
 
             if !trimmedLogin.isEmpty {
