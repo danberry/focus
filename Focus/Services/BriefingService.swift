@@ -70,7 +70,7 @@ struct BriefingService: Sendable {
         let repoKeys: [(owner: String, name: String)] = scopedRepos.map { ($0.owner, $0.name) }
 
         var cal = Calendar.current
-        cal.firstWeekday = 2
+        cal.firstWeekday = 1
         let priorWeekStart = weekInterval.start.addingTimeInterval(-1)
         let priorGhRange = cal.dateInterval(of: .weekOfYear, for: priorWeekStart)
             .map { githubDateRange(for: $0) } ?? ""
@@ -167,7 +167,7 @@ struct BriefingService: Sendable {
     /// - Returns: The previous week's `DateInterval`, or `nil` if date arithmetic fails.
     func previousWeekInterval() -> DateInterval? {
         var cal = Calendar.current
-        cal.firstWeekday = 2
+        cal.firstWeekday = 1
         guard let lastWeekDate = cal.date(byAdding: .weekOfYear, value: -1, to: Date()) else {
             return nil
         }
@@ -449,7 +449,7 @@ struct BriefingService: Sendable {
         }
 
         var cal = Calendar.current
-        cal.firstWeekday = 2
+        cal.firstWeekday = 1
         let priorWeekInterval = cal.dateInterval(of: .weekOfYear, for: weekInterval.start.addingTimeInterval(-1))
         let priorIdleCount: Int = priorWeekInterval.map { prior in
             members.filter { member in
