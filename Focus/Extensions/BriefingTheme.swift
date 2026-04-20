@@ -162,8 +162,8 @@ enum BriefingFont {
     /// 54pt monospaced-digit — hero KPI numbers.
     static let kpiHero: Font = .system(size: 54, weight: .medium).monospacedDigit()
 
-    /// 24pt monospaced-digit — supporting KPI numbers.
-    static let kpiSupporting: Font = .system(size: 24, weight: .medium).monospacedDigit()
+    /// 34pt monospaced-digit — supporting KPI numbers.
+    static let kpiSupporting: Font = .system(size: 34, weight: .medium).monospacedDigit()
 
     /// 15pt medium — attention card titles.
     static let attentionTitle: Font = .system(size: 18, weight: .medium)
