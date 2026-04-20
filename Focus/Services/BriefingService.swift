@@ -69,10 +69,17 @@ struct BriefingService: Sendable {
         // Snapshot Sendable (owner, repo) pairs for the non-isolated fetch fan-out.
         let repoKeys: [(owner: String, name: String)] = scopedRepos.map { ($0.owner, $0.name) }
 
+        var cal = Calendar.current
+        cal.firstWeekday = 2
+        let priorWeekStart = weekInterval.start.addingTimeInterval(-1)
+        let priorGhRange = cal.dateInterval(of: .weekOfYear, for: priorWeekStart)
+            .map { githubDateRange(for: $0) } ?? ""
+
         async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
         async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
         async let releasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: weekInterval.start)
-        let (prCounts, metrics, releaseCount) = await (prCountsFetch, metricsFetch, releasesFetch)
+        async let priorPRCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: priorGhRange)
+        let (prCounts, metrics, releaseCount, priorPRCounts) = await (prCountsFetch, metricsFetch, releasesFetch, priorPRCountsFetch)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
@@ -84,6 +91,7 @@ struct BriefingService: Sendable {
             weekRange: weekRange,
             repositories: scopedRepos,
             prCounts: prCounts,
+            priorWeekPRTotal: priorPRCounts.values.reduce(0, +),
             shippingDailyCounts: metrics.dailyCounts,
             medianMergeHours: metrics.medianHours,
             releaseCount: releaseCount,
@@ -376,6 +384,7 @@ struct BriefingService: Sendable {
         weekRange: String,
         repositories: [SavedRepository],
         prCounts: [String: Int],
+        priorWeekPRTotal: Int,
         shippingDailyCounts: [Int],
         medianMergeHours: Int?,
         releaseCount: Int?,
@@ -668,7 +677,7 @@ struct BriefingService: Sendable {
             hero: hero,
             attention: [attention01, attention02, attention03],
             kpis: BriefingKPIs(
-                shipping: BriefingKPIShipping(value: shippingTotal, dailyCounts: shippingDailyCounts),
+                shipping: BriefingKPIShipping(value: shippingTotal, dailyCounts: shippingDailyCounts, priorWeekValue: priorWeekPRTotal > 0 ? priorWeekPRTotal : nil),
                 security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, spark: securitySpark),
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
                 medianMergeHours: medianMergeHours,

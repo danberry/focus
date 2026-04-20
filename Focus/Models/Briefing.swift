@@ -83,7 +83,8 @@ struct Briefing: Sendable {
         kpis: BriefingKPIs(
             shipping: BriefingKPIShipping(
                 value: 73,
-                dailyCounts: [8, 12, 9, 15, 11, 14, 4]
+                dailyCounts: [8, 12, 9, 15, 11, 14, 4],
+                priorWeekValue: 62
             ),
             security: BriefingKPISecurity(
                 value: 48,
@@ -228,6 +229,9 @@ struct BriefingKPIShipping: Sendable {
 
     /// Raw PR counts per day for the 7-day report period, ordered oldest to newest.
     let dailyCounts: [Int]
+
+    /// Total merged PRs for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
 }
 
 // MARK: - BriefingKPISecurity
