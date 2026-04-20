@@ -4,9 +4,9 @@ import SwiftUI
 
 /// A compact bar-chart sparkline used inside Focus Briefing KPI cards.
 ///
-/// Renders up to ten 3pt-wide bars with heights proportional to their normalized
-/// values. Zero-value bars receive a low-emphasis ink color so the silhouette
-/// remains visible.
+/// Renders up to ten 3pt-wide bars with heights proportional to their normalized values.
+/// The shipping KPI passes seven bars (one per day). Zero-value bars receive a low-emphasis
+/// ink color so the silhouette remains visible.
 struct BriefingSparkBarView: View {
 
     // MARK: - Properties
