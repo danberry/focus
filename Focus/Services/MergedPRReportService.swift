@@ -75,6 +75,35 @@ struct MergedPRReportService: Sendable {
         return collectPRs(from: nodes)
     }
 
+    /// Computes the median time from PR open to merge (in whole hours) across the provided
+    /// repositories for the given date range.
+    ///
+    /// Returns `nil` when there are no repositories, no merged PRs in the range, or on any error.
+    ///
+    /// - Parameters:
+    ///   - repositories: The repositories to query, each identified by owner and name.
+    ///   - startDate: The first calendar day (UTC) of the range, inclusive.
+    ///   - endDate: The last calendar day (UTC) of the range, inclusive.
+    /// - Returns: The median merge cycle time in hours, or `nil`.
+    func fetchMedianMergeHours(
+        for repositories: [(owner: String, name: String)],
+        from startDate: Date,
+        to endDate: Date
+    ) async throws -> Int? {
+        let byRepo = try await fetchMergedPRs(for: repositories, from: startDate, to: endDate)
+        let cycleTimes: [Double] = byRepo.values.flatMap { $0 }.compactMap { pr in
+            let hours = pr.mergedAt.timeIntervalSince(pr.createdAt) / 3600
+            return hours >= 0 ? hours : nil
+        }
+        guard !cycleTimes.isEmpty else { return nil }
+        let sorted = cycleTimes.sorted()
+        let mid = sorted.count / 2
+        let median = sorted.count % 2 == 0
+            ? (sorted[mid - 1] + sorted[mid]) / 2
+            : sorted[mid]
+        return Int(median.rounded())
+    }
+
     // MARK: - Private
 
     /// Pages through all results for the given search query, returning every node.
@@ -114,6 +143,8 @@ struct MergedPRReportService: Sendable {
             guard
                 let number = node.number,
                 let title = node.title,
+                let createdAtStr = node.createdAt,
+                let createdAt = iso.date(from: createdAtStr),
                 let mergedAtStr = node.mergedAt,
                 let mergedAt = iso.date(from: mergedAtStr),
                 let url = node.url,
@@ -123,6 +154,7 @@ struct MergedPRReportService: Sendable {
             let pr = MergedPR(
                 number: number,
                 title: title,
+                createdAt: createdAt,
                 mergedAt: mergedAt,
                 authorLogin: node.author?.login ?? "",
                 url: url,
@@ -185,6 +217,9 @@ private struct SearchResponse: Decodable, Sendable {
 
         /// The pull request title.
         let title: String?
+
+        /// The ISO 8601 timestamp when this pull request was opened.
+        let createdAt: String?
 
         /// The ISO 8601 timestamp when this pull request was merged, or `nil` if not merged.
         let mergedAt: String?

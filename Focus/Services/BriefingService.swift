@@ -68,7 +68,10 @@ struct BriefingService: Sendable {
 
         // Snapshot Sendable (owner, repo) pairs for the non-isolated fetch fan-out.
         let repoKeys: [(owner: String, name: String)] = scopedRepos.map { ($0.owner, $0.name) }
-        let prCounts = await fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
+
+        async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
+        async let medianFetch = fetchMedianMergeHours(repoKeys: repoKeys, interval: weekInterval)
+        let (prCounts, medianMergeHours) = await (prCountsFetch, medianFetch)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
@@ -80,6 +83,7 @@ struct BriefingService: Sendable {
             weekRange: weekRange,
             repositories: scopedRepos,
             prCounts: prCounts,
+            medianMergeHours: medianMergeHours,
             criticalAlerts: criticalAlerts,
             members: scopedMembers
         )
@@ -244,6 +248,19 @@ struct BriefingService: Sendable {
         }
     }
 
+    /// Fetches the median merge cycle time in hours for the given repositories and week interval.
+    ///
+    /// Returns `nil` when there are no repositories, no merged PRs, or on any error.
+    private func fetchMedianMergeHours(
+        repoKeys: [(owner: String, name: String)],
+        interval: DateInterval
+    ) async -> Int? {
+        guard !repoKeys.isEmpty else { return nil }
+        let service = MergedPRReportService(graphQL: graphQL)
+        let endDate = interval.end.addingTimeInterval(-1)
+        return try? await service.fetchMedianMergeHours(for: repoKeys, from: interval.start, to: endDate)
+    }
+
     // MARK: - Assembly
 
     /// Builds a ``Briefing`` from pre-collected SwiftData entities and API counts.
@@ -266,6 +283,7 @@ struct BriefingService: Sendable {
         weekRange: String,
         repositories: [SavedRepository],
         prCounts: [String: Int],
+        medianMergeHours: Int?,
         criticalAlerts: [DependabotAlert],
         members: [Member]
     ) -> Briefing {
@@ -485,7 +503,7 @@ struct BriefingService: Sendable {
                 shipping: BriefingKPIShipping(value: shippingTotal, spark: shippingSpark),
                 security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, spark: securitySpark),
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
-                reviewMedianHours: nil,
+                medianMergeHours: medianMergeHours,
                 ciPassPct: nil,
                 deploys: nil
             ),
