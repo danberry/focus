@@ -365,6 +365,7 @@ struct BriefingService: Sendable {
             BriefingContributor(
                 initials: Self.initials(from: pair.member.name),
                 name: pair.member.name,
+                githubLogin: pair.member.githubLogin,
                 count: pair.count
             )
         }

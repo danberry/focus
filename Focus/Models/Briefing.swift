@@ -105,9 +105,9 @@ struct Briefing: Sendable {
                 BriefingRepoCount(name: "design-system", count: 6, flag: false)
             ],
             contributors: [
-                BriefingContributor(initials: "JM", name: "Jordan Miles", count: 14),
-                BriefingContributor(initials: "AS", name: "Ana Silva", count: 11),
-                BriefingContributor(initials: "RK", name: "Rahul Kumar", count: 9)
+                BriefingContributor(initials: "JM", name: "Jordan Miles", githubLogin: nil, count: 14),
+                BriefingContributor(initials: "AS", name: "Ana Silva", githubLogin: nil, count: 11),
+                BriefingContributor(initials: "RK", name: "Rahul Kumar", githubLogin: nil, count: 9)
             ]
         ),
         blocked: BriefingBlocked(
@@ -295,6 +295,9 @@ struct BriefingContributor: Sendable {
 
     /// The member's display name.
     let name: String
+
+    /// The GitHub login used to load the member's avatar; `nil` falls back to initials.
+    let githubLogin: String?
 
     /// The contribution count for the week.
     let count: Int
