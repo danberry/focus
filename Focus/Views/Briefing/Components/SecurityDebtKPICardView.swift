@@ -40,7 +40,7 @@ struct SecurityDebtKPICardView: View {
                     .foregroundStyle(BriefingColor.ink3)
             }
 
-            BriefingSparkBarView(values: normalizedSpark)
+            BriefingSparkBarView(values: normalizedSpark, highlightColor: BriefingColor.red)
                 .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
