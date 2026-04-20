@@ -2,17 +2,21 @@ import SwiftUI
 
 // MARK: - BriefingAvatarView
 
-/// A flat initials-only circular avatar used inside briefing rows.
+/// A circular avatar used inside briefing rows.
 ///
-/// `BriefingAvatarView` does not load remote images — it always renders the
-/// supplied initials over a paper-toned circle. Used inside contributor and
-/// blocked-member rows where a fast, lightweight avatar is preferred.
+/// When `githubLogin` is provided the view attempts to load the member's GitHub
+/// avatar via `AsyncImage`. The initials circle is shown while loading and as a
+/// permanent fallback when no login is available or the image fails to load.
 struct BriefingAvatarView: View {
 
     // MARK: - Properties
 
-    /// The initials text rendered inside the circle.
+    /// The initials text rendered inside the fallback circle.
     let initials: String
+
+    /// The GitHub login used to construct the avatar URL. When `nil` the view
+    /// renders the initials circle only.
+    var githubLogin: String? = nil
 
     /// The diameter of the avatar circle in points. Defaults to `32`.
     var size: CGFloat = 32
@@ -21,6 +25,28 @@ struct BriefingAvatarView: View {
 
     /// The view's content.
     var body: some View {
+        if let login = githubLogin,
+           let url = URL(string: "https://avatars.githubusercontent.com/\(login)?s=72") {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: size, height: size)
+                        .clipShape(Circle())
+                default:
+                    initialsCircle
+                }
+            }
+        } else {
+            initialsCircle
+        }
+    }
+
+    // MARK: - Helpers
+
+    private var initialsCircle: some View {
         Circle()
             .fill(BriefingColor.paper3)
             .frame(width: size, height: size)
@@ -38,7 +64,7 @@ struct BriefingAvatarView: View {
 #Preview {
     HStack(spacing: 12) {
         BriefingAvatarView(initials: "AL")
-        BriefingAvatarView(initials: "DM", size: 40)
+        BriefingAvatarView(initials: "DM", githubLogin: "danberry", size: 40)
     }
     .padding()
 }
