@@ -39,7 +39,7 @@ struct SectionHeaderView: View {
                 .textCase(.uppercase)
                 .foregroundStyle(BriefingColor.red)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(.init(verdict))
                     .font(BriefingFont.sectionVerdict)
                     .foregroundStyle(BriefingColor.ink)
