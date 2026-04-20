@@ -6,8 +6,8 @@ import SwiftData
 /// The top-level Focus Briefing screen — an editorial weekly engineering dashboard.
 ///
 /// `BriefingView` orchestrates the full briefing layout: the serif hero verdict,
-/// KPI strip, and four opinionated sections (Shipped, Blocked, Security, Repo
-/// Health). On appear it constructs a ``BriefingService`` from the ambient
+/// KPI strip, and three opinionated sections (Shipped, Blocked, Security). On
+/// appear it constructs a ``BriefingService`` from the ambient
 /// ``AuthenticationService`` and asks it to assemble a ``Briefing`` for the
 /// previous calendar week, rendering a loading indicator until the result lands.
 struct BriefingView: View {
@@ -84,10 +84,6 @@ struct BriefingView: View {
                     // MARK: Security
                     BriefingSecuritySection(security: briefing.security, onTriage: nil)
 
-                    sectionDivider
-
-                    // MARK: Repo Health
-                    BriefingRepoHealthSection(repoHealth: briefing.repoHealth)
                 } else {
 
                     // MARK: Loading state
