@@ -53,7 +53,7 @@ struct KPICardView: View {
             }
 
             if let spark {
-                BriefingSparkBarView(values: spark, tone: tone, highlightPeak: highlightPeak)
+                BriefingSparkBarView(values: spark)
                     .padding(.top, 4)
             }
         }
