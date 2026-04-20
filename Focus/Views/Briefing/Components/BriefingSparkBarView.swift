@@ -5,14 +5,17 @@ import SwiftUI
 /// A full-width bar-chart sparkline used inside Focus Briefing KPI cards.
 ///
 /// Bars stretch to fill the available width with equal spacing. Heights are
-/// proportional to the normalized input values. The peak bar renders in red;
-/// all others render in a low-emphasis gray.
+/// proportional to the normalized input values. The peak bar renders in
+/// `highlightColor`; all others render in a low-emphasis gray.
 struct BriefingSparkBarView: View {
 
     // MARK: - Properties
 
     /// Normalized values in the range `0.0`–`1.0`. Up to fourteen elements are rendered.
     let values: [Double]
+
+    /// Color used to highlight the bar with the largest value. Defaults to green.
+    var highlightColor: Color = BriefingColor.green
 
     private let maxHeight: CGFloat = 48
     private let spacing: CGFloat = 3
@@ -28,7 +31,7 @@ struct BriefingSparkBarView: View {
             HStack(alignment: .bottom, spacing: spacing) {
                 ForEach(Array(clipped.enumerated()), id: \.offset) { index, value in
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(index == peakIndex && value > 0 ? BriefingColor.red : BriefingColor.ink4)
+                        .fill(index == peakIndex && value > 0 ? highlightColor : BriefingColor.ink4)
                         .frame(width: barWidth, height: max(2, value * maxHeight))
                 }
             }
