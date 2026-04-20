@@ -288,6 +288,8 @@ struct BriefingService: Sendable {
         var memberIdleLabels: [ObjectIdentifier: String] = [:]
 
         for member in members {
+            guard member.jobTitle?.discipline?.tracksGitHubActivity != false else { continue }
+
             let weekSum = member.dailyContributions
                 .filter { weekInterval.contains($0.date) }
                 .reduce(0) { $0 + $1.count }

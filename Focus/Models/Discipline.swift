@@ -16,13 +16,23 @@ final class Discipline {
     /// The display name of the discipline (e.g., "Engineering", "Design").
     var name: String
 
+    /// Whether members in this discipline are expected to have GitHub activity.
+    ///
+    /// Set to `false` for disciplines like Design or Product Management whose
+    /// practitioners don't commit code, so they are excluded from inactivity
+    /// flagging in the Focus Briefing.
+    var tracksGitHubActivity: Bool = true
+
     // MARK: - Init
 
     /// Creates a new discipline with the given name.
     ///
-    /// - Parameter name: The display name shown in lists and detail views.
-    init(name: String) {
+    /// - Parameters:
+    ///   - name: The display name shown in lists and detail views.
+    ///   - tracksGitHubActivity: Whether members are expected to have GitHub contributions.
+    init(name: String, tracksGitHubActivity: Bool = true) {
         self.name = name
+        self.tracksGitHubActivity = tracksGitHubActivity
     }
 
     // MARK: - Relationships

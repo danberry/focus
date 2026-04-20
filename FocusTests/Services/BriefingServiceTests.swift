@@ -26,6 +26,7 @@ struct BriefingServiceTests {
         return try ModelContainer(
             for: SavedRepository.self, DependabotAlert.self,
             Member.self, DailyContribution.self, Team.self, Department.self, SavedOrganization.self,
+            Discipline.self, JobTitle.self,
             configurations: config
         )
     }
@@ -85,6 +86,27 @@ struct BriefingServiceTests {
         let briefing = await makeService().generate(scope: .all, in: context)
 
         #expect(briefing.blocked.members.contains { $0.name == "Priya Shah" })
+    }
+
+    /// Verifies that members in a discipline with `tracksGitHubActivity == false` are excluded
+    /// from the blocked list even when they have zero contributions for the week.
+    @Test func memberInNonGitHubDisciplineIsNotFlaggedAsIdle() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let discipline = Discipline(name: "Design", tracksGitHubActivity: false)
+        context.insert(discipline)
+        let jobTitle = JobTitle(name: "Product Designer")
+        context.insert(jobTitle)
+        discipline.jobTitles.append(jobTitle)
+
+        let member = Member(name: "Cleo Park", githubId: 99, githubLogin: "cleopark")
+        member.jobTitle = jobTitle
+        context.insert(member)
+
+        let briefing = await makeService().generate(scope: .all, in: context)
+
+        #expect(!briefing.blocked.members.contains { $0.name == "Cleo Park" })
     }
 
     /// Verifies that the API-returned `issueCount` propagates to the shipping total.
