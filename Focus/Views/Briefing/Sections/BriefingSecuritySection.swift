@@ -26,8 +26,8 @@ struct BriefingSecuritySection: View {
             // MARK: Section header
             SectionHeaderView(
                 number: "03",
-                label: "Security Debt",
                 verdict: security.verdict,
+                summary: "Summary placeholder",
                 actionLabel: "Triage all →",
                 onAction: onTriage
             )

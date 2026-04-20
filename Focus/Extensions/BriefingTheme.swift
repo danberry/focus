@@ -156,8 +156,8 @@ enum BriefingFont {
     /// 44pt serif — the hero verdict on the briefing landing page.
     static let hero: Font = .system(size: 88, weight: .medium, design: .serif)
 
-    /// 22pt serif — verdicts shown beneath each section header.
-    static let sectionVerdict: Font = .system(size: 22, weight: .medium, design: .serif)
+    /// 36pt serif — verdicts shown beside each section eyebrow.
+    static let sectionVerdict: Font = .system(size: 36, weight: .medium, design: .serif)
 
     /// 54pt monospaced-digit — hero KPI numbers.
     static let kpiHero: Font = .system(size: 54, weight: .medium).monospacedDigit()

@@ -25,8 +25,8 @@ struct BriefingShippedSection: View {
             // MARK: Section header
             SectionHeaderView(
                 number: "01",
-                label: "What Shipped",
                 verdict: shipped.verdict,
+                summary: "Summary placeholder",
                 actionLabel: "See all →",
                 onAction: onSeeAll
             )
