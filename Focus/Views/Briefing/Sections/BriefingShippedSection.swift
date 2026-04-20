@@ -31,34 +31,40 @@ struct BriefingShippedSection: View {
                 onAction: onSeeAll
             )
 
-            // MARK: PRs merged by repo
-            VStack(alignment: .leading, spacing: 0) {
-                Text("PRs merged by repo")
-                    .font(BriefingFont.eyebrow)
-                    .textCase(.uppercase)
-                    .foregroundStyle(BriefingColor.ink4)
-                    .padding(.bottom, 6)
+            // MARK: PRs merged + Top contributors (side by side)
+            HStack(alignment: .top, spacing: 16) {
 
-                VStack(spacing: 6) {
-                    ForEach(Array(shipped.repos.prefix(6).enumerated()), id: \.offset) { _, repo in
-                        RepoBarRow(repo: repo, maxCount: maxRepoCount)
+                // MARK: PRs merged by repo
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("PRs merged by repo")
+                        .font(BriefingFont.eyebrow)
+                        .textCase(.uppercase)
+                        .foregroundStyle(BriefingColor.ink4)
+                        .padding(.bottom, 6)
+
+                    VStack(spacing: 6) {
+                        ForEach(Array(shipped.repos.prefix(6).enumerated()), id: \.offset) { _, repo in
+                            RepoBarRow(repo: repo, maxCount: maxRepoCount)
+                        }
                     }
                 }
-            }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            // MARK: Top contributors
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Top contributors")
-                    .font(BriefingFont.eyebrow)
-                    .textCase(.uppercase)
-                    .foregroundStyle(BriefingColor.ink4)
-                    .padding(.bottom, 6)
+                // MARK: Top contributors
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Top contributors")
+                        .font(BriefingFont.eyebrow)
+                        .textCase(.uppercase)
+                        .foregroundStyle(BriefingColor.ink4)
+                        .padding(.bottom, 6)
 
-                VStack(spacing: 6) {
-                    ForEach(Array(shipped.contributors.enumerated()), id: \.offset) { _, contributor in
-                        ContributorRow(contributor: contributor)
+                    VStack(spacing: 6) {
+                        ForEach(Array(shipped.contributors.enumerated()), id: \.offset) { _, contributor in
+                            ContributorRow(contributor: contributor)
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, BriefingLayout.gutter)
