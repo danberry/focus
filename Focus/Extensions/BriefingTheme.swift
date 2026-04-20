@@ -164,8 +164,8 @@ enum BriefingFont {
     /// 36pt serif — verdicts shown beside each section eyebrow.
     static let sectionVerdict: Font = .system(size: 36, weight: .medium, design: .serif)
 
-    /// 54pt monospaced-digit — hero KPI numbers.
-    static let kpiHero: Font = .system(size: 54, weight: .medium).monospacedDigit()
+    /// 64pt monospaced-digit — hero KPI numbers.
+    static let kpiHero: Font = .system(size: 64, weight: .medium).monospacedDigit()
 
     /// 34pt monospaced-digit — supporting KPI numbers.
     static let kpiSupporting: Font = .system(size: 34, weight: .medium).monospacedDigit()
