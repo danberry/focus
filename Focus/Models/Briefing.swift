@@ -94,7 +94,7 @@ struct Briefing: Sendable {
             ),
             idle: BriefingKPIIdle(value: 2, delta: 1),
             medianMergeHours: nil,
-            ciPassPct: nil,
+            ciPass: nil,
             releases: nil
         ),
         shipped: BriefingShipped(
@@ -213,8 +213,8 @@ struct BriefingKPIs: Sendable {
     /// Median time from PR open to merge in hours, or `nil` if not tracked.
     let medianMergeHours: Int?
 
-    /// CI pass rate as a percent (0–100), or `nil` if not tracked.
-    let ciPassPct: Int?
+    /// CI pass rate for the current and prior week, or `nil` if no PRs had checks.
+    let ciPass: BriefingKPICIPass?
 
     /// GitHub release count across all tracked repos in the last 7 days, or `nil` if not tracked.
     let releases: Int?
@@ -263,6 +263,18 @@ struct BriefingKPIIdle: Sendable {
 
     /// Change relative to the prior week (positive = more idle members now).
     let delta: Int
+}
+
+// MARK: - BriefingKPICIPass
+
+/// CI pass rate KPI (percentage of merged PRs whose CI checks all passed).
+struct BriefingKPICIPass: Sendable {
+
+    /// Percentage of merged PRs with all checks passing this week (0–100).
+    let value: Int
+
+    /// Same percentage for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
 }
 
 // MARK: - BriefingShipped

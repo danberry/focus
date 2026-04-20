@@ -54,7 +54,8 @@ struct BriefingKPISection: View {
 
                 KPICardView(
                     title: "CI Pass",
-                    value: kpis.ciPassPct.map { "\($0)%" } ?? "—"
+                    value: kpis.ciPass.map { "\($0.value)%" } ?? "—",
+                    deltaLabel: ciPassDeltaLabel
                 )
                 
                 Divider()
@@ -76,6 +77,14 @@ struct BriefingKPISection: View {
         let delta = kpis.idle.delta
         guard delta != 0 else { return nil }
         return delta > 0 ? "+\(delta)" : "\(delta)"
+    }
+
+    /// Returns a week-over-week delta label for the CI pass rate, or `nil` when unavailable or unchanged.
+    private var ciPassDeltaLabel: String? {
+        guard let ci = kpis.ciPass, let prior = ci.priorWeekValue else { return nil }
+        let delta = ci.value - prior
+        guard delta != 0 else { return nil }
+        return delta > 0 ? "+\(delta)pp" : "\(delta)pp"
     }
 }
 
