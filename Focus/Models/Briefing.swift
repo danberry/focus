@@ -89,8 +89,8 @@ struct Briefing: Sendable {
             security: BriefingKPISecurity(
                 value: 48,
                 critical: 12,
-                dailyCounts: [2, 4, 3, 6, 5, 4, 1],
-                priorWeekTotal: 20
+                dailyOpenTotals: [38, 41, 43, 45, 46, 47, 48],
+                priorWeekTotal: 38
             ),
             idle: BriefingKPIIdle(value: 2, delta: 1),
             medianMergeHours: nil,
@@ -237,7 +237,7 @@ struct BriefingKPIShipping: Sendable {
 
 // MARK: - BriefingKPISecurity
 
-/// Security KPI (open alert total, critical count, and 7-day new-alert sparkline).
+/// Security KPI (open alert total, critical count, and 7-day open-total sparkline).
 struct BriefingKPISecurity: Sendable {
 
     /// Total open security alerts across all tracked repos.
@@ -246,10 +246,10 @@ struct BriefingKPISecurity: Sendable {
     /// The number of alerts at `"critical"` severity.
     let critical: Int
 
-    /// New alerts created per day for the 7-day report period, ordered oldest to newest.
-    let dailyCounts: [Int]
+    /// Total open alert count per day for the 7-day report period, ordered oldest to newest.
+    let dailyOpenTotals: [Int]
 
-    /// Total new alerts created in the prior week, used to compute week-over-week delta.
+    /// Total open alerts at the end of the prior week, used to compute week-over-week delta.
     let priorWeekTotal: Int?
 }
 

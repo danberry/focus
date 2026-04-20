@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// Displays the total open security alert count with an optional week-over-week
 /// delta percentage, a subtitle showing the critical count, and a 7-day bar
-/// sparkline where each bar represents new alerts created that day.
+/// sparkline where each bar represents the running open-alert total for that day.
 struct SecurityDebtKPICardView: View {
 
     // MARK: - Properties
@@ -51,15 +51,14 @@ struct SecurityDebtKPICardView: View {
     // MARK: - Helpers
 
     private var normalizedSpark: [Double] {
-        let counts = security.dailyCounts
-        guard let peak = counts.max(), peak > 0 else { return counts.map { _ in 0.0 } }
-        return counts.map { Double($0) / Double(peak) }
+        let totals = security.dailyOpenTotals
+        guard let peak = totals.max(), peak > 0 else { return totals.map { _ in 0.0 } }
+        return totals.map { Double($0) / Double(peak) }
     }
 
     private var deltaPct: String? {
         guard let prior = security.priorWeekTotal, prior > 0 else { return nil }
-        let thisWeek = security.dailyCounts.reduce(0, +)
-        let pct = Int(round(Double(thisWeek - prior) / Double(prior) * 100))
+        let pct = Int(round(Double(security.value - prior) / Double(prior) * 100))
         return pct >= 0 ? "↑ \(pct)%" : "↓ \(-pct)%"
     }
 
@@ -76,8 +75,8 @@ struct SecurityDebtKPICardView: View {
         security: BriefingKPISecurity(
             value: 48,
             critical: 12,
-            dailyCounts: [2, 4, 3, 6, 5, 4, 1],
-            priorWeekTotal: 20
+            dailyOpenTotals: [38, 41, 43, 45, 46, 47, 48],
+            priorWeekTotal: 38
         )
     )
     .padding()
