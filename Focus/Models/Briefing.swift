@@ -120,6 +120,7 @@ struct Briefing: Sendable {
                     idleLabel: "6d",
                     recommendation: "Usually ships 4+ PRs / week. Check in.",
                     urgent: true,
+                    neverContributed: false,
                     githubLogin: "priyashah"
                 ),
                 BriefingBlockedMember(
@@ -129,6 +130,7 @@ struct Briefing: Sendable {
                     idleLabel: "4d",
                     recommendation: "Blocked on review for 3 open PRs.",
                     urgent: false,
+                    neverContributed: false,
                     githubLogin: "mtorres"
                 )
             ]
@@ -332,6 +334,9 @@ struct BriefingBlockedMember: Sendable {
 
     /// When `true`, the row is rendered with the urgent (blue) tone.
     let urgent: Bool
+
+    /// When `true`, the member has no contribution history at all — rendered with the red tone.
+    let neverContributed: Bool
 
     /// The member's GitHub login, or `nil` if not linked.
     let githubLogin: String?

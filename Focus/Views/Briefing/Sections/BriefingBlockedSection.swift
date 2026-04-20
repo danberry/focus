@@ -77,7 +77,7 @@ private struct BlockedMemberCard: View {
                         .font(BriefingFont.attentionTitle)
                         .foregroundStyle(BriefingColor.ink)
 
-                    Text("\(member.team) · \(member.idleLabel) idle")
+                    Text(member.neverContributed ? "\(member.team) · no contributions on record" : "\(member.team) · \(member.idleLabel) idle")
                         .font(BriefingFont.meta)
                         .foregroundStyle(BriefingColor.ink3)
                 }
@@ -100,7 +100,7 @@ private struct BlockedMemberCard: View {
             }
         }
         .padding(14)
-        .briefingCard(tone: member.urgent ? .blue : .neutral)
+        .briefingCard(tone: member.neverContributed ? .red : (member.urgent ? .blue : .neutral))
     }
 }
 

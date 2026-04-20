@@ -354,14 +354,19 @@ struct BriefingService: Sendable {
         // MARK: Blocked members
         let blockedMembers: [BriefingBlockedMember] = idleMembers.map { member in
             let label = memberIdleLabels[ObjectIdentifier(member)] ?? "—"
-            let urgent = label.hasSuffix("d") && (Int(label.dropLast()) ?? 0) >= 5
+            let neverContributed = label == "—"
+            let urgent = !neverContributed && label.hasSuffix("d") && (Int(label.dropLast()) ?? 0) >= 5
+            let recommendation = neverContributed
+                ? "No contributions on record. Verify their account is linked and active."
+                : "No commits this week. Consider a check-in."
             return BriefingBlockedMember(
                 initials: Self.initials(from: member.name),
                 name: member.name,
                 team: member.team?.name ?? "—",
                 idleLabel: label,
-                recommendation: "No commits this week. Consider a check-in.",
+                recommendation: recommendation,
                 urgent: urgent,
+                neverContributed: neverContributed,
                 githubLogin: member.githubLogin
             )
         }
