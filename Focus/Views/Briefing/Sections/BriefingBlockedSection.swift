@@ -30,7 +30,7 @@ struct BriefingBlockedSection: View {
             SectionHeaderView(
                 number: "02",
                 verdict: blocked.verdict,
-                summary: "Summary placeholder"
+                summary: blocked.summary
             )
 
             // MARK: Member cards
