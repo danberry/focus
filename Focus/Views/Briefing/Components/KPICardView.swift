@@ -23,6 +23,9 @@ struct KPICardView: View {
     /// Optional sparkline values in the range `0.0`–`1.0`.
     var spark: [Double]? = nil
 
+    /// When `true`, the bar at the highest spark value is highlighted in green.
+    var highlightPeak: Bool = false
+
     /// The semantic tone that drives the card's fill and border.
     var tone: BriefingTone = .neutral
 
@@ -50,7 +53,7 @@ struct KPICardView: View {
             }
 
             if let spark {
-                BriefingSparkBarView(values: spark, tone: tone)
+                BriefingSparkBarView(values: spark, tone: tone, highlightPeak: highlightPeak)
                     .padding(.top, 4)
             }
         }

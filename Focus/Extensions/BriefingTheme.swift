@@ -112,6 +112,11 @@ enum BriefingColor {
     /// Red border stroke for tone-red cards.
     static let redBd: Color = adaptive(light: 0xe3b0a1, dark: 0x5a2418)
 
+    // MARK: - Green Accent
+
+    /// Primary green accent — used to highlight the peak bar in the shipping spark chart.
+    static let green: Color = adaptive(light: 0x2f7d4f, dark: 0x52c27e)
+
     // MARK: - Blue Accent
 
     /// Primary blue accent — used for idle/blocked members and leading bars.

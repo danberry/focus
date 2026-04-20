@@ -24,6 +24,7 @@ struct BriefingKPISection: View {
                     value: "\(kpis.shipping.value)",
                     deltaLabel: nil,
                     spark: normalizedShippingSpark,
+                    highlightPeak: true,
                     tone: .neutral,
                     isHero: true
                 )
