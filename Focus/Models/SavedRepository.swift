@@ -43,6 +43,10 @@ final class SavedRepository {
     /// repository owner may not be a watched organization.
     var organizationLogin: String?
 
+    /// When `true`, the repository is in maintenance mode and is excluded from low-activity
+    /// performance alerts in the weekly briefing.
+    var isInMaintenance: Bool = false
+
     // MARK: - Init
 
     /// Creates a new saved repository.
