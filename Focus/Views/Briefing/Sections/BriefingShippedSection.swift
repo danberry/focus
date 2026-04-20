@@ -67,7 +67,6 @@ struct BriefingShippedSection: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.horizontal, BriefingLayout.gutter)
     }
 
     // MARK: - Helpers
