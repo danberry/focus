@@ -426,8 +426,18 @@ struct BriefingService: Sendable {
             }
         }
 
-        // TODO: Replace idle delta with real prior-week comparison.
-        let idleDelta = 0
+        var cal = Calendar.current
+        cal.firstWeekday = 2
+        let priorWeekInterval = cal.dateInterval(of: .weekOfYear, for: weekInterval.start.addingTimeInterval(-1))
+        let priorIdleCount: Int = priorWeekInterval.map { prior in
+            members.filter { member in
+                guard member.jobTitle?.discipline?.tracksGitHubActivity != false else { return false }
+                return member.dailyContributions
+                    .filter { prior.contains($0.date) }
+                    .reduce(0) { $0 + $1.count } == 0
+            }.count
+        } ?? 0
+        let idleDelta = idleMembers.count - priorIdleCount
 
         // MARK: Shipped — repo ranking
         var repoRanking: [(repo: SavedRepository, count: Int)] = repositories.map { repo in
