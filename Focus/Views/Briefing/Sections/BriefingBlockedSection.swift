@@ -29,8 +29,8 @@ struct BriefingBlockedSection: View {
             // MARK: Section header
             SectionHeaderView(
                 number: "02",
-                label: "Who Looks Blocked",
-                verdict: blocked.verdict
+                verdict: blocked.verdict,
+                summary: "Summary placeholder"
             )
 
             // MARK: Member cards

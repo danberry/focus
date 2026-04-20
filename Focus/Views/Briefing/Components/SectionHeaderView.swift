@@ -14,11 +14,11 @@ struct SectionHeaderView: View {
     /// The two-digit section number, e.g. `"01"`.
     let number: String
 
-    /// The section label shown after the number, e.g. `"What Shipped"`.
-    let label: String
-
     /// The serif verdict sentence shown beneath the eyebrow row.
     let verdict: String
+
+    /// Optional summary line shown below the verdict row.
+    var summary: String? = nil
 
     /// Optional supporting evidence line shown beneath the verdict.
     var evidenceLine: String? = nil
@@ -33,29 +33,35 @@ struct SectionHeaderView: View {
 
     /// The view's content.
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("§ \(number) — \(label)")
-                    .font(BriefingFont.eyebrow)
-                    .textCase(.uppercase)
-                    .foregroundStyle(BriefingColor.red)
+        HStack(alignment: .firstTextBaseline, spacing: 32) {
+            Text("§ \(number)")
+                .font(BriefingFont.eyebrow)
+                .textCase(.uppercase)
+                .foregroundStyle(BriefingColor.red)
 
-                Spacer()
+            VStack(alignment: .leading, spacing: 12) {
+                Text(.init(verdict))
+                    .font(BriefingFont.sectionVerdict)
+                    .foregroundStyle(BriefingColor.ink)
 
-                if let actionLabel, let onAction {
-                    Button(actionLabel, action: onAction)
-                        .font(BriefingFont.eyebrow)
+                if let summary {
+                    Text(summary)
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(BriefingColor.ink3)
+                }
+
+                if let evidenceLine {
+                    Text(evidenceLine)
+                        .font(BriefingFont.meta)
                         .foregroundStyle(BriefingColor.ink3)
                 }
             }
 
-            Text(.init(verdict))
-                .font(BriefingFont.sectionVerdict)
-                .foregroundStyle(BriefingColor.ink)
+            Spacer()
 
-            if let evidenceLine {
-                Text(evidenceLine)
-                    .font(BriefingFont.meta)
+            if let actionLabel, let onAction {
+                Button(actionLabel, action: onAction)
+                    .font(BriefingFont.eyebrow)
                     .foregroundStyle(BriefingColor.ink3)
             }
         }
@@ -68,11 +74,8 @@ struct SectionHeaderView: View {
 #Preview {
     SectionHeaderView(
         number: "01",
-        label: "What Shipped",
         verdict: "Shipping held steady. payments-api led the week.",
-        evidenceLine: "142 PRs merged across 5 repos",
-        actionLabel: "See all →",
-        onAction: {}
+        evidenceLine: "142 PRs merged across 5 repos"
     )
     .padding()
 }
