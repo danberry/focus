@@ -49,4 +49,10 @@ struct SecurityInsightConfig: Sendable {
 
     /// Minimum consecutive clean weeks before the streak insight fires.
     var cleanStreakMinWeeks: Int = 3
+
+    /// Minimum absolute alert reduction (week-over-week) to fire the drop insight.
+    var significantDropDelta: Int = 5
+
+    /// Minimum fractional alert reduction (week-over-week) to fire the drop insight.
+    var significantDropPct: Double = 0.20
 }
