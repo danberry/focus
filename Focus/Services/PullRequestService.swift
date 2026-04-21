@@ -53,25 +53,43 @@ struct PullRequestService: Sendable {
 
     // MARK: - Apply (@MainActor, writes to SwiftData)
 
-    /// Persists fetched pull requests to SwiftData, replacing any existing records.
+    /// Persists fetched pull requests to SwiftData using an upsert strategy.
+    ///
+    /// Existing `OpenPullRequest` objects are updated in-place (preserving their
+    /// `PersistentIdentifier`) so views holding live references are not invalidated.
+    /// PRs absent from the new data are deleted; new PRs are inserted.
     ///
     /// Does nothing when `prs` is `nil` (preserving any existing data).
     @MainActor
     func applyOpenPRs(_ prs: [OpenPRData]?, to repository: SavedRepository, in context: ModelContext) {
         guard let prs else { return }
 
-        for existing in repository.openPullRequests {
-            existing.repository = nil
-            context.delete(existing)
+        let iso = ISO8601DateFormatter()
+        let incomingByNumber = Dictionary(uniqueKeysWithValues: prs.map { ($0.number, $0) })
+
+        // Snapshot before mutating the relationship
+        let snapshot = repository.openPullRequests
+        let existingNumbers = Set(snapshot.map(\.number))
+
+        // Update existing or delete stale
+        for existing in snapshot {
+            if let data = incomingByNumber[existing.number] {
+                existing.title = data.title
+                existing.authorLogin = data.authorLogin ?? ""
+                existing.url = data.url
+                existing.createdAt = iso.date(from: data.createdAt) ?? existing.createdAt
+            } else {
+                existing.repository = nil
+                context.delete(existing)
+            }
         }
 
-        let iso = ISO8601DateFormatter()
-        for data in prs {
-            let createdAt = iso.date(from: data.createdAt) ?? Date()
+        // Insert new PRs not already tracked
+        for data in prs where !existingNumbers.contains(data.number) {
             let pr = OpenPullRequest(
                 number: data.number,
                 title: data.title,
-                createdAt: createdAt,
+                createdAt: iso.date(from: data.createdAt) ?? Date(),
                 authorLogin: data.authorLogin ?? "",
                 url: data.url
             )
