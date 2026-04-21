@@ -79,11 +79,12 @@ struct BriefingService: Sendable {
         async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
         async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
         async let releasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: weekInterval.start)
+        async let priorReleasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: priorWeekStart, until: weekInterval.start)
         async let priorPRCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: priorGhRange)
         async let priorMetricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: priorWeekInterval)
         async let ciPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: ghRange)
         async let priorCIPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: priorGhRange)
-        let (prCounts, metrics, releaseCount, priorPRCounts, priorMetrics, ciPassPct, priorCIPassPct) = await (prCountsFetch, metricsFetch, releasesFetch, priorPRCountsFetch, priorMetricsFetch, ciPassFetch, priorCIPassFetch)
+        let (prCounts, metrics, releaseCount, priorReleaseCount, priorPRCounts, priorMetrics, ciPassPct, priorCIPassPct) = await (prCountsFetch, metricsFetch, releasesFetch, priorReleasesFetch, priorPRCountsFetch, priorMetricsFetch, ciPassFetch, priorCIPassFetch)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
@@ -108,6 +109,7 @@ struct BriefingService: Sendable {
             ciPassPct: ciPassPct,
             priorCIPassPct: priorCIPassPct,
             releaseCount: releaseCount,
+            priorReleaseCount: priorReleaseCount,
             criticalAlerts: criticalAlerts,
             allAlertDates: allAlertDates,
             members: scopedMembers
@@ -332,7 +334,8 @@ struct BriefingService: Sendable {
     /// - Returns: Total release count across all repos, or `nil` if there are no repos.
     func fetchReleaseCount(
         repoKeys: [(owner: String, name: String)],
-        since: Date
+        since: Date,
+        until: Date? = nil
     ) async -> Int? {
         guard !repoKeys.isEmpty else { return nil }
         return await withTaskGroup(of: Int.self) { group in
@@ -340,7 +343,7 @@ struct BriefingService: Sendable {
                 let owner = key.owner
                 let name = key.name
                 group.addTask {
-                    await self.fetchRepoReleaseCount(owner: owner, name: name, since: since)
+                    await self.fetchRepoReleaseCount(owner: owner, name: name, since: since, until: until)
                 }
             }
             var total = 0
@@ -360,7 +363,7 @@ struct BriefingService: Sendable {
     ///   - name: The repository name.
     ///   - since: Releases published before this date are ignored.
     /// - Returns: The number of qualifying releases, or `0` on failure.
-    func fetchRepoReleaseCount(owner: String, name: String, since: Date) async -> Int {
+    func fetchRepoReleaseCount(owner: String, name: String, since: Date, until: Date? = nil) async -> Int {
         do {
             let response: WeeklyReleasesResponse = try await graphQL.execute(
                 query: BriefingQueries.recentReleases,
@@ -369,7 +372,7 @@ struct BriefingService: Sendable {
             )
             return response.repository?.releases.nodes
                 .compactMap(\.publishedAt)
-                .filter { $0 >= since }
+                .filter { date in date >= since && until.map { date < $0 } ?? true }
                 .count ?? 0
         } catch {
             return 0
@@ -477,6 +480,7 @@ struct BriefingService: Sendable {
         ciPassPct: Int?,
         priorCIPassPct: Int?,
         releaseCount: Int?,
+        priorReleaseCount: Int?,
         criticalAlerts: [DependabotAlert],
         allAlertDates: [Date],
         members: [Member]
@@ -777,7 +781,7 @@ struct BriefingService: Sendable {
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
                 medianMerge: medianMergeHours.map { BriefingKPIMedianMerge(value: $0, priorWeekValue: priorMedianMergeHours) },
                 ciPass: ciPassPct.map { BriefingKPICIPass(value: $0, priorWeekValue: priorCIPassPct) },
-                releases: releaseCount
+                releases: releaseCount.map { BriefingKPIReleases(value: $0, priorWeekValue: priorReleaseCount) }
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,

@@ -217,7 +217,7 @@ struct BriefingKPIs: Sendable {
     let ciPass: BriefingKPICIPass?
 
     /// GitHub release count across all tracked repos in the last 7 days, or `nil` if not tracked.
-    let releases: Int?
+    let releases: BriefingKPIReleases?
 }
 
 // MARK: - BriefingKPIShipping
@@ -286,6 +286,18 @@ struct BriefingKPIMedianMerge: Sendable {
     let value: Int
 
     /// Same metric for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIReleases
+
+/// Releases KPI (GitHub release count for the week + prior-week comparison).
+struct BriefingKPIReleases: Sendable {
+
+    /// Total GitHub releases published this week across all tracked repos.
+    let value: Int
+
+    /// Same count for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 
