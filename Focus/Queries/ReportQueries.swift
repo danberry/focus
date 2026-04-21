@@ -31,6 +31,8 @@ enum ReportQueries {
                         author { login }
                         url
                         repository { nameWithOwner }
+                        additions
+                        deletions
                     }
                 }
             }

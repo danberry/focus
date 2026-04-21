@@ -28,8 +28,17 @@ struct MergedPR: Identifiable, Sendable {
     /// The repository name in `owner/repo` format.
     let repoNameWithOwner: String
 
+    /// The number of lines added by this pull request.
+    let additions: Int
+
+    /// The number of lines deleted by this pull request.
+    let deletions: Int
+
     // MARK: - Computed
 
     /// A stable identifier combining the repository name and pull request number.
     var id: String { "\(repoNameWithOwner)#\(number)" }
+
+    /// Total lines changed by this pull request (additions + deletions).
+    var linesChanged: Int { additions + deletions }
 }

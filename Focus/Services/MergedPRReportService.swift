@@ -158,7 +158,9 @@ struct MergedPRReportService: Sendable {
                 mergedAt: mergedAt,
                 authorLogin: node.author?.login ?? "",
                 url: url,
-                repoNameWithOwner: repoName
+                repoNameWithOwner: repoName,
+                additions: node.additions ?? 0,
+                deletions: node.deletions ?? 0
             )
             result[repoName, default: []].append(pr)
         }
@@ -232,6 +234,12 @@ private struct SearchResponse: Decodable, Sendable {
 
         /// The repository this pull request belongs to, or `nil` if unavailable.
         let repository: Repo?
+
+        /// The number of lines added by this pull request.
+        let additions: Int?
+
+        /// The number of lines deleted by this pull request.
+        let deletions: Int?
 
         /// The GitHub user who authored a pull request.
         struct Author: Decodable, Sendable {

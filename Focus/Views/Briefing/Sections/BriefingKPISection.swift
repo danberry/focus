@@ -59,6 +59,11 @@ struct BriefingKPISection: View {
                     value: kpis.releases.map { "\($0.value)" } ?? "—",
                     inlineDeltaLabel: releasesDeltaLabel
                 )
+
+                if let prSize = kpis.prSize {
+                    divider
+                    PRSizeKPICardView(prSize: prSize)
+                }
             }
         }
     }
@@ -91,6 +96,14 @@ struct BriefingKPISection: View {
     private var releasesDeltaLabel: String? {
         guard let r = kpis.releases, let prior = r.priorWeekValue else { return nil }
         let delta = r.value - prior
+        if delta == 0 { return "→" }
+        return delta > 0 ? "↑" : "↓"
+    }
+
+    /// Returns a week-over-week delta label for PR size, or `nil` when unavailable.
+    private var prSizeDeltaLabel: String? {
+        guard let ps = kpis.prSize, let prior = ps.priorWeekValue else { return nil }
+        let delta = ps.value - prior
         if delta == 0 { return "→" }
         return delta > 0 ? "↑" : "↓"
     }
