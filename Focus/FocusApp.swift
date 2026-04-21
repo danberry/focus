@@ -49,6 +49,11 @@ struct FocusApp: App {
                     tokenProvider: authService.tokenProvider
                 )
                 syncManager.scheduleNextSync()
+                // Sync on fresh launch — onChange(of: scenePhase) only fires on transitions,
+                // so it misses the initial .active state when the app is cold-started.
+                guard authService.authState == .authenticated else { return }
+                let context = ModelContext(modelContainer)
+                await syncManager.syncIfNeeded(context: context)
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active, authService.authState == .authenticated else { return }
