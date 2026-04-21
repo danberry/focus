@@ -77,6 +77,30 @@ enum BriefingQueries {
         }
         """
 
+    /// Fetches the count of issues closed in one repository within a date range.
+    ///
+    /// The `$q` variable is a GitHub Search query string, for example:
+    /// ```
+    /// "repo:owner/name is:issue is:closed closed:2026-04-13..2026-04-19"
+    /// ```
+    static let weeklyClosedIssueCount = """
+        query BriefingWeeklyClosedIssues($q: String!) {
+            search(query: $q, type: ISSUE, first: 1) { issueCount }
+        }
+        """
+
+    /// Fetches the count of issues opened in one repository within a date range.
+    ///
+    /// The `$q` variable is a GitHub Search query string, for example:
+    /// ```
+    /// "repo:owner/name is:issue created:2026-04-13..2026-04-19"
+    /// ```
+    static let weeklyOpenedIssueCount = """
+        query BriefingWeeklyOpenedIssues($q: String!) {
+            search(query: $q, type: ISSUE, first: 1) { issueCount }
+        }
+        """
+
     /// Fetches the 20 most-recently-created releases for one repository.
     ///
     /// The response nodes include `publishedAt` (null for drafts) so the caller can

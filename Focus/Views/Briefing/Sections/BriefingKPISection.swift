@@ -99,6 +99,18 @@ struct BriefingKPISection: View {
 
                     HotfixRateKPICardView(hotfixRate: hotfix)
                 }
+
+                if let reviewLoad = kpis.reviewLoad {
+                    divider
+
+                    ReviewLoadKPICardView(kpi: reviewLoad)
+                }
+
+                if let issueVelocity = kpis.issueVelocity {
+                    divider
+
+                    IssueVelocityKPICardView(issueVelocity: issueVelocity)
+                }
             }
         }
     }

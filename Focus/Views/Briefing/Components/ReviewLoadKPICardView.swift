@@ -1,19 +1,5 @@
 import SwiftUI
 
-// MARK: - BriefingKPIReviewLoad
-
-// TODO: Move this struct into Focus/Models/Briefing.swift in Track C — stub lives here until service wiring.
-
-/// Review load data for a single briefing week.
-///
-/// Reviewers are pre-sorted descending by review count and capped at 7 entries
-/// before being stored here. `normalizedCount` is `1.0` for the top reviewer.
-struct BriefingKPIReviewLoad {
-
-    /// Up to 7 reviewers sorted by descending review volume, with counts normalized to `0.0`–`1.0`.
-    let reviewers: [(login: String, normalizedCount: Double)]
-}
-
 // MARK: - ReviewLoadKPICardView
 
 /// Displays the distribution of code review work across team members for the current week.

@@ -96,7 +96,13 @@ struct BriefingService: Sendable {
         async let priorCIPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: priorGhRange)
         async let openedPRCountsFetch = fetchAllOpenedPRCounts(repoKeys: repoKeys, range: ghRange)
         async let priorOpenedPRCountsFetch = fetchAllOpenedPRCounts(repoKeys: repoKeys, range: priorGhRange)
+        async let openedIssueCountsFetch = fetchAllOpenedIssueCounts(repoKeys: repoKeys, range: ghRange)
+        async let closedIssueCountsFetch = fetchAllClosedIssueCounts(repoKeys: repoKeys, range: ghRange)
+        async let priorClosedIssueCountsFetch = fetchAllClosedIssueCounts(repoKeys: repoKeys, range: priorGhRange)
         let (prCounts, metrics, releaseCount, priorReleaseCount, priorPRCounts, priorMetrics, ciPassPct, priorCIPassPct, openedPRCounts, priorOpenedPRCounts) = await (prCountsFetch, metricsFetch, releasesFetch, priorReleasesFetch, priorPRCountsFetch, priorMetricsFetch, ciPassFetch, priorCIPassFetch, openedPRCountsFetch, priorOpenedPRCountsFetch)
+        let openedIssueCounts = await openedIssueCountsFetch
+        let closedIssueCounts = await closedIssueCountsFetch
+        let priorClosedIssueCounts = await priorClosedIssueCountsFetch
         let unreviewedCount = metrics.unreviewedCount
         let totalPRCount = metrics.totalPRCount
         let priorUnreviewedCount = priorMetrics.unreviewedCount
@@ -180,6 +186,9 @@ struct BriefingService: Sendable {
             priorReleaseCount: priorReleaseCount,
             openedPRTotal: openedPRCounts.values.reduce(0, +),
             priorOpenedPRTotal: priorOpenedPRCounts.values.reduce(0, +),
+            openedIssueTotal: openedIssueCounts.values.reduce(0, +),
+            closedIssueTotal: closedIssueCounts.values.reduce(0, +),
+            priorClosedIssueTotal: priorClosedIssueCounts.values.reduce(0, +),
             unreviewedCount: unreviewedCount,
             totalPRCount: totalPRCount,
             priorUnreviewedCount: priorUnreviewedCount,
@@ -490,6 +499,94 @@ struct BriefingService: Sendable {
         do {
             let response: WeeklyPRCountResponse = try await graphQL.execute(
                 query: BriefingQueries.weeklyOpenedPRCount,
+                variables: ["q": query],
+                responseType: WeeklyPRCountResponse.self
+            )
+            return response.search.issueCount
+        } catch {
+            return 0
+        }
+    }
+
+    /// Fans out opened-issue-count requests across all repositories in parallel.
+    ///
+    /// - Parameters:
+    ///   - repoKeys: The `(owner, name)` pairs to query.
+    ///   - range: The GitHub `created:` range string applied to each query.
+    /// - Returns: A dictionary keyed by `"owner/name"` mapping to opened issue count.
+    func fetchAllOpenedIssueCounts(
+        repoKeys: [(owner: String, name: String)],
+        range: String
+    ) async -> [String: Int] {
+        await withTaskGroup(of: (String, Int).self) { group in
+            for key in repoKeys {
+                let owner = key.owner
+                let name = key.name
+                group.addTask {
+                    let count = await self.fetchOpenedIssueCount(owner: owner, repo: name, range: range)
+                    return ("\(owner)/\(name)", count)
+                }
+            }
+            var result: [String: Int] = [:]
+            for await (key, count) in group {
+                result[key] = count
+            }
+            return result
+        }
+    }
+
+    /// Fetches the opened issue count for a single repository and date range.
+    ///
+    /// Returns `0` on any network, decoding, or transport error.
+    func fetchOpenedIssueCount(owner: String, repo: String, range: String) async -> Int {
+        let query = "repo:\(owner)/\(repo) is:issue created:\(range)"
+        do {
+            let response: WeeklyPRCountResponse = try await graphQL.execute(
+                query: BriefingQueries.weeklyOpenedIssueCount,
+                variables: ["q": query],
+                responseType: WeeklyPRCountResponse.self
+            )
+            return response.search.issueCount
+        } catch {
+            return 0
+        }
+    }
+
+    /// Fans out closed-issue-count requests across all repositories in parallel.
+    ///
+    /// - Parameters:
+    ///   - repoKeys: The `(owner, name)` pairs to query.
+    ///   - range: The GitHub `closed:` range string applied to each query.
+    /// - Returns: A dictionary keyed by `"owner/name"` mapping to closed issue count.
+    func fetchAllClosedIssueCounts(
+        repoKeys: [(owner: String, name: String)],
+        range: String
+    ) async -> [String: Int] {
+        await withTaskGroup(of: (String, Int).self) { group in
+            for key in repoKeys {
+                let owner = key.owner
+                let name = key.name
+                group.addTask {
+                    let count = await self.fetchClosedIssueCount(owner: owner, repo: name, range: range)
+                    return ("\(owner)/\(name)", count)
+                }
+            }
+            var result: [String: Int] = [:]
+            for await (key, count) in group {
+                result[key] = count
+            }
+            return result
+        }
+    }
+
+    /// Fetches the closed issue count for a single repository and date range.
+    ///
+    /// Returns `0` on any network, decoding, or transport error.
+    func fetchClosedIssueCount(owner: String, repo: String, range: String) async -> Int {
+        let query = "repo:\(owner)/\(repo) is:issue is:closed closed:\(range)"
+        do {
+            let response: WeeklyPRCountResponse = try await graphQL.execute(
+                query: BriefingQueries.weeklyClosedIssueCount,
                 variables: ["q": query],
                 responseType: WeeklyPRCountResponse.self
             )
@@ -860,6 +957,9 @@ struct BriefingService: Sendable {
         priorReleaseCount: Int?,
         openedPRTotal: Int,
         priorOpenedPRTotal: Int,
+        openedIssueTotal: Int,
+        closedIssueTotal: Int,
+        priorClosedIssueTotal: Int,
         unreviewedCount: Int,
         totalPRCount: Int,
         priorUnreviewedCount: Int,
@@ -933,6 +1033,28 @@ struct BriefingService: Sendable {
                 : nil
             return BriefingKPIHotfixRate(value: pct, hotfixCount: hotfixCount, totalMerged: totalMerged, priorWeekValue: priorPct)
         }() : nil
+
+        // MARK: Review Load
+        let reviewLoad: BriefingKPIReviewLoad? = {
+            let pairs: [(login: String, count: Int)] = members.compactMap { member in
+                guard let login = member.githubLogin else { return nil }
+                let total = member.contributions.reduce(0) { $0 + $1.reviews }
+                return total > 0 ? (login: login, count: total) : nil
+            }
+            guard !pairs.isEmpty else { return nil }
+            let sorted = pairs.sorted { $0.count > $1.count }.prefix(7)
+            let maxCount = Double(sorted.first?.count ?? 1)
+            let reviewers = sorted.map { (login: $0.login, normalizedCount: Double($0.count) / maxCount) }
+            return BriefingKPIReviewLoad(reviewers: reviewers)
+        }()
+
+        // MARK: Issue Velocity
+        let issueVelocity: BriefingKPIIssueVelocity? = repositories.isEmpty ? nil : BriefingKPIIssueVelocity(
+            opened: openedIssueTotal,
+            closed: closedIssueTotal,
+            dailyClosedCounts: [Int](repeating: 0, count: 7),
+            priorWeekClosed: priorClosedIssueTotal > 0 ? priorClosedIssueTotal : nil
+        )
 
         // MARK: Security
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
@@ -1318,7 +1440,9 @@ struct BriefingService: Sendable {
                 stalePRCount: stalePRCount,
                 timeToFirstReview: timeToFirstReview,
                 unreviewedMergeRate: unreviewedMergeRate,
-                hotfixRate: hotfixRate
+                hotfixRate: hotfixRate,
+                reviewLoad: reviewLoad,
+                issueVelocity: issueVelocity
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,
