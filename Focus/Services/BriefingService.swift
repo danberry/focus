@@ -75,13 +75,15 @@ struct BriefingService: Sendable {
         let priorGhRange = cal.dateInterval(of: .weekOfYear, for: priorWeekStart)
             .map { githubDateRange(for: $0) } ?? ""
 
+        let priorWeekInterval = cal.dateInterval(of: .weekOfYear, for: priorWeekStart) ?? weekInterval
         async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
         async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
         async let releasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: weekInterval.start)
         async let priorPRCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: priorGhRange)
+        async let priorMetricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: priorWeekInterval)
         async let ciPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: ghRange)
         async let priorCIPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: priorGhRange)
-        let (prCounts, metrics, releaseCount, priorPRCounts, ciPassPct, priorCIPassPct) = await (prCountsFetch, metricsFetch, releasesFetch, priorPRCountsFetch, ciPassFetch, priorCIPassFetch)
+        let (prCounts, metrics, releaseCount, priorPRCounts, priorMetrics, ciPassPct, priorCIPassPct) = await (prCountsFetch, metricsFetch, releasesFetch, priorPRCountsFetch, priorMetricsFetch, ciPassFetch, priorCIPassFetch)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
@@ -102,6 +104,7 @@ struct BriefingService: Sendable {
             priorWeekPRTotal: priorPRCounts.values.reduce(0, +),
             shippingDailyCounts: metrics.dailyCounts,
             medianMergeHours: metrics.medianHours,
+            priorMedianMergeHours: priorMetrics.medianHours,
             ciPassPct: ciPassPct,
             priorCIPassPct: priorCIPassPct,
             releaseCount: releaseCount,
@@ -470,6 +473,7 @@ struct BriefingService: Sendable {
         priorWeekPRTotal: Int,
         shippingDailyCounts: [Int],
         medianMergeHours: Int?,
+        priorMedianMergeHours: Int?,
         ciPassPct: Int?,
         priorCIPassPct: Int?,
         releaseCount: Int?,
@@ -771,7 +775,7 @@ struct BriefingService: Sendable {
                 shipping: BriefingKPIShipping(value: shippingTotal, dailyCounts: shippingDailyCounts, priorWeekValue: priorWeekPRTotal > 0 ? priorWeekPRTotal : nil),
                 security: BriefingKPISecurity(value: securityTotal, critical: criticalCount, dailyOpenTotals: securityDailyOpenTotals, priorWeekTotal: securityPriorTotal > 0 ? securityPriorTotal : nil),
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
-                medianMergeHours: medianMergeHours,
+                medianMerge: medianMergeHours.map { BriefingKPIMedianMerge(value: $0, priorWeekValue: priorMedianMergeHours) },
                 ciPass: ciPassPct.map { BriefingKPICIPass(value: $0, priorWeekValue: priorCIPassPct) },
                 releases: releaseCount
             ),

@@ -46,7 +46,9 @@ struct BriefingKPISection: View {
 
                 KPICardView(
                     title: "Median Merge Time",
-                    value: kpis.medianMergeHours.map { "\($0)h" } ?? "—"
+                    value: kpis.medianMerge.map { "\($0.value)h" } ?? "—",
+                    inlineDeltaLabel: medianMergeDeltaLabel,
+                    deltaLabel: kpis.medianMerge != nil ? "target 24h" : nil
                 )
                 
                 Divider()
@@ -73,6 +75,14 @@ struct BriefingKPISection: View {
     }
 
     // MARK: - Helpers
+
+    /// Returns a week-over-week delta label for the median merge time, or `nil` when unavailable.
+    private var medianMergeDeltaLabel: String? {
+        guard let merge = kpis.medianMerge, let prior = merge.priorWeekValue else { return nil }
+        let delta = merge.value - prior
+        if delta == 0 { return "→" }
+        return delta > 0 ? "↑ \(delta)h" : "↓ \(-delta)h"
+    }
 
     /// Returns a week-over-week delta label for the CI pass rate, or `nil` when unavailable.
     private var ciPassDeltaLabel: String? {
