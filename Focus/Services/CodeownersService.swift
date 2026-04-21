@@ -48,7 +48,10 @@ struct CodeownersService: Sendable {
 
     // MARK: - Apply (@MainActor, writes to SwiftData)
 
-    /// Persists CODEOWNERS entries to SwiftData, replacing any existing records for the repository.
+    /// Persists CODEOWNERS entries to SwiftData using an upsert strategy.
+    ///
+    /// Entries already present (matched by handle + pathPattern) are kept in-place.
+    /// Removed entries are deleted; new entries are inserted.
     ///
     /// - Parameters:
     ///   - entries: The `(pattern, handle)` pairs to persist.
@@ -56,13 +59,17 @@ struct CodeownersService: Sendable {
     ///   - context: The SwiftData model context used for persistence.
     @MainActor
     func applyCodeowners(_ entries: [(pattern: String, handle: String)], to repository: SavedRepository, in context: ModelContext) {
-        let existing = repository.codeowners
-        for codeowner in existing {
+        let incomingPairs = Set(entries.map { "\($0.handle)|\($0.pattern)" })
+        let existingPairs = Set(repository.codeowners.map { "\($0.handle)|\($0.pathPattern ?? "")" })
+
+        // Delete entries no longer present
+        for codeowner in repository.codeowners where !incomingPairs.contains("\(codeowner.handle)|\(codeowner.pathPattern ?? "")") {
             codeowner.repository = nil
             context.delete(codeowner)
         }
 
-        for (pattern, handle) in entries {
+        // Insert new entries
+        for (pattern, handle) in entries where !existingPairs.contains("\(handle)|\(pattern)") {
             let codeowner = Codeowner(handle: handle, pathPattern: pattern)
             codeowner.repository = repository
             context.insert(codeowner)

@@ -73,17 +73,15 @@ struct VelocityService: Sendable {
 
     // MARK: - Apply (@MainActor, writes to SwiftData)
 
-    /// Persists fetched velocity metrics to SwiftData, replacing any existing records.
+    /// Persists fetched velocity metrics to SwiftData using an upsert strategy.
+    ///
+    /// Existing ``RepositoryVelocity`` objects are updated in-place (preserving their
+    /// `PersistentIdentifier`) so views holding live references are not invalidated.
     ///
     /// Does nothing when `data` is `nil` (preserving any existing records).
     @MainActor
     func applyVelocityData(_ data: VelocityFetchResult?, to repository: SavedRepository, in context: ModelContext) {
         guard let data else { return }
-
-        for existing in repository.velocityMetrics {
-            existing.repository = nil
-            context.delete(existing)
-        }
 
         let entries: [(VelocityPeriod, Date, Int, Int)] = [
             (.sevenDays,  data.windows.w7.currentStart,  data.w7Current,  data.w7Prior),
@@ -92,17 +90,36 @@ struct VelocityService: Sendable {
             (.yearToDate, data.windows.ytd.currentStart, data.ytdCurrent, data.ytdPrior)
         ]
 
+        let existingByPeriod = Dictionary(
+            uniqueKeysWithValues: repository.velocityMetrics.map { ($0.periodType, $0) }
+        )
+        let incomingPeriods = Set(entries.map { $0.0.rawValue })
+
+        // Delete periods no longer in the incoming data (shouldn't normally happen)
+        for (periodType, record) in existingByPeriod where !incomingPeriods.contains(periodType) {
+            record.repository = nil
+            context.delete(record)
+        }
+
         for (period, periodStart, current, prior) in entries {
-            let velocity = RepositoryVelocity(
-                periodType: period.rawValue,
-                currentCount: current,
-                priorCount: prior,
-                periodStart: periodStart,
-                periodEnd: data.today,
-                fetchedAt: data.today
-            )
-            velocity.repository = repository
-            context.insert(velocity)
+            if let existing = existingByPeriod[period.rawValue] {
+                existing.currentCount = current
+                existing.priorCount = prior
+                existing.periodStart = periodStart
+                existing.periodEnd = data.today
+                existing.fetchedAt = data.today
+            } else {
+                let velocity = RepositoryVelocity(
+                    periodType: period.rawValue,
+                    currentCount: current,
+                    priorCount: prior,
+                    periodStart: periodStart,
+                    periodEnd: data.today,
+                    fetchedAt: data.today
+                )
+                velocity.repository = repository
+                context.insert(velocity)
+            }
         }
 
         try? context.save()

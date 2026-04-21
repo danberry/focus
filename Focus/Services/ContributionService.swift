@@ -110,23 +110,33 @@ struct ContributionService: Sendable {
                 guard receivedAnyData else { return }
             }
 
-            // Full-replace sync: remove any existing contribution record for this member.
-            for existing in member.contributions {
-                existing.member = nil
-                context.delete(existing)
+            // Upsert: update the existing MemberContribution in-place, or insert if none exists.
+            if let existing = member.contributions.first {
+                existing.commits = totalCommits
+                existing.pullRequests = totalPRs
+                existing.reviews = totalReviews
+                existing.issues = totalIssues
+                existing.periodStart = oneYearAgo
+                existing.periodEnd = now
+                existing.fetchedAt = now
+                // Delete any extras beyond the first (shouldn't exist, but guard against it)
+                for extra in member.contributions.dropFirst() {
+                    extra.member = nil
+                    context.delete(extra)
+                }
+            } else {
+                let contribution = MemberContribution(
+                    commits: totalCommits,
+                    pullRequests: totalPRs,
+                    reviews: totalReviews,
+                    issues: totalIssues,
+                    periodStart: oneYearAgo,
+                    periodEnd: now,
+                    fetchedAt: now
+                )
+                contribution.member = member
+                context.insert(contribution)
             }
-
-            let contribution = MemberContribution(
-                commits: totalCommits,
-                pullRequests: totalPRs,
-                reviews: totalReviews,
-                issues: totalIssues,
-                periodStart: oneYearAgo,
-                periodEnd: now,
-                fetchedAt: now
-            )
-            contribution.member = member
-            context.insert(contribution)
 
             member.contributionCount = totalCommits + totalPRs + totalReviews + totalIssues
 
@@ -152,24 +162,40 @@ struct ContributionService: Sendable {
         }
     }
 
-    /// Replaces all existing ``DailyContribution`` records for the member with the given date-keyed counts.
+    /// Upserts ``DailyContribution`` records for the member from the given date-keyed counts.
+    ///
+    /// Existing objects are updated in-place (preserving their `PersistentIdentifier`) so views
+    /// holding live references are not invalidated. Stale dates are deleted; new dates are inserted.
     @MainActor
     private func syncDailyContributions(
         from dailyCounts: [String: Int],
         member: Member,
         in context: ModelContext
     ) {
-        // Full-replace: remove existing daily records.
-        for existing in member.dailyContributions {
-            existing.member = nil
-            context.delete(existing)
-        }
-
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         dateFormatter.timeZone = .current
 
-        for (dateString, count) in dailyCounts {
+        // Snapshot before mutating the relationship
+        let snapshot = member.dailyContributions
+        var existingByDate: [String: DailyContribution] = [:]
+        for record in snapshot {
+            let key = dateFormatter.string(from: record.date)
+            existingByDate[key] = record
+        }
+
+        // Update existing or delete stale
+        for (key, record) in existingByDate {
+            if let newCount = dailyCounts[key] {
+                record.count = newCount
+            } else {
+                record.member = nil
+                context.delete(record)
+            }
+        }
+
+        // Insert new dates not already tracked
+        for (dateString, count) in dailyCounts where existingByDate[dateString] == nil {
             guard let date = dateFormatter.date(from: dateString) else { continue }
             let record = DailyContribution(date: date, count: count)
             record.member = member
