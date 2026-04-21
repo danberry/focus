@@ -147,7 +147,7 @@ struct BriefingView: View {
         .task {
             isLoading = true
             let client = GraphQLClient(tokenProvider: authService.tokenProvider)
-            let service = BriefingService(graphQL: client)
+            let service = BriefingService(graphQL: client, rest: RESTClient(tokenProvider: authService.tokenProvider))
             briefing = await service.generate(scope: scope, in: context)
             isLoading = false
         }
@@ -155,7 +155,7 @@ struct BriefingView: View {
             Task {
                 isLoading = true
                 let client = GraphQLClient(tokenProvider: authService.tokenProvider)
-                let service = BriefingService(graphQL: client)
+                let service = BriefingService(graphQL: client, rest: RESTClient(tokenProvider: authService.tokenProvider))
                 briefing = await service.generate(scope: scope, in: context)
                 isLoading = false
             }

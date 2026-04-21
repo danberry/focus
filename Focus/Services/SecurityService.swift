@@ -30,6 +30,32 @@ struct SecurityService: Sendable {
 
     // MARK: - Fetch (non-isolated, Sendable results)
 
+    /// Fetches the count of Dependabot alerts dismissed or fixed within a date range.
+    ///
+    /// Uses `state=dismissed` to enumerate closed alerts, then filters by `dismissed_at`
+    /// falling within `[since, until)`. Returns `0` on any network or decoding error.
+    ///
+    /// - Parameters:
+    ///   - owner: The repository owner login.
+    ///   - repo: The repository name.
+    ///   - since: The start of the date range (inclusive).
+    ///   - until: The end of the date range (exclusive).
+    /// - Returns: The number of alerts dismissed within the range, or `0` on failure.
+    func fetchDismissedAlertCount(owner: String, repo: String, since: Date, until: Date) async -> Int {
+        let queryItems = [
+            URLQueryItem(name: "state", value: "dismissed"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        let stubs: [DismissedAlertStub]? = try? await rest.getAll(
+            path: Endpoint.dependabotAlerts(owner: owner, repo: repo).path,
+            queryItems: queryItems
+        )
+        return stubs?.filter { stub in
+            guard let dismissedAt = stub.dismissedAt else { return false }
+            return dismissedAt >= since && dismissedAt < until
+        }.count ?? 0
+    }
+
     /// Fetches open Dependabot alerts from the GitHub REST API.
     ///
     /// Returns `nil` on any network or decoding error; does not write to SwiftData.
@@ -283,6 +309,17 @@ struct SecurityService: Sendable {
 /// Decoding only the array length avoids deserializing the full alert body
 /// across potentially hundreds of records.
 private struct AlertStub: Decodable, Sendable {}
+
+// MARK: - DismissedAlertStub
+
+/// A minimal decodable type for dismissed Dependabot alert responses.
+///
+/// Only decodes `dismissed_at` — needed to filter by the week interval.
+struct DismissedAlertStub: Decodable, Sendable {
+
+    /// The date and time the alert was dismissed, or `nil` if not yet dismissed.
+    let dismissedAt: Date?
+}
 
 // MARK: - DependabotAlertResponse
 

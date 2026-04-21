@@ -201,6 +201,10 @@ struct SecurityWeekTotals: Sendable {
 
     /// Per-repo critical counts at week end, keyed by repo display name.
     let repoCriticalCounts: [String: Int]
+
+    /// Dependabot alerts dismissed or fixed during the week, keyed by repo display name.
+    /// Empty until Tier 3 closure API fetch ships.
+    let repoClosedCounts: [String: Int]
 }
 
 // MARK: - SecurityInsightInput
