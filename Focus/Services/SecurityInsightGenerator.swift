@@ -82,8 +82,12 @@ struct SecurityInsightGenerator: Sendable {
             RepoWentCleanRule(),
             AlertCountDroppedRule(),
             CleanStreakRule(),
-            // P3 — Tier 1
-            FixesAvailableRule()
+            // P3 — Tier 1 + Tier 3
+            FixesAvailableRule(),
+            ClosureVelocityBeatIntakeRule(),
+            // P4 — Tier 3
+            FastestResolvingRepoRule(),
+            IntakeAcceleratingRule()
         ]
     }
 
@@ -622,6 +626,86 @@ struct FixesAvailableRule: SecurityInsightRule {
                 title: "Fix available for \(fixable.count) of \(criticals.count) critical Dependabot alerts.",
                 meta: "\(upgradeWord) ready — no waiting on upstream",
                 actionLabel: "View fixes →"
+            )
+        )
+    }
+}
+
+/// Fires when closures outpaced new alerts opened during the week.
+///
+/// Requires `currentWeekTotals` with `closed > opened`. A positive signal —
+/// the security backlog is shrinking.
+struct ClosureVelocityBeatIntakeRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        guard let totals = input.currentWeekTotals,
+              totals.closed > totals.opened
+        else { return nil }
+        let net = totals.closed - totals.opened
+        return SecurityInsight(
+            kind: .closureVelocityBeatIntake(closed: totals.closed, opened: totals.opened),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p3_positive,
+                tone: .blue,
+                title: "Closed \(totals.closed) alerts, opened \(totals.opened). Net −\(net).",
+                meta: "Backlog shrinking — closures ahead of intake this week",
+                actionLabel: "See security →"
+            )
+        )
+    }
+}
+
+// MARK: - P4 Rules
+
+/// Surfaces the repository that dismissed the most Dependabot alerts this week.
+///
+/// Fires only when at least one repo has a non-zero closure count in
+/// `currentWeekTotals.repoClosedCounts`.
+struct FastestResolvingRepoRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        guard let totals = input.currentWeekTotals,
+              let (repoName, count) = totals.repoClosedCounts.max(by: { $0.value < $1.value }),
+              count > 0
+        else { return nil }
+        let alertWord = count == 1 ? "alert" : "alerts"
+        return SecurityInsight(
+            kind: .fastestResolvingRepo(repoName: repoName, closedCount: count),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p4_informational,
+                tone: .blue,
+                title: "**\(repoName)** closed \(count) \(alertWord) this week, leading all repos.",
+                meta: "Top closure velocity across tracked repositories",
+                actionLabel: "View security →"
+            )
+        )
+    }
+}
+
+/// Fires when new alerts are outpacing closures by a configured ratio.
+///
+/// Requires `currentWeekTotals.closed > 0` so the ratio is well-defined.
+/// A cautionary signal — intake is accelerating relative to remediation.
+struct IntakeAcceleratingRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        guard let totals = input.currentWeekTotals,
+              totals.closed > 0
+        else { return nil }
+        let ratio = Double(totals.opened) / Double(totals.closed)
+        guard ratio >= config.intakeRatio else { return nil }
+        let ratioStr = String(format: "%.1f", ratio)
+        return SecurityInsight(
+            kind: .intakeAccelerating(opened: totals.opened, closed: totals.closed),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p4_informational,
+                tone: .red,
+                title: "New alerts outpacing closures \(ratioStr):1 this week.",
+                meta: "\(totals.opened) opened · \(totals.closed) closed",
+                actionLabel: "See security →"
             )
         )
     }

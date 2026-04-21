@@ -55,4 +55,8 @@ struct SecurityInsightConfig: Sendable {
 
     /// Minimum fractional alert reduction (week-over-week) to fire the drop insight.
     var significantDropPct: Double = 0.20
+
+    /// Opened-to-closed ratio at or above which the intake-accelerating insight fires.
+    /// Requires at least 1 closure so the ratio is well-defined.
+    var intakeRatio: Double = 2.0
 }

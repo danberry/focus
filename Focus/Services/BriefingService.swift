@@ -21,13 +21,23 @@ struct BriefingService: Sendable {
     /// The GraphQL client used to execute merged PR count queries.
     private let graphQL: GraphQLClient
 
+    /// The REST client used to fetch dismissed Dependabot alerts for Tier 3 rules.
+    ///
+    /// `nil` in test environments and before the token is available; Tier 3 rules
+    /// no-op gracefully when `currentWeekTotals` is not populated.
+    private let rest: RESTClient?
+
     // MARK: - Init
 
-    /// Creates a briefing service backed by the given GraphQL client.
+    /// Creates a briefing service backed by the given clients.
     ///
-    /// - Parameter graphQL: The client used to execute search queries against the GitHub GraphQL API.
-    init(graphQL: GraphQLClient) {
+    /// - Parameters:
+    ///   - graphQL: The client used to execute search queries against the GitHub GraphQL API.
+    ///   - rest: Optional REST client used to fetch dismissed Dependabot alert counts.
+    ///           Pass `nil` (the default) to skip the closure-velocity fetch.
+    init(graphQL: GraphQLClient, rest: RESTClient? = nil) {
         self.graphQL = graphQL
+        self.rest = rest
     }
 
     // MARK: - Generation
@@ -100,14 +110,43 @@ struct BriefingService: Sendable {
             + allCodeScanningAlerts.map(\.createdAt)
             + allSecretAlerts.map(\.createdAt)
 
-        // Persist a snapshot for this week and load trend history for Tier 2 rules.
-        let (currentWeekTotals, priorWeekTotals, weekHistory) = persistSecuritySnapshot(
+        // Tier 2: persist snapshot and load trend history.
+        let (baseCurrentWeekTotals, priorWeekTotals, weekHistory) = persistSecuritySnapshot(
             weekInterval: weekInterval,
             repositories: scopedRepos,
             criticalAlerts: criticalAlerts,
             allDependabotAlerts: allDependabotAlerts,
             context: context
         )
+
+        // Tier 3: fetch dismissed Dependabot alert counts per repo and merge into currentWeekTotals.
+        let repoClosedCounts: [String: Int]
+        if let restClient = rest {
+            let secService = SecurityService(rest: restClient)
+            repoClosedCounts = await fetchDismissedCounts(
+                repoKeys: repoKeys,
+                repositories: scopedRepos,
+                securityService: secService,
+                since: weekInterval.start,
+                until: weekInterval.end
+            )
+        } else {
+            repoClosedCounts = [:]
+        }
+        let totalClosed = repoClosedCounts.values.reduce(0, +)
+        // Rebuild currentWeekTotals with actual closed counts; repoClosedCounts is always
+        // empty in the snapshot since it is fetched live each session.
+        let currentWeekTotals: SecurityWeekTotals? = baseCurrentWeekTotals.map { base in
+            SecurityWeekTotals(
+                weekStart: base.weekStart,
+                totalOpen: base.totalOpen,
+                totalCritical: base.totalCritical,
+                opened: base.opened,
+                closed: totalClosed,
+                repoCriticalCounts: base.repoCriticalCounts,
+                repoClosedCounts: repoClosedCounts
+            )
+        }
 
         return assemble(
             weekInterval: weekInterval,
@@ -205,7 +244,8 @@ struct BriefingService: Sendable {
                 totalCritical: s.totalCritical,
                 opened: s.opened,
                 closed: s.closed,
-                repoCriticalCounts: s.repoCriticalCounts
+                repoCriticalCounts: s.repoCriticalCounts,
+                repoClosedCounts: [:]
             )
         }
 
@@ -320,6 +360,39 @@ struct BriefingService: Sendable {
         fmt.dateFormat = "yyyy-MM-dd"
         let endInclusive = interval.end.addingTimeInterval(-24 * 60 * 60)
         return "\(fmt.string(from: interval.start))..\(fmt.string(from: endInclusive))"
+    }
+
+    // MARK: - Dismissed Alert Fetch
+
+    /// Fans out dismissed Dependabot alert count requests across all repositories in parallel.
+    ///
+    /// Returns a dictionary keyed by repository display name mapping to the count of
+    /// alerts dismissed within `[since, until)`.
+    func fetchDismissedCounts(
+        repoKeys: [(owner: String, name: String)],
+        repositories: [SavedRepository],
+        securityService: SecurityService,
+        since: Date,
+        until: Date
+    ) async -> [String: Int] {
+        await withTaskGroup(of: (String, Int).self) { group in
+            for (key, repo) in zip(repoKeys, repositories) {
+                let owner = key.owner
+                let name = key.name
+                let displayName = repo.displayName
+                group.addTask {
+                    let count = await securityService.fetchDismissedAlertCount(
+                        owner: owner, repo: name, since: since, until: until
+                    )
+                    return (displayName, count)
+                }
+            }
+            var result: [String: Int] = [:]
+            for await (key, count) in group where count > 0 {
+                result[key] = count
+            }
+            return result
+        }
     }
 
     // MARK: - PR Fetch
