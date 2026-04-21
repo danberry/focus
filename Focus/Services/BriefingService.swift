@@ -614,15 +614,15 @@ struct BriefingService: Sendable {
         let attention01: BriefingAttentionItem = {
             if let top = repoByMostCritical, top.critical > 0 {
                 return BriefingAttentionItem(
-                    n: "01",
+                    n: "1",
                     tone: .red,
-                    title: "\(top.critical) critical alerts open in `\(top.repo.displayName)`.",
+                    title: "\(top.critical) critical alerts open in \(top.repo.name).",
                     meta: "Escalate to security review",
                     actionLabel: "Open alerts →"
                 )
             }
             return BriefingAttentionItem(
-                n: "01",
+                n: "1",
                 tone: .neutral,
                 title: "No critical security alerts this week.",
                 meta: "All tracked repos clear",
@@ -639,7 +639,7 @@ struct BriefingService: Sendable {
                 if unlinked.count == 1, let only = unlinked.first {
                     let firstName = only.name.split(separator: " ").first.map(String.init) ?? only.name
                     return BriefingAttentionItem(
-                        n: "02",
+                        n: "2",
                         tone: .red,
                         title: "**\(only.name)** may not have GitHub linked.",
                         meta: "\(only.team) — no contributions on record",
@@ -647,7 +647,7 @@ struct BriefingService: Sendable {
                     )
                 }
                 return BriefingAttentionItem(
-                    n: "02",
+                    n: "2",
                     tone: .red,
                     title: "**\(unlinked.count) members** may not have GitHub linked.",
                     meta: "No contributions detected — check account connections",
@@ -662,7 +662,7 @@ struct BriefingService: Sendable {
                 }
                 let longestDesc = longest.map { "\($0.name), \($0.idleLabel)" } ?? "—"
                 return BriefingAttentionItem(
-                    n: "02",
+                    n: "2",
                     tone: .blue,
                     title: "**\(idle.count) members** haven't shipped this week.",
                     meta: "Longest idle: \(longestDesc)",
@@ -674,7 +674,7 @@ struct BriefingService: Sendable {
             if let first = idle.first {
                 let firstName = first.name.split(separator: " ").first.map(String.init) ?? first.name
                 return BriefingAttentionItem(
-                    n: "02",
+                    n: "2",
                     tone: .blue,
                     title: "\(first.name) idle \(first.idleLabel).",
                     meta: "\(first.team) team",
@@ -683,7 +683,7 @@ struct BriefingService: Sendable {
             }
 
             return BriefingAttentionItem(
-                n: "02",
+                n: "2",
                 tone: .neutral,
                 title: "Every tracked member shipped this week.",
                 meta: "No idle members detected",
@@ -694,15 +694,15 @@ struct BriefingService: Sendable {
         let attention03: BriefingAttentionItem = {
             if let low = lowestRepo, repoCounts.count > 1 {
                 return BriefingAttentionItem(
-                    n: "03",
+                    n: "3",
                     tone: .neutral,
-                    title: "Only \(low.count) PRs merged in `\(low.name)`.",
+                    title: "Only \(low.count) PRs merged in \(low.name).",
                     meta: "Lowest volume of the week",
                     actionLabel: "See repo →"
                 )
             }
             return BriefingAttentionItem(
-                n: "03",
+                n: "3",
                 tone: .neutral,
                 title: "\(shippingTotal) PRs merged this week.",
                 meta: "Across \(repositories.count) tracked repos",
@@ -713,7 +713,7 @@ struct BriefingService: Sendable {
         // MARK: Verdicts
         let shippedVerdict: String
         if topRepoCount > 0 {
-            shippedVerdict = "`\(topRepoName)` led the week with \(topRepoCount) merges."
+            shippedVerdict = "\(topRepoName) led the week with \(topRepoCount) merges."
         } else {
             shippedVerdict = "No merges recorded this week."
         }

@@ -62,14 +62,11 @@ struct BriefingView: View {
                     .padding(.horizontal, 36)
                     .padding(.bottom, 56)
 
-                    sectionDivider
-
                     // MARK: KPIs
                     BriefingKPISection(kpis: briefing.kpis)
                         .padding(.horizontal, 36)
                         .padding(.vertical, 33)
-
-                    sectionDivider
+                        .background(.gray100)
 
                     // MARK: Shipped
                     BriefingShippedSection(
@@ -171,7 +168,6 @@ struct BriefingView: View {
     private var sectionDivider: some View {
         Divider()
             .foregroundStyle(BriefingColor.rule2)
-            .padding(.vertical, BriefingLayout.sectionGap)
     }
 }
 

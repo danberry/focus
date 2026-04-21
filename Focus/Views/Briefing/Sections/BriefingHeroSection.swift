@@ -44,8 +44,13 @@ struct BriefingHeroSection: View {
             // MARK: Verdict
             Text(verdictAttributed)
                 .font(BriefingFont.hero)
-                .foregroundStyle(BriefingColor.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 24)
+            
+            Text("Look into the following")
+                .font(BriefingFont.eyebrow)
+                .textCase(.uppercase)
+                .foregroundStyle(BriefingColor.ink3)
 
             // MARK: Attention cards
             VStack(spacing: 10) {
@@ -63,9 +68,9 @@ struct BriefingHeroSection: View {
     /// The tone-matched underline color for the emphasis word.
     private var emphasisColor: Color {
         switch hero.highlight {
-        case .red: return BriefingColor.red
-        case .blue: return BriefingColor.blue
-        case .neutral: return BriefingColor.ink4
+        case .red: Color.accentColor
+        case .blue: Color.customBlue
+        case .neutral: Color.gray800
         }
     }
 

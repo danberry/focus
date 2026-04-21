@@ -31,15 +31,14 @@ struct AttentionCardView: View {
     /// The view's content.
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 20) {
+            HStack(alignment: .firstTextBaseline, spacing: 30) {
                 Text(item.n)
-                    .font(BriefingFont.eyebrow)
-                    .foregroundStyle(toneColor)
+                    .font(.system(size: 30, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.gray700)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(.init(item.title))
                         .font(BriefingFont.attentionTitle)
-                        .foregroundStyle(BriefingColor.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(item.meta)
@@ -58,8 +57,6 @@ struct AttentionCardView: View {
             .tint(.background(item.tone))
         }
         .padding(.vertical, 18)
-        .padding(.horizontal, 22)
-        .briefingCard(tone: item.tone)
     }
 }
 

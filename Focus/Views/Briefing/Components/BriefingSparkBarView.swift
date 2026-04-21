@@ -15,22 +15,24 @@ struct BriefingSparkBarView: View {
     let values: [Double]
 
     /// Color used to highlight the bar with the largest value. Defaults to green.
-    var highlightColor: Color = BriefingColor.green
+    var highlightColor: Color = .customGreen
 
-    private let maxHeight: CGFloat = 48
-    private let barWidth: CGFloat = 23
-    private let spacing: CGFloat = 3
+    private let maxHeight: CGFloat = 20
 
     // MARK: - Body
 
     var body: some View {
         let clipped = Array(values.prefix(14))
         let peakValue = clipped.max() ?? 0
-        HStack(alignment: .bottom, spacing: spacing) {
-            ForEach(Array(clipped.enumerated()), id: \.offset) { index, value in
+        HStack(alignment: .bottom, spacing: 4) {
+            ForEach(Array(clipped.enumerated()), id: \.offset) {
+                index,
+                value in
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(peakValue > 0 && value == peakValue ? highlightColor : BriefingColor.ink4)
-                    .frame(width: barWidth, height: max(2, value * maxHeight))
+                    .fill(
+                        peakValue > 0 && value == peakValue ? highlightColor : .gray600
+                    )
+                    .frame(height: max(1, value * maxHeight))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: maxHeight, alignment: .bottomLeading)
