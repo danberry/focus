@@ -49,6 +49,15 @@ struct ReportsView: View {
                         Text("Breakdown of members across each discipline")
                     }
                 }
+                NavigationLink {
+                    LoadDistributionView()
+                } label: {
+                    LabeledContent {
+                    } label: {
+                        Text("Load Distribution")
+                        Text("Contribution workload spread across team members")
+                    }
+                }
                 // MARK: Security
                 NavigationLink {
                     SecurityIssuesReportView()
