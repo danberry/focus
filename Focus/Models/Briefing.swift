@@ -105,7 +105,20 @@ struct Briefing: Sendable {
             stalePRCount: BriefingKPIStalePRCount(value: 5, oldestAgeDays: 23, priorWeekValue: 4),
             timeToFirstReview: BriefingKPITimeToFirstReview(value: 6, dailyMedians: [8, 5, 6, 9, 4, 7, 6], priorWeekValue: 10),
             unreviewedMergeRate: BriefingKPIUnreviewedMergeRate(value: 12, unreviewed: 9, total: 73, priorWeekValue: 8),
-            hotfixRate: BriefingKPIHotfixRate(value: 11, hotfixCount: 8, totalMerged: 73, priorWeekValue: 15)
+            hotfixRate: BriefingKPIHotfixRate(value: 11, hotfixCount: 8, totalMerged: 73, priorWeekValue: 15),
+            reviewLoad: BriefingKPIReviewLoad(reviewers: [
+                (login: "alice", normalizedCount: 1.0),
+                (login: "bob", normalizedCount: 0.75),
+                (login: "carol", normalizedCount: 0.60),
+                (login: "dave", normalizedCount: 0.45),
+                (login: "eve", normalizedCount: 0.30),
+            ]),
+            issueVelocity: BriefingKPIIssueVelocity(
+                opened: 14,
+                closed: 11,
+                dailyClosedCounts: [1, 2, 3, 1, 2, 1, 1],
+                priorWeekClosed: 8
+            )
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -256,6 +269,12 @@ struct BriefingKPIs: Sendable {
 
     /// Hotfix rate: percentage of merged PRs identified as hotfixes, or `nil` if no PRs were merged.
     let hotfixRate: BriefingKPIHotfixRate?
+
+    /// Review load distribution across team members for the week, or `nil` if no review data is available.
+    let reviewLoad: BriefingKPIReviewLoad?
+
+    /// Issue velocity: issues opened and closed during the week, or `nil` if not tracked.
+    let issueVelocity: BriefingKPIIssueVelocity?
 }
 
 // MARK: - BriefingKPIShipping
@@ -457,6 +476,36 @@ struct BriefingKPIHotfixRate: Sendable {
 
     /// Same percentage for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIReviewLoad
+
+/// Review load distribution across team members for one briefing week.
+///
+/// Reviewers are pre-sorted descending by review count and capped at 7 entries
+/// before being stored here. `normalizedCount` is `1.0` for the top reviewer.
+struct BriefingKPIReviewLoad: Sendable {
+
+    /// Up to 7 reviewers sorted by descending review volume, with counts normalized to `0.0`–`1.0`.
+    let reviewers: [(login: String, normalizedCount: Double)]
+}
+
+// MARK: - BriefingKPIIssueVelocity
+
+/// Issue velocity KPI (issues opened and closed during the briefing week).
+struct BriefingKPIIssueVelocity: Sendable {
+
+    /// Count of issues opened (created) during the week.
+    let opened: Int
+
+    /// Count of issues closed during the week.
+    let closed: Int
+
+    /// Closed issue counts per day for the 7-day report period, oldest to newest.
+    let dailyClosedCounts: [Int]
+
+    /// Closed issue count for the prior week, used to compute week-over-week delta.
+    let priorWeekClosed: Int?
 }
 
 // MARK: - BriefingShipped
