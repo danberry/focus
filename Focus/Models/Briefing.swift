@@ -93,7 +93,7 @@ struct Briefing: Sendable {
                 priorWeekTotal: 38
             ),
             idle: BriefingKPIIdle(value: 2, delta: 1),
-            medianMergeHours: nil,
+            medianMerge: nil,
             ciPass: nil,
             releases: nil
         ),
@@ -210,8 +210,8 @@ struct BriefingKPIs: Sendable {
     /// Idle-member totals and delta vs. the prior week.
     let idle: BriefingKPIIdle
 
-    /// Median time from PR open to merge in hours, or `nil` if not tracked.
-    let medianMergeHours: Int?
+    /// Median time from PR open to merge, or `nil` if not tracked.
+    let medianMerge: BriefingKPIMedianMerge?
 
     /// CI pass rate for the current and prior week, or `nil` if no PRs had checks.
     let ciPass: BriefingKPICIPass?
@@ -274,6 +274,18 @@ struct BriefingKPICIPass: Sendable {
     let value: Int
 
     /// Same percentage for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIMedianMerge
+
+/// Median merge time KPI (hours from PR open to merge).
+struct BriefingKPIMedianMerge: Sendable {
+
+    /// Median hours from PR open to merge this week.
+    let value: Int
+
+    /// Same metric for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 
