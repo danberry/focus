@@ -98,7 +98,8 @@ struct Briefing: Sendable {
             idle: BriefingKPIIdle(value: 2, delta: 1),
             medianMerge: nil,
             ciPass: nil,
-            releases: nil
+            releases: nil,
+            activeContributors: BriefingKPIActiveContributors(value: 28, total: 34, priorWeekValue: 25)
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -228,6 +229,9 @@ struct BriefingKPIs: Sendable {
 
     /// GitHub release count across all tracked repos in the last 7 days, or `nil` if not tracked.
     let releases: BriefingKPIReleases?
+
+    /// Count of tracked members who contributed at least once this week, or `nil` if no members are tracked.
+    let activeContributors: BriefingKPIActiveContributors?
 }
 
 // MARK: - BriefingKPIShipping
@@ -308,6 +312,21 @@ struct BriefingKPIReleases: Sendable {
     let value: Int
 
     /// Same count for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIActiveContributors
+
+/// Active Contributors KPI (count of tracked members with at least one contribution this week).
+struct BriefingKPIActiveContributors: Sendable {
+
+    /// Number of tracked members who contributed at least once this week.
+    let value: Int
+
+    /// Total number of tracked members (denominator for context).
+    let total: Int
+
+    /// Same active count for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 

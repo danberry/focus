@@ -583,6 +583,9 @@ struct BriefingService: Sendable {
             }
         }
         memberWeeklyCounts.sort { $0.count > $1.count }
+        let activeContributorCount = memberWeeklyCounts.count
+        let priorActiveCount = totalTracked - priorIdleCount
+
         let contributors: [BriefingContributor] = memberWeeklyCounts.prefix(3).map { pair in
             BriefingContributor(
                 initials: Self.initials(from: pair.member.name),
@@ -864,7 +867,12 @@ struct BriefingService: Sendable {
                 idle: BriefingKPIIdle(value: idleMembers.count, delta: idleDelta),
                 medianMerge: medianMergeHours.map { BriefingKPIMedianMerge(value: $0, priorWeekValue: priorMedianMergeHours) },
                 ciPass: ciPassPct.map { BriefingKPICIPass(value: $0, priorWeekValue: priorCIPassPct) },
-                releases: releaseCount.map { BriefingKPIReleases(value: $0, priorWeekValue: priorReleaseCount) }
+                releases: releaseCount.map { BriefingKPIReleases(value: $0, priorWeekValue: priorReleaseCount) },
+                activeContributors: totalTracked > 0 ? BriefingKPIActiveContributors(
+                    value: activeContributorCount,
+                    total: totalTracked,
+                    priorWeekValue: priorActiveCount
+                ) : nil
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,

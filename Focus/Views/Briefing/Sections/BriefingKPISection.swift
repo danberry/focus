@@ -59,6 +59,15 @@ struct BriefingKPISection: View {
                     value: kpis.releases.map { "\($0.value)" } ?? "—",
                     inlineDeltaLabel: releasesDeltaLabel
                 )
+
+                divider
+
+                KPICardView(
+                    title: "Active",
+                    value: kpis.activeContributors.map { "\($0.value)/\($0.total)" } ?? "—",
+                    inlineDeltaLabel: activeContributorsDeltaLabel,
+                    deltaLabel: kpis.activeContributors != nil ? "contributors" : nil
+                )
             }
         }
     }
@@ -91,6 +100,14 @@ struct BriefingKPISection: View {
     private var releasesDeltaLabel: String? {
         guard let r = kpis.releases, let prior = r.priorWeekValue else { return nil }
         let delta = r.value - prior
+        if delta == 0 { return "→" }
+        return delta > 0 ? "↑" : "↓"
+    }
+
+    /// Returns a week-over-week delta label for active contributors, or `nil` when unavailable.
+    private var activeContributorsDeltaLabel: String? {
+        guard let ac = kpis.activeContributors, let prior = ac.priorWeekValue else { return nil }
+        let delta = ac.value - prior
         if delta == 0 { return "→" }
         return delta > 0 ? "↑" : "↓"
     }
