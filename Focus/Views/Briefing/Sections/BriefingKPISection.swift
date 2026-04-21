@@ -93,6 +93,12 @@ struct BriefingKPISection: View {
 
                     UnreviewedMergeRateKPICardView(unreviewedMergeRate: umr)
                 }
+
+                if let hotfix = kpis.hotfixRate {
+                    divider
+
+                    HotfixRateKPICardView(hotfixRate: hotfix)
+                }
             }
         }
     }

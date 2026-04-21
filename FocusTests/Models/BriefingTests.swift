@@ -23,9 +23,9 @@ struct BriefingTests {
         #expect(Briefing.placeholder.kpis.shipping.dailyCounts.count == 7)
     }
 
-    /// Verifies that the placeholder security sparkline contains at most ten values.
-    @Test func placeholderSecuritySparkHasTenOrFewerValues() {
-        #expect(Briefing.placeholder.kpis.security.spark.count <= 10)
+    /// Verifies that the placeholder security sparkline contains exactly seven values (one per day).
+    @Test func placeholderSecuritySparkHasSevenValues() {
+        #expect(Briefing.placeholder.kpis.security.dailyOpenTotals.count == 7)
     }
 
     /// Verifies that the placeholder repo health list is non-empty.
@@ -99,6 +99,27 @@ struct BriefingTests {
     /// Verifies that a lower time-to-first-review vs. prior week is an improvement (smaller is better).
     @Test func timeToFirstReviewImprovementWhenValueLowerThanPrior() {
         let kpi = BriefingKPITimeToFirstReview(value: 6, dailyMedians: [], priorWeekValue: 10)
+        let prior = try? #require(kpi.priorWeekValue)
+        #expect((prior ?? 0) > kpi.value)
+    }
+
+    // MARK: - Hotfix Rate KPI
+
+    /// Verifies that the placeholder includes a non-nil hotfix rate KPI.
+    @Test func placeholderHotfixRateIsNonNil() {
+        #expect(Briefing.placeholder.kpis.hotfixRate != nil)
+    }
+
+    /// Verifies that the hotfix rate percentage is computed from hotfixCount / totalMerged.
+    @Test func hotfixRateValueMatchesCountRatio() throws {
+        let kpi = try #require(Briefing.placeholder.kpis.hotfixRate)
+        let expected = Int((Double(kpi.hotfixCount) / Double(kpi.totalMerged) * 100).rounded())
+        #expect(kpi.value == expected)
+    }
+
+    /// Verifies that a lower hotfix rate vs. prior week is an improvement (lower is better).
+    @Test func hotfixRateImprovementWhenValueLowerThanPrior() {
+        let kpi = BriefingKPIHotfixRate(value: 8, hotfixCount: 6, totalMerged: 73, priorWeekValue: 15)
         let prior = try? #require(kpi.priorWeekValue)
         #expect((prior ?? 0) > kpi.value)
     }
