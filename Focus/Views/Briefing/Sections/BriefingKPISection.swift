@@ -66,7 +66,8 @@ struct BriefingKPISection: View {
 
                 KPICardView(
                     title: "Releases",
-                    value: kpis.releases.map { "\($0)" } ?? "—"
+                    value: kpis.releases.map { "\($0.value)" } ?? "—",
+                    inlineDeltaLabel: releasesDeltaLabel
                 )
             }
         }
@@ -80,6 +81,14 @@ struct BriefingKPISection: View {
         let delta = ci.value - prior
         if delta == 0 { return "→" }
         return delta > 0 ? "+\(delta)pp" : "\(delta)pp"
+    }
+
+    /// Returns a week-over-week delta label for releases, or `nil` when unavailable.
+    private var releasesDeltaLabel: String? {
+        guard let r = kpis.releases, let prior = r.priorWeekValue else { return nil }
+        let delta = r.value - prior
+        if delta == 0 { return "→" }
+        return delta > 0 ? "↑ \(delta)" : "↓ \(-delta)"
     }
 
     /// Returns the formatted delta label for the idle KPI, or `nil` when the delta is zero.
