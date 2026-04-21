@@ -797,6 +797,16 @@ struct BriefingService: Sendable {
             )
         }
 
+        let activeContributorCount = memberWeeklyCounts.count
+        let priorActiveCount: Int? = priorWeekInterval.map { prior in
+            members.filter { member in
+                guard member.jobTitle?.discipline?.tracksGitHubActivity != false else { return false }
+                return member.dailyContributions
+                    .filter { prior.contains($0.date) }
+                    .reduce(0) { $0 + $1.count } > 0
+            }.count
+        }
+
         // MARK: Blocked members
         let blockedMembers: [BriefingBlockedMember] = idleMembers.map { member in
             let label = memberIdleLabels[ObjectIdentifier(member)] ?? "—"
@@ -1070,7 +1080,10 @@ struct BriefingService: Sendable {
                 medianMerge: medianMergeHours.map { BriefingKPIMedianMerge(value: $0, priorWeekValue: priorMedianMergeHours) },
                 ciPass: ciPassPct.map { BriefingKPICIPass(value: $0, priorWeekValue: priorCIPassPct) },
                 releases: releaseCount.map { BriefingKPIReleases(value: $0, priorWeekValue: priorReleaseCount) },
-                prSize: medianPRSize.map { BriefingKPIPRSize(value: $0, dailyMedians: dailyPRSizeMedians, priorWeekValue: priorMedianPRSize) }
+                prSize: medianPRSize.map { BriefingKPIPRSize(value: $0, dailyMedians: dailyPRSizeMedians, priorWeekValue: priorMedianPRSize) },
+                activeContributors: totalTracked > 0
+                    ? BriefingKPIActiveContributors(value: activeContributorCount, totalTracked: totalTracked, priorWeekValue: priorActiveCount)
+                    : nil
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,

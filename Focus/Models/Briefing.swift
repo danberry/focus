@@ -99,7 +99,8 @@ struct Briefing: Sendable {
             medianMerge: nil,
             ciPass: nil,
             releases: nil,
-            prSize: nil
+            prSize: nil,
+            activeContributors: BriefingKPIActiveContributors(value: 28, totalTracked: 34, priorWeekValue: 25)
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -232,6 +233,9 @@ struct BriefingKPIs: Sendable {
 
     /// Median PR size (lines changed) for the week, or `nil` if no PRs were merged.
     let prSize: BriefingKPIPRSize?
+
+    /// Active contributor count: tracked members with at least one contribution this week.
+    let activeContributors: BriefingKPIActiveContributors?
 }
 
 // MARK: - BriefingKPIShipping
@@ -327,6 +331,21 @@ struct BriefingKPIPRSize: Sendable {
     let dailyMedians: [Int]
 
     /// Same metric for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIActiveContributors
+
+/// Active Contributors KPI (count of tracked members with at least one contribution this week).
+struct BriefingKPIActiveContributors: Sendable {
+
+    /// Members with at least one contribution this week.
+    let value: Int
+
+    /// Total number of tracked members (denominator for the activity rate).
+    let totalTracked: Int
+
+    /// Same active count for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 

@@ -64,6 +64,12 @@ struct BriefingKPISection: View {
                     divider
                     PRSizeKPICardView(prSize: prSize)
                 }
+
+                if let ac = kpis.activeContributors {
+                    divider
+
+                    ActiveContributorsKPICardView(activeContributors: ac)
+                }
             }
         }
     }
