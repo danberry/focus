@@ -101,7 +101,8 @@ struct Briefing: Sendable {
             releases: nil,
             prSize: nil,
             activeContributors: BriefingKPIActiveContributors(value: 28, totalTracked: 34, priorWeekValue: 25),
-            mergeRate: BriefingKPIMergeRate(value: 87, merged: 73, opened: 84, priorWeekValue: 79)
+            mergeRate: BriefingKPIMergeRate(value: 87, merged: 73, opened: 84, priorWeekValue: 79),
+            stalePRCount: BriefingKPIStalePRCount(value: 5, oldestAgeDays: 23, priorWeekValue: 4)
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -240,6 +241,9 @@ struct BriefingKPIs: Sendable {
 
     /// Merge rate: percentage of PRs opened this week that were merged this week, or `nil` if not tracked.
     let mergeRate: BriefingKPIMergeRate?
+
+    /// Stale PR count: open PRs older than the stale threshold, or `nil` if no PRs are tracked.
+    let stalePRCount: BriefingKPIStalePRCount?
 }
 
 // MARK: - BriefingKPIShipping
@@ -371,6 +375,21 @@ struct BriefingKPIMergeRate: Sendable {
     let opened: Int
 
     /// Same percentage for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIStalePRCount
+
+/// Stale PR Count KPI (open pull requests older than the stale threshold).
+struct BriefingKPIStalePRCount: Sendable {
+
+    /// Count of open PRs that have been open longer than the stale threshold.
+    let value: Int
+
+    /// Age in days of the oldest stale PR, or `nil` if there are no stale PRs.
+    let oldestAgeDays: Int?
+
+    /// Stale PR count at the prior week end, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 
