@@ -99,6 +99,7 @@ struct Briefing: Sendable {
             medianMerge: nil,
             ciPass: nil,
             releases: nil,
+            prSize: nil,
             activeContributors: BriefingKPIActiveContributors(value: 28, totalTracked: 34, priorWeekValue: 25)
         ),
         shipped: BriefingShipped(
@@ -230,6 +231,9 @@ struct BriefingKPIs: Sendable {
     /// GitHub release count across all tracked repos in the last 7 days, or `nil` if not tracked.
     let releases: BriefingKPIReleases?
 
+    /// Median PR size (lines changed) for the week, or `nil` if no PRs were merged.
+    let prSize: BriefingKPIPRSize?
+
     /// Active contributor count: tracked members with at least one contribution this week.
     let activeContributors: BriefingKPIActiveContributors?
 }
@@ -312,6 +316,21 @@ struct BriefingKPIReleases: Sendable {
     let value: Int
 
     /// Same count for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIPRSize
+
+/// PR size KPI (median lines changed per merged PR for the week + 7-day sparkline).
+struct BriefingKPIPRSize: Sendable {
+
+    /// Median lines changed (additions + deletions) per merged PR for the week.
+    let value: Int
+
+    /// Median lines changed per PR per day for the 7-day report period, ordered oldest to newest.
+    let dailyMedians: [Int]
+
+    /// Same metric for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 

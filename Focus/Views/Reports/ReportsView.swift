@@ -39,6 +39,16 @@ struct ReportsView: View {
                         Text("PRs merged across your saved repos this week")
                     }
                 }
+                // MARK: Velocity
+                NavigationLink {
+                    IssueVelocityReportView()
+                } label: {
+                    LabeledContent {
+                    } label: {
+                        Text("Issue Velocity")
+                        Text("Merged PR velocity across your saved repos by period")
+                    }
+                }
                 // MARK: Members
                 NavigationLink {
                     MemberDisciplineReportView()
