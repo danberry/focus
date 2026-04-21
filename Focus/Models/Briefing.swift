@@ -100,7 +100,8 @@ struct Briefing: Sendable {
             ciPass: nil,
             releases: nil,
             prSize: nil,
-            activeContributors: BriefingKPIActiveContributors(value: 28, totalTracked: 34, priorWeekValue: 25)
+            activeContributors: BriefingKPIActiveContributors(value: 28, totalTracked: 34, priorWeekValue: 25),
+            mergeRate: BriefingKPIMergeRate(value: 87, merged: 73, opened: 84, priorWeekValue: 79)
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -236,6 +237,9 @@ struct BriefingKPIs: Sendable {
 
     /// Active contributor count: tracked members with at least one contribution this week.
     let activeContributors: BriefingKPIActiveContributors?
+
+    /// Merge rate: percentage of PRs opened this week that were merged this week, or `nil` if not tracked.
+    let mergeRate: BriefingKPIMergeRate?
 }
 
 // MARK: - BriefingKPIShipping
@@ -346,6 +350,24 @@ struct BriefingKPIActiveContributors: Sendable {
     let totalTracked: Int
 
     /// Same active count for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIMergeRate
+
+/// Merge rate KPI (ratio of merged PRs to opened PRs for the week).
+struct BriefingKPIMergeRate: Sendable {
+
+    /// Percentage of PRs merged vs. opened this week (0–100+; can exceed 100 when clearing backlog).
+    let value: Int
+
+    /// Total PRs merged during the week.
+    let merged: Int
+
+    /// Total PRs opened (created) during the week.
+    let opened: Int
+
+    /// Same percentage for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 

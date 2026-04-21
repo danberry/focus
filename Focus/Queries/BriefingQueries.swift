@@ -29,6 +29,21 @@ enum BriefingQueries {
         }
         """
 
+    /// Fetches the count of pull requests opened (created) in one repository and date range.
+    ///
+    /// The `$q` variable is a GitHub Search query string, for example:
+    /// ```
+    /// "repo:owner/name is:pr created:2026-04-13..2026-04-19"
+    /// ```
+    ///
+    /// - Note: `first: 1` is required by the GitHub Search API even when only
+    ///   `issueCount` is needed.
+    static let weeklyOpenedPRCount = """
+        query BriefingWeeklyOpenedPRs($q: String!) {
+            search(query: $q, type: ISSUE, first: 1) { issueCount }
+        }
+        """
+
     /// Fetches merged PRs with their CI check state for one repository and date range.
     ///
     /// The `$q` variable is a GitHub Search query string, for example:

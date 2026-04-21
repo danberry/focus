@@ -70,6 +70,12 @@ struct BriefingKPISection: View {
 
                     ActiveContributorsKPICardView(activeContributors: ac)
                 }
+
+                if let mr = kpis.mergeRate {
+                    divider
+
+                    MergeRateKPICardView(mergeRate: mr)
+                }
             }
         }
     }
