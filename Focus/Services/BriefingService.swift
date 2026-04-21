@@ -854,6 +854,29 @@ struct BriefingService: Sendable {
             return BriefingKPIMergeRate(value: pct, merged: shippingTotal, opened: openedPRTotal, priorWeekValue: priorPct)
         }() : nil
 
+        // MARK: Stale PRs
+        let stalePRThresholdDays = 14
+        let allOpenPRs = repositories.flatMap { $0.openPullRequests }
+        let staleDate = weekInterval.end.addingTimeInterval(-Double(stalePRThresholdDays) * 86_400)
+        let stalePRs = allOpenPRs.filter { $0.createdAt < staleDate }
+        let priorStaleDate: Date = {
+            var cal = Calendar.current
+            cal.firstWeekday = 1
+            if let priorEnd = cal.dateInterval(of: .weekOfYear, for: weekInterval.start.addingTimeInterval(-1))?.end {
+                return priorEnd.addingTimeInterval(-Double(stalePRThresholdDays) * 86_400)
+            }
+            return staleDate
+        }()
+        let priorStalePRCount = allOpenPRs.filter { $0.createdAt < priorStaleDate }.count
+        let oldestStalePRAgeDays: Int? = stalePRs
+            .map { Calendar.current.dateComponents([.day], from: $0.createdAt, to: weekInterval.end).day ?? 0 }
+            .max()
+        let stalePRCount: BriefingKPIStalePRCount? = !allOpenPRs.isEmpty ? BriefingKPIStalePRCount(
+            value: stalePRs.count,
+            oldestAgeDays: oldestStalePRAgeDays,
+            priorWeekValue: priorStalePRCount
+        ) : nil
+
         // MARK: Security
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
         let criticalCount = criticalAlerts.count
@@ -1235,6 +1258,7 @@ struct BriefingService: Sendable {
                     ? BriefingKPIActiveContributors(value: activeContributorCount, totalTracked: totalTracked, priorWeekValue: priorActiveCount)
                     : nil,
                 mergeRate: mergeRate,
+                stalePRCount: stalePRCount,
                 timeToFirstReview: timeToFirstReview
             ),
             shipped: BriefingShipped(

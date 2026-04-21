@@ -76,6 +76,12 @@ struct BriefingKPISection: View {
                     MergeRateKPICardView(mergeRate: mr)
                 }
 
+                if let stale = kpis.stalePRCount {
+                    divider
+
+                    StalePRCountKPICardView(stalePRCount: stale)
+                }
+
                 if let t2fr = kpis.timeToFirstReview {
                     divider
 
