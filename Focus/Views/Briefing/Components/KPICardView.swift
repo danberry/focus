@@ -17,6 +17,9 @@ struct KPICardView: View {
     /// Pre-formatted value shown as the card's primary number, or `"—"` when unavailable.
     let value: String
 
+    /// Optional delta rendered inline with the value at last-baseline alignment, e.g. `"↑ 4pp"`.
+    var inlineDeltaLabel: String? = nil
+
     /// Optional supporting delta line, e.g. `"↑ 18%"`.
     var deltaLabel: String? = nil
 
@@ -42,9 +45,17 @@ struct KPICardView: View {
                 .textCase(.uppercase)
                 .foregroundStyle(BriefingColor.ink3)
 
-            Text(value)
-                .font(isHero ? BriefingFont.kpiHero : BriefingFont.kpiSupporting)
-                .foregroundStyle(BriefingColor.ink)
+            HStack(alignment: .lastTextBaseline, spacing: 8) {
+                Text(value)
+                    .font(isHero ? BriefingFont.kpiHero : BriefingFont.kpiSupporting)
+                    .foregroundStyle(BriefingColor.ink)
+
+                if let inlineDeltaLabel {
+                    Text(inlineDeltaLabel)
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(BriefingColor.ink)
+                }
+            }
 
             if let deltaLabel {
                 Text(deltaLabel)
