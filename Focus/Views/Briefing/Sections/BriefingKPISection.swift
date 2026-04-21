@@ -20,13 +20,15 @@ struct BriefingKPISection: View {
         Grid(horizontalSpacing: 0) {
             GridRow(alignment: .top) {
                 ShippingKPICardView(shipping: kpis.shipping)
-                
+                    .gridCellColumns(2)
+
                 divider
 
                 SecurityDebtKPICardView(security: kpis.security)
-                
+                    .gridCellColumns(2)
+
                 divider
-                
+
                 KPICardView(
                     title: "Idle",
                     value: "\(kpis.idle.value)",
