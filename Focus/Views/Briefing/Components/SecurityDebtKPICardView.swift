@@ -17,35 +17,36 @@ struct SecurityDebtKPICardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Security Debt")
+            Text("Security Issues")
                 .font(BriefingFont.eyebrow)
                 .textCase(.uppercase)
-                .foregroundStyle(BriefingColor.ink3)
+                .foregroundStyle(.gray700)
 
             HStack(alignment: .lastTextBaseline, spacing: 8) {
                 Text("\(security.value)")
                     .font(BriefingFont.kpiHero)
-                    .foregroundStyle(BriefingColor.ink)
 
                 if let deltaPct {
                     Text(deltaPct)
-                        .font(BriefingFont.meta)
-                        .foregroundStyle(BriefingColor.ink)
+                        .font(.system(size: 34, weight: .semibold))
                 }
             }
+            .foregroundStyle(.white)
 
             if let subtitle {
                 Text(subtitle)
                     .font(BriefingFont.meta)
-                    .foregroundStyle(BriefingColor.ink3)
+                    .foregroundStyle(.gray700)
             }
 
-            BriefingSparkBarView(values: normalizedSpark, highlightColor: BriefingColor.red)
-                .padding(.top, 4)
+            BriefingSparkBarView(
+                values: normalizedSpark,
+                highlightColor: .customYellow
+            )
+            .padding(.top, 20)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
-        .padding(.vertical, 4)
     }
 
     // MARK: - Helpers
@@ -59,7 +60,7 @@ struct SecurityDebtKPICardView: View {
     private var deltaPct: String? {
         guard let prior = security.priorWeekTotal, prior > 0 else { return nil }
         let pct = Int(round(Double(security.value - prior) / Double(prior) * 100))
-        return pct >= 0 ? "↑ \(pct)%" : "↓ \(-pct)%"
+        return pct >= 0 ? "↑" : "↓"
     }
 
     private var subtitle: String? {

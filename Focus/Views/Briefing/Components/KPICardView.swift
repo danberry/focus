@@ -43,24 +43,23 @@ struct KPICardView: View {
             Text(title)
                 .font(BriefingFont.eyebrow)
                 .textCase(.uppercase)
-                .foregroundStyle(BriefingColor.ink3)
+                .foregroundStyle(.gray700)
 
-            HStack(alignment: .lastTextBaseline, spacing: 8) {
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
-                    .font(isHero ? BriefingFont.kpiHero : BriefingFont.kpiSupporting)
-                    .foregroundStyle(BriefingColor.ink)
+                    .font(BriefingFont.kpiSupporting)
 
                 if let inlineDeltaLabel {
                     Text(inlineDeltaLabel)
-                        .font(BriefingFont.meta)
-                        .foregroundStyle(BriefingColor.ink)
+                        .font(.system(size: 17, weight: .semibold))
                 }
             }
+            .foregroundStyle(.white)
 
             if let deltaLabel {
                 Text(deltaLabel)
                     .font(BriefingFont.meta)
-                    .foregroundStyle(BriefingColor.ink3)
+                    .foregroundStyle(.gray700)
             }
 
             if let spark {
@@ -68,9 +67,8 @@ struct KPICardView: View {
                     .padding(.top, 4)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(minWidth: 60, alignment: .leading)
         .padding(.horizontal, 24)
-        .padding(.vertical, 4)
     }
 }
 

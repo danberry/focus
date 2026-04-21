@@ -194,7 +194,7 @@ enum BriefingFont {
     #endif
 
     /// 15pt medium — attention card titles.
-    static let attentionTitle: Font = .system(size: 18, weight: .medium)
+    static let attentionTitle: Font = .system(size: 30, weight: .medium)
 
     /// 14pt body — primary card body copy.
     static let body: Font = .system(size: 14)
