@@ -63,21 +63,24 @@ struct Briefing: Sendable {
                 tone: .red,
                 title: "12 critical alerts open in `payments-api`.",
                 meta: "No triage in 9 days · escalate to @security",
-                actionLabel: "Open alerts →"
+                actionLabel: "Open alerts →",
+                insight: nil
             ),
             BriefingAttentionItem(
                 n: "02",
                 tone: .blue,
                 title: "Priya Shah idle 6 days.",
                 meta: "Last commit: Apr 12 · Platform team",
-                actionLabel: "DM Priya →"
+                actionLabel: "DM Priya →",
+                insight: nil
             ),
             BriefingAttentionItem(
                 n: "03",
                 tone: .neutral,
                 title: "Only 4 PRs merged in `mobile-ios`.",
                 meta: "Down from 11 the prior week",
-                actionLabel: "See repo →"
+                actionLabel: "See repo →",
+                insight: nil
             )
         ],
         kpis: BriefingKPIs(
@@ -194,6 +197,13 @@ struct BriefingAttentionItem: Sendable, Equatable, Hashable {
 
     /// The label of the full-width action button.
     let actionLabel: String
+
+    /// The underlying engine-generated insight, or `nil` for hardcoded/fallback cards.
+    ///
+    /// Populated when the attention item was produced by a domain generator
+    /// (e.g. ``SecurityInsightGenerator``). Views can read this to get richer
+    /// context (domain, priority, rule kind) than the display strings expose.
+    let insight: BriefingInsight?
 }
 
 // MARK: - BriefingKPIs
