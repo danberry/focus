@@ -36,7 +36,8 @@ struct BriefingKPISection: View {
                 KPICardView(
                     title: "Idle",
                     value: "\(kpis.idle.value)",
-                    deltaLabel: idleDeltaLabel
+                    inlineDeltaLabel: idleDeltaLabel,
+                    deltaLabel: kpis.idle.value > 0 ? "7d+" : nil
                 )
                 
                 Divider()
@@ -55,7 +56,8 @@ struct BriefingKPISection: View {
                 KPICardView(
                     title: "CI Pass",
                     value: kpis.ciPass.map { "\($0.value)%" } ?? "—",
-                    deltaLabel: ciPassDeltaLabel
+                    inlineDeltaLabel: ciPassDeltaLabel,
+                    deltaLabel: kpis.ciPass != nil ? "target 95%" : nil
                 )
                 
                 Divider()
@@ -72,19 +74,20 @@ struct BriefingKPISection: View {
 
     // MARK: - Helpers
 
-    /// Returns the formatted delta label for the idle KPI, or `nil` when the delta is zero.
-    private var idleDeltaLabel: String? {
-        let delta = kpis.idle.delta
-        guard delta != 0 else { return nil }
-        return delta > 0 ? "+\(delta)" : "\(delta)"
-    }
-
-    /// Returns a week-over-week delta label for the CI pass rate, or `nil` when unavailable or unchanged.
+    /// Returns a week-over-week delta label for the CI pass rate, or `nil` when unavailable.
     private var ciPassDeltaLabel: String? {
         guard let ci = kpis.ciPass, let prior = ci.priorWeekValue else { return nil }
         let delta = ci.value - prior
-        guard delta != 0 else { return nil }
+        if delta == 0 { return "→" }
         return delta > 0 ? "+\(delta)pp" : "\(delta)pp"
+    }
+
+    /// Returns the formatted delta label for the idle KPI, or `nil` when the delta is zero.
+    private var idleDeltaLabel: String? {
+        let delta = kpis.idle.delta
+        if delta > 0 { return "↑ \(delta)" }
+        if delta < 0 { return "↓ \(-delta)" }
+        return kpis.idle.value > 0 ? "→" : nil
     }
 }
 
