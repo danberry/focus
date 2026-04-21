@@ -14,7 +14,7 @@ struct FocusApp: App {
     // MARK: - Properties
 
     /// The SwiftData model container, created once and shared with `BackgroundSyncManager`.
-    private let modelContainer = try! ModelContainer(for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self, Discipline.self, JobTitle.self, RepositoryVelocity.self, SavedOrganization.self, Department.self)
+    private let modelContainer = try! ModelContainer(for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self, Discipline.self, JobTitle.self, RepositoryVelocity.self, SavedOrganization.self, Department.self, SecurityWeeklySnapshot.self)
 
     /// The current scene phase, used to trigger a sync when the app becomes active.
     @Environment(\.scenePhase) private var scenePhase

@@ -56,7 +56,7 @@ struct SecurityInsightGenerator: Sendable {
     /// Registered rules. Order is the tie-breaker within a priority bucket.
     private let rules: [any SecurityInsightRule]
 
-    /// Creates a generator backed by the given config and the default Tier 1 rule set.
+    /// Creates a generator backed by the given config and the full Tier 1 + Tier 2 rule set.
     init(config: SecurityInsightConfig = .default) {
         self.config = config
         self.rules = [
@@ -68,16 +68,24 @@ struct SecurityInsightGenerator: Sendable {
             MultiRepoCriticalSpreadRule(),
             AgingUnassignedCriticalsRule(),
             CriticalAlertsInRepoRule(),
-            // P2
+            // P2 — Tier 1
             MultiRepoSecretRule(),
             SharedBlastRadiusRule(),
             EcosystemConcentrationRule(),
             SLABreachRule(),
             CodeScanningRulePatternRule(),
-            // P3
+            // P2 — Tier 2 (historical trend; no-ops until snapshots accumulate)
+            AlertDebtTrendRule(),
+            NewRepoAtRiskRule(),
+            // P3 — Tier 2 (positive signals; no-ops until snapshots exist)
+            CriticalBacklogClearedRule(),
+            RepoWentCleanRule(),
+            AlertCountDroppedRule(),
+            CleanStreakRule(),
+            // P3 — Tier 1 + Tier 3
             FixesAvailableRule(),
             ClosureVelocityBeatIntakeRule(),
-            // P4
+            // P4 — Tier 3
             FastestResolvingRepoRule(),
             IntakeAcceleratingRule()
         ]
@@ -429,7 +437,177 @@ struct CodeScanningRulePatternRule: SecurityInsightRule {
     }
 }
 
+// MARK: - P2 Tier 2 Rules
+
+/// Fires when the total open alert count has grown for N consecutive weeks.
+///
+/// Requires at least `config.trendMinWeeks` entries in `weekHistory`. The check
+/// looks at the last `trendMinWeeks` snapshots (oldest first) and fires only when
+/// each week's `totalOpen` strictly exceeds the previous week's.
+struct AlertDebtTrendRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        let history = input.weekHistory
+        guard history.count >= config.trendMinWeeks else { return nil }
+        let recent = Array(history.suffix(config.trendMinWeeks))
+        for i in 1..<recent.count {
+            guard recent[i].totalOpen > recent[i - 1].totalOpen else { return nil }
+        }
+        let delta = recent[recent.count - 1].totalOpen - recent[0].totalOpen
+        return SecurityInsight(
+            kind: .alertDebtTrend(weeks: config.trendMinWeeks, delta: delta),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p2_notable,
+                tone: .red,
+                title: "Open alerts have grown for \(config.trendMinWeeks) consecutive weeks.",
+                meta: "+\(delta) alerts over the past \(config.trendMinWeeks) weeks",
+                actionLabel: "View security →"
+            )
+        )
+    }
+}
+
+/// Fires when a repo had zero critical alerts last week but has criticals this week.
+struct NewRepoAtRiskRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        guard let prior = input.priorWeekTotals else { return nil }
+        let newAtRisk = input.repoDetails.filter { detail in
+            detail.criticalCount > 0 && (prior.repoCriticalCounts[detail.repoName] ?? 0) == 0
+        }
+        guard let first = newAtRisk.first else { return nil }
+        let count = newAtRisk.count
+        let title: String
+        let meta: String
+        if count == 1 {
+            title = "**\(first.repoName)** has new critical alerts — clean last week."
+            meta = "Critical alert introduced this week"
+        } else {
+            title = "\(count) repos have new critical alerts — all clean last week."
+            meta = newAtRisk.prefix(3).map(\.repoName).joined(separator: " · ")
+        }
+        return SecurityInsight(
+            kind: .newRepoAtRisk(repoName: first.repoName),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p2_notable,
+                tone: .red,
+                title: title,
+                meta: meta,
+                actionLabel: "View alerts →"
+            )
+        )
+    }
+}
+
 // MARK: - P3 Rules
+
+/// Fires when the entire critical backlog was cleared week-over-week.
+struct CriticalBacklogClearedRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        guard let prior = input.priorWeekTotals, prior.totalCritical > 0 else { return nil }
+        let currentCritical = input.repoDetails.reduce(0) { $0 + $1.criticalCount }
+        guard currentCritical == 0 else { return nil }
+        let n = prior.totalCritical
+        let alertWord = n == 1 ? "alert" : "alerts"
+        return SecurityInsight(
+            kind: .criticalBacklogCleared(clearedCount: n),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p3_positive,
+                tone: .blue,
+                title: "Critical backlog cleared — \(n) critical \(alertWord) resolved.",
+                meta: "No open critical alerts this week",
+                actionLabel: "View security →"
+            )
+        )
+    }
+}
+
+/// Fires when a previously-noisy repo now has zero open alerts.
+struct RepoWentCleanRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        guard let prior = input.priorWeekTotals else { return nil }
+        // Repos that had criticals last week and now have zero open alerts of any kind.
+        let cleanRepos = prior.repoCriticalCounts
+            .filter { $0.value > 0 }
+            .keys
+            .filter { repoName in
+                input.repoDetails.first(where: { $0.repoName == repoName })?.openAlerts == 0
+            }
+            .sorted()
+        guard let first = cleanRepos.first else { return nil }
+        return SecurityInsight(
+            kind: .repoWentClean(repoName: first),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p3_positive,
+                tone: .blue,
+                title: "**\(first)** is now alert-free.",
+                meta: "Had critical alerts last week — resolved this week",
+                actionLabel: "View security →"
+            )
+        )
+    }
+}
+
+/// Fires when the total open alert count dropped significantly week-over-week.
+///
+/// The rule fires when either the absolute drop meets `config.significantDropDelta`
+/// or the fractional drop meets `config.significantDropPct` (whichever is easier to satisfy).
+struct AlertCountDroppedRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        guard let prior = input.priorWeekTotals,
+              let current = input.currentWeekTotals,
+              prior.totalOpen > 0 else { return nil }
+        let delta = prior.totalOpen - current.totalOpen
+        guard delta > 0 else { return nil }
+        let dropPct = Double(delta) / Double(prior.totalOpen)
+        guard delta >= config.significantDropDelta || dropPct >= config.significantDropPct else { return nil }
+        return SecurityInsight(
+            kind: .alertCountDropped(delta: delta, fromTotal: prior.totalOpen),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p3_positive,
+                tone: .blue,
+                title: "Open alerts dropped by \(delta) this week.",
+                meta: "From \(prior.totalOpen) to \(current.totalOpen) open alerts",
+                actionLabel: "View security →"
+            )
+        )
+    }
+}
+
+/// Fires when no critical alerts have appeared for N consecutive weeks.
+struct CleanStreakRule: SecurityInsightRule {
+
+    func evaluate(_ input: SecurityInsightInput, config: SecurityInsightConfig) -> SecurityInsight? {
+        let history = input.weekHistory
+        guard !history.isEmpty else { return nil }
+        var streak = 0
+        for week in history.reversed() {
+            guard week.totalCritical == 0 else { break }
+            streak += 1
+        }
+        guard streak >= config.cleanStreakMinWeeks else { return nil }
+        let weekWord = streak == 1 ? "week" : "weeks"
+        return SecurityInsight(
+            kind: .cleanStreak(weeks: streak),
+            briefingInsight: BriefingInsight(
+                domain: .security,
+                priority: .p3_positive,
+                tone: .blue,
+                title: "No critical alerts for \(streak) \(weekWord) in a row.",
+                meta: "Keep it up — \(streak)-week clean streak",
+                actionLabel: "View security →"
+            )
+        )
+    }
+}
 
 /// Fires when a meaningful share of critical Dependabot alerts have upgrades ready.
 struct FixesAvailableRule: SecurityInsightRule {
