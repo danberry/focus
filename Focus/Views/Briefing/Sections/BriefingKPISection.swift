@@ -38,11 +38,12 @@ struct BriefingKPISection: View {
                 
                 divider
 
-                if let cycleTime = kpis.medianMerge {
-                    CycleTimeKPICardView(cycleTime: cycleTime)
-                } else {
-                    KPICardView(title: "Cycle Time", value: "—")
-                }
+                KPICardView(
+                    title: "Cycle Time",
+                    value: kpis.medianMerge.map { cycleTimeLabel($0.value) } ?? "—",
+                    inlineDeltaLabel: kpis.medianMerge.flatMap { cycleTimeDelta($0) },
+                    deltaLabel: kpis.medianMerge != nil ? "open → merge" : nil
+                )
 
                 divider
 
@@ -86,6 +87,18 @@ struct BriefingKPISection: View {
         let delta = r.value - prior
         if delta == 0 { return "→" }
         return delta > 0 ? "↑" : "↓"
+    }
+
+    private func cycleTimeLabel(_ hours: Int) -> String {
+        if hours < 24 { return "\(hours)h" }
+        return "\(Int((Double(hours) / 24).rounded()))d"
+    }
+
+    private func cycleTimeDelta(_ ct: BriefingKPIMedianMerge) -> String? {
+        guard let prior = ct.priorWeekValue, prior > 0 else { return nil }
+        let diff = ct.value - prior
+        if diff == 0 { return "→" }
+        return diff < 0 ? "↓" : "↑"
     }
 
     /// Returns the formatted delta label for the idle KPI, or `nil` when the delta is zero.
