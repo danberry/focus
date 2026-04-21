@@ -94,7 +94,9 @@ struct BriefingService: Sendable {
         async let priorMetricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: priorWeekInterval)
         async let ciPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: ghRange)
         async let priorCIPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: priorGhRange)
-        let (prCounts, metrics, releaseCount, priorReleaseCount, priorPRCounts, priorMetrics, ciPassPct, priorCIPassPct) = await (prCountsFetch, metricsFetch, releasesFetch, priorReleasesFetch, priorPRCountsFetch, priorMetricsFetch, ciPassFetch, priorCIPassFetch)
+        async let openedPRCountsFetch = fetchAllOpenedPRCounts(repoKeys: repoKeys, range: ghRange)
+        async let priorOpenedPRCountsFetch = fetchAllOpenedPRCounts(repoKeys: repoKeys, range: priorGhRange)
+        let (prCounts, metrics, releaseCount, priorReleaseCount, priorPRCounts, priorMetrics, ciPassPct, priorCIPassPct, openedPRCounts, priorOpenedPRCounts) = await (prCountsFetch, metricsFetch, releasesFetch, priorReleasesFetch, priorPRCountsFetch, priorMetricsFetch, ciPassFetch, priorCIPassFetch, openedPRCountsFetch, priorOpenedPRCountsFetch)
 
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
@@ -165,6 +167,8 @@ struct BriefingService: Sendable {
             priorCIPassPct: priorCIPassPct,
             releaseCount: releaseCount,
             priorReleaseCount: priorReleaseCount,
+            openedPRTotal: openedPRCounts.values.reduce(0, +),
+            priorOpenedPRTotal: priorOpenedPRCounts.values.reduce(0, +),
             criticalAlerts: criticalAlerts,
             allDependabotAlerts: allDependabotAlerts,
             allCodeScanningAlerts: allCodeScanningAlerts,
@@ -424,6 +428,59 @@ struct BriefingService: Sendable {
                 result[key] = count
             }
             return result
+        }
+    }
+
+    /// Fans out opened-PR-count requests across all repositories in parallel.
+    ///
+    /// Uses the `created:` qualifier instead of `merged:`, so the count reflects how many
+    /// PRs were opened during the week regardless of whether they were merged.
+    ///
+    /// - Parameters:
+    ///   - repoKeys: The `(owner, name)` pairs to query.
+    ///   - range: The GitHub `created:` range string applied to each query.
+    /// - Returns: A dictionary keyed by `"owner/name"` mapping to opened PR count.
+    func fetchAllOpenedPRCounts(
+        repoKeys: [(owner: String, name: String)],
+        range: String
+    ) async -> [String: Int] {
+        await withTaskGroup(of: (String, Int).self) { group in
+            for key in repoKeys {
+                let owner = key.owner
+                let name = key.name
+                group.addTask {
+                    let count = await self.fetchOpenedPRCount(owner: owner, repo: name, range: range)
+                    return ("\(owner)/\(name)", count)
+                }
+            }
+            var result: [String: Int] = [:]
+            for await (key, count) in group {
+                result[key] = count
+            }
+            return result
+        }
+    }
+
+    /// Fetches the opened pull request count for a single repository and date range.
+    ///
+    /// Returns `0` on any network, decoding, or transport error.
+    ///
+    /// - Parameters:
+    ///   - owner: The repository owner login.
+    ///   - repo: The repository name.
+    ///   - range: The GitHub `created:` range string.
+    /// - Returns: The opened PR count for the window, or `0` on failure.
+    func fetchOpenedPRCount(owner: String, repo: String, range: String) async -> Int {
+        let query = "repo:\(owner)/\(repo) is:pr created:\(range)"
+        do {
+            let response: WeeklyPRCountResponse = try await graphQL.execute(
+                query: BriefingQueries.weeklyOpenedPRCount,
+                variables: ["q": query],
+                responseType: WeeklyPRCountResponse.self
+            )
+            return response.search.issueCount
+        } catch {
+            return 0
         }
     }
 
@@ -715,6 +772,8 @@ struct BriefingService: Sendable {
         priorCIPassPct: Int?,
         releaseCount: Int?,
         priorReleaseCount: Int?,
+        openedPRTotal: Int,
+        priorOpenedPRTotal: Int,
         criticalAlerts: [DependabotAlert],
         allDependabotAlerts: [DependabotAlert],
         allCodeScanningAlerts: [CodeScanningAlert],
@@ -729,6 +788,15 @@ struct BriefingService: Sendable {
 
         // MARK: Shipping
         let shippingTotal = prCounts.values.reduce(0, +)
+
+        // MARK: Merge Rate
+        let mergeRate: BriefingKPIMergeRate? = openedPRTotal > 0 ? {
+            let pct = Int((Double(shippingTotal) / Double(openedPRTotal) * 100).rounded())
+            let priorPct: Int? = priorOpenedPRTotal > 0
+                ? Int((Double(priorWeekPRTotal) / Double(priorOpenedPRTotal) * 100).rounded())
+                : nil
+            return BriefingKPIMergeRate(value: pct, merged: shippingTotal, opened: openedPRTotal, priorWeekValue: priorPct)
+        }() : nil
 
         // MARK: Security
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
@@ -1109,7 +1177,8 @@ struct BriefingService: Sendable {
                 prSize: medianPRSize.map { BriefingKPIPRSize(value: $0, dailyMedians: dailyPRSizeMedians, priorWeekValue: priorMedianPRSize) },
                 activeContributors: totalTracked > 0
                     ? BriefingKPIActiveContributors(value: activeContributorCount, totalTracked: totalTracked, priorWeekValue: priorActiveCount)
-                    : nil
+                    : nil,
+                mergeRate: mergeRate
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,
