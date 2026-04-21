@@ -100,6 +100,15 @@ struct BriefingService: Sendable {
             + allCodeScanningAlerts.map(\.createdAt)
             + allSecretAlerts.map(\.createdAt)
 
+        // Persist a snapshot for this week and load trend history for Tier 2 rules.
+        let (currentWeekTotals, priorWeekTotals, weekHistory) = persistSecuritySnapshot(
+            weekInterval: weekInterval,
+            repositories: scopedRepos,
+            criticalAlerts: criticalAlerts,
+            allDependabotAlerts: allDependabotAlerts,
+            context: context
+        )
+
         return assemble(
             weekInterval: weekInterval,
             weekRange: weekRange,
@@ -118,8 +127,92 @@ struct BriefingService: Sendable {
             allCodeScanningAlerts: allCodeScanningAlerts,
             allSecretAlerts: allSecretAlerts,
             allAlertDates: allAlertDates,
-            members: scopedMembers
+            members: scopedMembers,
+            currentWeekTotals: currentWeekTotals,
+            priorWeekTotals: priorWeekTotals,
+            weekHistory: weekHistory
         )
+    }
+
+    // MARK: - Security Snapshot Persistence
+
+    /// Writes or updates the ``SecurityWeeklySnapshot`` for `weekInterval`, then returns
+    /// the trend data needed by Tier 2 insight rules.
+    ///
+    /// The returned `weekHistory` array contains up to 8 snapshots sorted oldest-first.
+    /// `currentWeekTotals` and `priorWeekTotals` are derived from that history.
+    ///
+    /// - Parameters:
+    ///   - weekInterval: The week being briefed.
+    ///   - repositories: Scoped saved repositories (used for totalOpen count).
+    ///   - criticalAlerts: All `DependabotAlert` records at critical severity.
+    ///   - allDependabotAlerts: All open `DependabotAlert` records (used for `opened` count).
+    ///   - context: The SwiftData context to read and write snapshots.
+    /// - Returns: A tuple of (currentWeekTotals, priorWeekTotals, weekHistory).
+    @MainActor
+    private func persistSecuritySnapshot(
+        weekInterval: DateInterval,
+        repositories: [SavedRepository],
+        criticalAlerts: [DependabotAlert],
+        allDependabotAlerts: [DependabotAlert],
+        context: ModelContext
+    ) -> (current: SecurityWeekTotals?, prior: SecurityWeekTotals?, history: [SecurityWeekTotals]) {
+        let weekStart = weekInterval.start
+        let totalOpen = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
+        let totalCritical = criticalAlerts.count
+        let opened = allDependabotAlerts.filter { weekInterval.contains($0.createdAt) }.count
+
+        var repoCriticalCounts: [String: Int] = [:]
+        for repo in repositories {
+            let count = criticalAlerts.filter { $0.repository?.githubId == repo.githubId }.count
+            if count > 0 {
+                repoCriticalCounts[repo.displayName] = count
+            }
+        }
+
+        // Upsert: update existing record for this week, or insert a new one.
+        let nextWeekStart = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: weekStart) ?? weekStart
+        let existing = try? context.fetch(FetchDescriptor<SecurityWeeklySnapshot>(
+            predicate: #Predicate { $0.weekStart >= weekStart && $0.weekStart < nextWeekStart }
+        ))
+        if let snapshot = existing?.first {
+            snapshot.totalOpen = totalOpen
+            snapshot.totalCritical = totalCritical
+            snapshot.opened = opened
+            snapshot.repoCriticalCountsJSON = try? JSONEncoder().encode(repoCriticalCounts)
+        } else {
+            context.insert(SecurityWeeklySnapshot(
+                weekStart: weekStart,
+                totalOpen: totalOpen,
+                totalCritical: totalCritical,
+                opened: opened,
+                repoCriticalCounts: repoCriticalCounts
+            ))
+        }
+        try? context.save()
+
+        // Fetch the 8 most recent snapshots, return oldest-first.
+        var descriptor = FetchDescriptor<SecurityWeeklySnapshot>(
+            sortBy: [SortDescriptor(\.weekStart, order: .reverse)]
+        )
+        descriptor.fetchLimit = 8
+        let snapshots = ((try? context.fetch(descriptor)) ?? []).reversed()
+
+        func toTotals(_ s: SecurityWeeklySnapshot) -> SecurityWeekTotals {
+            SecurityWeekTotals(
+                weekStart: s.weekStart,
+                totalOpen: s.totalOpen,
+                totalCritical: s.totalCritical,
+                opened: s.opened,
+                closed: s.closed,
+                repoCriticalCounts: s.repoCriticalCounts
+            )
+        }
+
+        let history = snapshots.map(toTotals)
+        let current = history.last
+        let prior = history.count >= 2 ? history[history.count - 2] : nil
+        return (current, prior, history)
     }
 
     // MARK: - Scope Filtering
@@ -492,7 +585,10 @@ struct BriefingService: Sendable {
         allCodeScanningAlerts: [CodeScanningAlert],
         allSecretAlerts: [SecretScanningAlert],
         allAlertDates: [Date],
-        members: [Member]
+        members: [Member],
+        currentWeekTotals: SecurityWeekTotals?,
+        priorWeekTotals: SecurityWeekTotals?,
+        weekHistory: [SecurityWeekTotals]
     ) -> Briefing {
         let volume = Calendar.current.component(.weekOfYear, from: weekInterval.start)
 
@@ -680,9 +776,9 @@ struct BriefingService: Sendable {
             codeScanningAlerts: codeScanningAlertSummaries,
             secretAlerts: secretAlertSummaries,
             repoDetails: repoDetails,
-            currentWeekTotals: nil,
-            priorWeekTotals: nil,
-            weekHistory: []
+            currentWeekTotals: currentWeekTotals,
+            priorWeekTotals: priorWeekTotals,
+            weekHistory: weekHistory
         )
 
         let attention01: BriefingAttentionItem = {

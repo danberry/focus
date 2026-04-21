@@ -48,6 +48,12 @@ enum SecurityInsightKind: Sendable, Hashable {
     /// Many Code Scanning alerts trace back to the same rule.
     case codeScanningRulePattern(ruleId: String, ruleName: String, count: Int, total: Int)
 
+    /// Open alert count has grown for N consecutive weeks. (Tier 2.)
+    case alertDebtTrend(weeks: Int, delta: Int)
+
+    /// A repo that was clean last week now has critical alerts. (Tier 2.)
+    case newRepoAtRisk(repoName: String)
+
     // MARK: P3 — Positive
 
     /// The critical backlog was cleared or reduced week-over-week. (Tier 2 — needs snapshot.)
