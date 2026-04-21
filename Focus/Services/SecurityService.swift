@@ -100,97 +100,162 @@ struct SecurityService: Sendable {
 
     // MARK: - Apply (@MainActor, writes to SwiftData)
 
-    /// Persists fetched Dependabot alerts to SwiftData, replacing any existing records.
+    /// Persists fetched Dependabot alerts to SwiftData using an upsert strategy.
+    ///
+    /// Existing objects are updated in-place (preserving their `PersistentIdentifier`)
+    /// so views holding live references are not invalidated.
     ///
     /// Does nothing when `alerts` is `nil` (preserving any existing data).
     @MainActor
     func applyDependabotAlerts(_ alerts: [DependabotAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        repository.dependabotAlertDetails.forEach { context.delete($0) }
+        let existingByNumber = Dictionary(
+            uniqueKeysWithValues: repository.dependabotAlertDetails.map { ($0.alertNumber, $0) }
+        )
+        let incomingNumbers = Set(alerts.map(\.number))
+
+        for (number, record) in existingByNumber where !incomingNumbers.contains(number) {
+            record.repository = nil
+            context.delete(record)
+        }
 
         for alert in alerts {
-            let model = DependabotAlert(
-                alertNumber: alert.number,
-                packageName: alert.securityVulnerability.package.name,
-                severity: alert.securityAdvisory.severity,
-                fixVersion: alert.securityVulnerability.firstPatchedVersion?.identifier,
-                createdAt: alert.createdAt,
-                summary: alert.securityAdvisory.summary,
-                advisoryDescription: alert.securityAdvisory.description,
-                ecosystem: alert.securityVulnerability.package.ecosystem,
-                vulnerableVersionRange: alert.securityVulnerability.vulnerableVersionRange,
-                ghsaId: alert.securityAdvisory.ghsaId,
-                cveId: alert.securityAdvisory.cveId,
-                cvssScore: alert.securityAdvisory.cvss?.score,
-                htmlUrl: alert.htmlUrl,
-                manifestPath: alert.dependency.manifestPath
-            )
-            model.assignedLogins = alert.assignees.map(\.login)
-            model.repository = repository
-            context.insert(model)
+            if let existing = existingByNumber[alert.number] {
+                existing.packageName = alert.securityVulnerability.package.name
+                existing.severity = alert.securityAdvisory.severity
+                existing.fixVersion = alert.securityVulnerability.firstPatchedVersion?.identifier
+                existing.createdAt = alert.createdAt
+                existing.summary = alert.securityAdvisory.summary
+                existing.advisoryDescription = alert.securityAdvisory.description
+                existing.ecosystem = alert.securityVulnerability.package.ecosystem
+                existing.vulnerableVersionRange = alert.securityVulnerability.vulnerableVersionRange
+                existing.ghsaId = alert.securityAdvisory.ghsaId
+                existing.cveId = alert.securityAdvisory.cveId
+                existing.cvssScore = alert.securityAdvisory.cvss?.score
+                existing.htmlUrl = alert.htmlUrl
+                existing.manifestPath = alert.dependency.manifestPath
+                existing.assignedLogins = alert.assignees.map(\.login)
+            } else {
+                let model = DependabotAlert(
+                    alertNumber: alert.number,
+                    packageName: alert.securityVulnerability.package.name,
+                    severity: alert.securityAdvisory.severity,
+                    fixVersion: alert.securityVulnerability.firstPatchedVersion?.identifier,
+                    createdAt: alert.createdAt,
+                    summary: alert.securityAdvisory.summary,
+                    advisoryDescription: alert.securityAdvisory.description,
+                    ecosystem: alert.securityVulnerability.package.ecosystem,
+                    vulnerableVersionRange: alert.securityVulnerability.vulnerableVersionRange,
+                    ghsaId: alert.securityAdvisory.ghsaId,
+                    cveId: alert.securityAdvisory.cveId,
+                    cvssScore: alert.securityAdvisory.cvss?.score,
+                    htmlUrl: alert.htmlUrl,
+                    manifestPath: alert.dependency.manifestPath
+                )
+                model.assignedLogins = alert.assignees.map(\.login)
+                model.repository = repository
+                context.insert(model)
+            }
         }
         try? context.save()
     }
 
-    /// Persists fetched code scanning alerts to SwiftData, replacing any existing records.
+    /// Persists fetched code scanning alerts to SwiftData using an upsert strategy.
+    ///
+    /// Existing objects are updated in-place (preserving their `PersistentIdentifier`)
+    /// so views holding live references are not invalidated.
     ///
     /// Does nothing when `alerts` is `nil` (preserving any existing data).
     @MainActor
     func applyCodeScanningAlerts(_ alerts: [CodeScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let toDelete = repository.codeScanningAlertDetails
-        for existing in toDelete {
-            existing.repository = nil
-            context.delete(existing)
+        let existingByNumber = Dictionary(
+            uniqueKeysWithValues: repository.codeScanningAlertDetails.map { ($0.alertNumber, $0) }
+        )
+        let incomingNumbers = Set(alerts.map(\.number))
+
+        for (number, record) in existingByNumber where !incomingNumbers.contains(number) {
+            record.repository = nil
+            context.delete(record)
         }
 
         for response in alerts {
-            let alert = CodeScanningAlert(
-                alertNumber: response.number,
-                ruleName: response.rule.name,
-                securitySeverityLevel: response.rule.securitySeverityLevel,
-                createdAt: response.createdAt,
-                htmlUrl: response.htmlUrl,
-                ruleId: response.rule.id,
-                ruleDescription: response.rule.description,
-                toolName: response.tool?.name,
-                locationPath: response.mostRecentInstance?.location?.path,
-                locationStartLine: response.mostRecentInstance?.location?.startLine,
-                messageText: response.mostRecentInstance?.message?.text
-            )
-            alert.repository = repository
-            context.insert(alert)
+            if let existing = existingByNumber[response.number] {
+                existing.ruleName = response.rule.name
+                existing.securitySeverityLevel = response.rule.securitySeverityLevel
+                existing.createdAt = response.createdAt
+                existing.htmlUrl = response.htmlUrl
+                existing.ruleId = response.rule.id
+                existing.ruleDescription = response.rule.description
+                existing.toolName = response.tool?.name
+                existing.locationPath = response.mostRecentInstance?.location?.path
+                existing.locationStartLine = response.mostRecentInstance?.location?.startLine
+                existing.messageText = response.mostRecentInstance?.message?.text
+            } else {
+                let alert = CodeScanningAlert(
+                    alertNumber: response.number,
+                    ruleName: response.rule.name,
+                    securitySeverityLevel: response.rule.securitySeverityLevel,
+                    createdAt: response.createdAt,
+                    htmlUrl: response.htmlUrl,
+                    ruleId: response.rule.id,
+                    ruleDescription: response.rule.description,
+                    toolName: response.tool?.name,
+                    locationPath: response.mostRecentInstance?.location?.path,
+                    locationStartLine: response.mostRecentInstance?.location?.startLine,
+                    messageText: response.mostRecentInstance?.message?.text
+                )
+                alert.repository = repository
+                context.insert(alert)
+            }
         }
     }
 
-    /// Persists fetched secret scanning alerts to SwiftData, replacing any existing records.
+    /// Persists fetched secret scanning alerts to SwiftData using an upsert strategy.
+    ///
+    /// Existing objects are updated in-place (preserving their `PersistentIdentifier`)
+    /// so views holding live references are not invalidated.
     ///
     /// Does nothing when `alerts` is `nil` (preserving any existing data).
     @MainActor
     func applySecretScanningAlerts(_ alerts: [SecretScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let existing = repository.secretScanningAlertDetails
-        for alert in existing {
-            alert.repository = nil
-            context.delete(alert)
+        let existingByNumber = Dictionary(
+            uniqueKeysWithValues: repository.secretScanningAlertDetails.map { ($0.alertNumber, $0) }
+        )
+        let incomingNumbers = Set(alerts.map(\.number))
+
+        for (number, record) in existingByNumber where !incomingNumbers.contains(number) {
+            record.repository = nil
+            context.delete(record)
         }
 
         for response in alerts {
-            let alert = SecretScanningAlert(
-                alertNumber: response.number,
-                secretTypeDisplayName: response.secretTypeDisplayName,
-                validity: response.validity,
-                publiclyLeaked: response.publiclyLeaked,
-                createdAt: response.createdAt,
-                htmlUrl: response.htmlUrl,
-                pushProtectionBypassed: response.pushProtectionBypassed ?? false,
-                multiRepo: response.multiRepo ?? false
-            )
-            alert.repository = repository
-            context.insert(alert)
+            if let existing = existingByNumber[response.number] {
+                existing.secretTypeDisplayName = response.secretTypeDisplayName
+                existing.validity = response.validity
+                existing.publiclyLeaked = response.publiclyLeaked
+                existing.createdAt = response.createdAt
+                existing.htmlUrl = response.htmlUrl
+                existing.pushProtectionBypassed = response.pushProtectionBypassed ?? false
+                existing.multiRepo = response.multiRepo ?? false
+            } else {
+                let alert = SecretScanningAlert(
+                    alertNumber: response.number,
+                    secretTypeDisplayName: response.secretTypeDisplayName,
+                    validity: response.validity,
+                    publiclyLeaked: response.publiclyLeaked,
+                    createdAt: response.createdAt,
+                    htmlUrl: response.htmlUrl,
+                    pushProtectionBypassed: response.pushProtectionBypassed ?? false,
+                    multiRepo: response.multiRepo ?? false
+                )
+                alert.repository = repository
+                context.insert(alert)
+            }
         }
     }
 
