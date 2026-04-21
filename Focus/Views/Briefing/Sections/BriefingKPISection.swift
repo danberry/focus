@@ -88,6 +88,12 @@ struct BriefingKPISection: View {
                     TimeToFirstReviewKPICardView(timeToFirstReview: t2fr)
                 }
 
+                if let umr = kpis.unreviewedMergeRate {
+                    divider
+
+                    UnreviewedMergeRateKPICardView(unreviewedMergeRate: umr)
+                }
+
                 if let hotfix = kpis.hotfixRate {
                     divider
 
