@@ -87,6 +87,12 @@ struct BriefingKPISection: View {
 
                     TimeToFirstReviewKPICardView(timeToFirstReview: t2fr)
                 }
+
+                if let umr = kpis.unreviewedMergeRate {
+                    divider
+
+                    UnreviewedMergeRateKPICardView(unreviewedMergeRate: umr)
+                }
             }
         }
     }
