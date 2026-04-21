@@ -125,7 +125,7 @@ struct BriefingService: Sendable {
             let secService = SecurityService(rest: restClient)
             repoClosedCounts = await fetchDismissedCounts(
                 repoKeys: repoKeys,
-                repositories: scopedRepos,
+                displayNames: scopedRepos.map(\.displayName),
                 securityService: secService,
                 since: weekInterval.start,
                 until: weekInterval.end
@@ -370,16 +370,15 @@ struct BriefingService: Sendable {
     /// alerts dismissed within `[since, until)`.
     func fetchDismissedCounts(
         repoKeys: [(owner: String, name: String)],
-        repositories: [SavedRepository],
+        displayNames: [String],
         securityService: SecurityService,
         since: Date,
         until: Date
     ) async -> [String: Int] {
         await withTaskGroup(of: (String, Int).self) { group in
-            for (key, repo) in zip(repoKeys, repositories) {
+            for (key, displayName) in zip(repoKeys, displayNames) {
                 let owner = key.owner
                 let name = key.name
-                let displayName = repo.displayName
                 group.addTask {
                     let count = await securityService.fetchDismissedAlertCount(
                         owner: owner, repo: name, since: since, until: until
