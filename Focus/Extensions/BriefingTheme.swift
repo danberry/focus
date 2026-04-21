@@ -164,11 +164,34 @@ enum BriefingFont {
     /// 36pt serif — verdicts shown beside each section eyebrow.
     static let sectionVerdict: Font = .system(size: 36, weight: .medium, design: .serif)
 
-    /// 64pt monospaced-digit — hero KPI numbers.
-    static let kpiHero: Font = .system(size: 64, weight: .medium).monospacedDigit()
+    /// 64pt monospaced-digit with alternate 6 & 9 — hero KPI numbers.
+    static let kpiHero: Font = kpiFont(size: 64)
 
-    /// 34pt monospaced-digit — supporting KPI numbers.
-    static let kpiSupporting: Font = .system(size: 34, weight: .medium).monospacedDigit()
+    /// 34pt monospaced-digit with alternate 6 & 9 — supporting KPI numbers.
+    static let kpiSupporting: Font = kpiFont(size: 34)
+
+    // MARK: - Private helpers
+
+    /// Builds a medium-weight system font at `size` with monospaced digits and
+    /// SF Pro's stylistic-set-1 alternate 6 & 9 glyphs enabled.
+    #if canImport(UIKit)
+    private static func kpiFont(size: CGFloat) -> Font {
+        let base = UIFont.systemFont(ofSize: size, weight: .medium)
+        let descriptor = base.fontDescriptor.addingAttributes([
+            .featureSettings: [
+                [UIFontDescriptor.FeatureKey.type: kStylisticAlternativesType,
+                 UIFontDescriptor.FeatureKey.selector: kStylisticAltOneOnSelector],
+                [UIFontDescriptor.FeatureKey.type: kNumberSpacingType,
+                 UIFontDescriptor.FeatureKey.selector: kMonospacedNumbersSelector]
+            ]
+        ])
+        return Font(UIFont(descriptor: descriptor, size: size))
+    }
+    #else
+    private static func kpiFont(size: CGFloat) -> Font {
+        .system(size: size, weight: .medium).monospacedDigit()
+    }
+    #endif
 
     /// 15pt medium — attention card titles.
     static let attentionTitle: Font = .system(size: 18, weight: .medium)
