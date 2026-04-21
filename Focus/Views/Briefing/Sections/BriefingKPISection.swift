@@ -59,6 +59,12 @@ struct BriefingKPISection: View {
                     value: kpis.releases.map { "\($0.value)" } ?? "—",
                     inlineDeltaLabel: releasesDeltaLabel
                 )
+
+                if let ac = kpis.activeContributors {
+                    divider
+
+                    ActiveContributorsKPICardView(activeContributors: ac)
+                }
             }
         }
     }
