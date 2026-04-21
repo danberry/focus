@@ -178,6 +178,17 @@ struct BriefingServiceTests {
         #expect(!briefing.attention[2].title.contains("Legacy"))
     }
 
+    /// Verifies that `medianMerge` is nil when there are no tracked repositories,
+    /// since cycle time requires actual merged PRs.
+    @Test func cycleTimeIsNilWithNoRepos() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let briefing = await makeService().generate(scope: .all, in: context)
+
+        #expect(briefing.kpis.medianMerge == nil)
+    }
+
     /// Verifies that a department-scoped briefing only includes idle members whose team rolls up to that department.
     ///
     /// Creates a member on a team inside the target department and a second member with no team.

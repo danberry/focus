@@ -96,7 +96,7 @@ struct Briefing: Sendable {
                 priorWeekTotal: 38
             ),
             idle: BriefingKPIIdle(value: 2, delta: 1),
-            medianMerge: nil,
+            medianMerge: BriefingKPIMedianMerge(value: 18, dailyMedians: [22, 14, 18, 31, 12, 20, 16], priorWeekValue: 24),
             ciPass: nil,
             releases: nil,
             prSize: nil,
@@ -297,11 +297,14 @@ struct BriefingKPICIPass: Sendable {
 
 // MARK: - BriefingKPIMedianMerge
 
-/// Median merge time KPI (hours from PR open to merge).
+/// Cycle time KPI (median hours from PR open to merge, with a 7-day sparkline).
 struct BriefingKPIMedianMerge: Sendable {
 
     /// Median hours from PR open to merge this week.
     let value: Int
+
+    /// Median cycle-time hours per day for the 7-day report period, ordered oldest to newest.
+    let dailyMedians: [Int]
 
     /// Same metric for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
