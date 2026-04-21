@@ -156,6 +156,9 @@ struct ContentView: View {
                     velocityService: VelocityService(
                         graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
                     ),
+                    issueVelocityService: IssueVelocityService(
+                        graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
+                    ),
                     pullRequestService: PullRequestService(
                         graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
                     )

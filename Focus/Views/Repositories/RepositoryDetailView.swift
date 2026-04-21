@@ -17,6 +17,9 @@ struct RepositoryDetailView: View {
     /// The currently selected velocity period, controlling which metric is shown in the hero row.
     @State private var selectedPeriod: VelocityPeriod = .yearToDate
 
+    /// The currently selected issue velocity period.
+    @State private var selectedIssuePeriod: VelocityPeriod = .yearToDate
+
     // MARK: - Body
 
     /// The view's content.
@@ -54,6 +57,50 @@ struct RepositoryDetailView: View {
                                 selectedPeriod = period
                             } label: {
                                 Label(period.rawValue, systemImage: selectedPeriod == period ? "checkmark" : "")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 6)
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    }
+                }
+            }
+
+            // MARK: Issue Velocity
+
+            Section {
+                let issueRecord = repository.issueVelocityMetrics.first { $0.periodType == selectedIssuePeriod.rawValue }
+
+                if let issueRecord {
+                    IssueVelocityHeroRow(comparison: issueRecord.comparison)
+                        .listRowSeparator(.hidden)
+                } else {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("—")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundStyle(.quaternary)
+                            Text("Not yet synced")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    .listRowSeparator(.hidden)
+                }
+            } header: {
+                HStack {
+                    Text("Issue Velocity")
+                    Menu {
+                        ForEach(VelocityPeriod.allCases, id: \.self) { period in
+                            Button {
+                                selectedIssuePeriod = period
+                            } label: {
+                                Label(period.rawValue, systemImage: selectedIssuePeriod == period ? "checkmark" : "")
                             }
                         }
                     } label: {
@@ -209,6 +256,81 @@ struct RepositoryDetailView: View {
     private func daysOpenLabel(_ createdAt: Date) -> String {
         let days = Calendar.current.dateComponents([.day], from: createdAt, to: .now).day ?? 0
         return days == 1 ? "1 day open" : "\(days) days open"
+    }
+}
+
+// MARK: - IssueVelocityHeroRow
+
+/// A hero-style row displaying closed issue count and year-over-year trend for an issue velocity period.
+private struct IssueVelocityHeroRow: View {
+
+    // MARK: - Properties
+
+    /// The velocity comparison data to render.
+    let comparison: VelocityComparison
+
+    // MARK: - Body
+
+    /// The view's content.
+    var body: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(comparison.current)")
+                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .contentTransition(.numericText())
+                Text("CLOSED ISSUES")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .tracking(1.2)
+            }
+
+            Spacer()
+
+            HStack(spacing: 6) {
+                Image(systemName: trendIcon(comparison.trend))
+                    .font(.system(size: 18, weight: .bold))
+                    .symbolEffect(.bounce, value: comparison.trend)
+                Text(badgeText(comparison))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .contentTransition(.numericText())
+            }
+            .foregroundStyle(trendColor(comparison.trend))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(trendColor(comparison.trend).opacity(0.12), in: Capsule())
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 26))
+        .animation(.easeInOut(duration: 0.25), value: comparison.current)
+    }
+
+    // MARK: - Helpers
+
+    private func trendIcon(_ trend: VelocityComparison.Trend) -> String {
+        switch trend {
+        case .up:   return "arrow.up.right"
+        case .down: return "arrow.down.right"
+        case .flat: return "arrow.right"
+        }
+    }
+
+    private func trendColor(_ trend: VelocityComparison.Trend) -> Color {
+        switch trend {
+        case .up:   return .green
+        case .down: return .red
+        case .flat: return .gray
+        }
+    }
+
+    private func badgeText(_ c: VelocityComparison) -> String {
+        if let pct = c.percentChange {
+            return "\(Int(abs(pct.rounded())))%"
+        }
+        let sign = c.delta >= 0 ? "+" : ""
+        return "\(sign)\(c.delta)"
     }
 }
 

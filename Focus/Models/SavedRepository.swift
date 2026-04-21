@@ -112,6 +112,12 @@ final class SavedRepository {
     @Relationship(deleteRule: .cascade, inverse: \RepositoryVelocity.repository)
     var velocityMetrics: [RepositoryVelocity] = []
 
+    /// Issue velocity metrics for this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``IssueVelocity/repository``.
+    @Relationship(deleteRule: .cascade, inverse: \IssueVelocity.repository)
+    var issueVelocityMetrics: [IssueVelocity] = []
+
     /// Open pull requests for this repository.
     ///
     /// Cascade-deleted when the repository is removed. Inverse of ``OpenPullRequest/repository``.

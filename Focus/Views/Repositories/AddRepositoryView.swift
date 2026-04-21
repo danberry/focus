@@ -20,6 +20,9 @@ struct AddRepositoryView: View {
     /// The service used to sync velocity metrics.
     let velocityService: VelocityService
 
+    /// The service used to sync issue velocity metrics.
+    let issueVelocityService: IssueVelocityService
+
     /// The service used to sync open pull requests.
     let pullRequestService: PullRequestService
 
@@ -158,6 +161,7 @@ struct AddRepositoryView: View {
             await securityService.syncSecretScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await codeownersService.syncCodeowners(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await velocityService.syncVelocity(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await issueVelocityService.syncIssueVelocity(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await pullRequestService.syncOpenPullRequests(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
 
             dismiss()

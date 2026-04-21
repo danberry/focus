@@ -6,12 +6,12 @@ import SwiftData
 /// Orchestrates a full data sync for every saved repository.
 ///
 /// `SyncService` coordinates ``SecurityService``, ``CodeownersService``,
-/// ``VelocityService``, and ``PullRequestService``, then derives badge counts
-/// from the freshly written SwiftData relationships.
+/// ``VelocityService``, ``IssueVelocityService``, and ``PullRequestService``,
+/// then derives badge counts from the freshly written SwiftData relationships.
 ///
 /// Repositories are synced in parallel (up to ``maxConcurrentRepos`` at once).
-/// Within each repository all six sub-service calls are issued concurrently via
-/// `async let`. Network I/O for up to `maxConcurrentRepos × 6` requests runs in
+/// Within each repository all seven sub-service calls are issued concurrently via
+/// `async let`. Network I/O for up to `maxConcurrentRepos × 7` requests runs in
 /// parallel; all SwiftData writes are serialized on the main actor.
 ///
 /// All operations run on the main actor.
@@ -29,16 +29,20 @@ struct SyncService: Sendable {
     /// The service used to sync velocity metrics.
     private let velocityService: VelocityService
 
+    /// The service used to sync issue velocity metrics.
+    private let issueVelocityService: IssueVelocityService
+
     /// The service used to sync open pull requests.
     private let pullRequestService: PullRequestService
 
     // MARK: - Init
 
-    /// Creates a `SyncService` with the four domain services it coordinates.
-    init(securityService: SecurityService, codeownersService: CodeownersService, velocityService: VelocityService, pullRequestService: PullRequestService) {
+    /// Creates a `SyncService` with the five domain services it coordinates.
+    init(securityService: SecurityService, codeownersService: CodeownersService, velocityService: VelocityService, issueVelocityService: IssueVelocityService, pullRequestService: PullRequestService) {
         self.securityService = securityService
         self.codeownersService = codeownersService
         self.velocityService = velocityService
+        self.issueVelocityService = issueVelocityService
         self.pullRequestService = pullRequestService
     }
 
@@ -111,7 +115,7 @@ struct SyncService: Sendable {
 
     // MARK: - Private
 
-    /// Fires all six sub-service network fetches for a single repository concurrently.
+    /// Fires all seven sub-service network fetches for a single repository concurrently.
     ///
     /// This method is `nonisolated` so it can be called directly from `withTaskGroup`
     /// task closures without requiring a main-actor hop. All parameters and return values
@@ -122,17 +126,18 @@ struct SyncService: Sendable {
         async let secretScanningAlerts = securityService.fetchSecretScanningAlerts(owner: owner, repo: name)
         async let codeownersEntries = codeownersService.fetchEntries(owner: owner, repo: name)
         async let velocityData = velocityService.fetchVelocityData(owner: owner, repo: name)
+        async let issueVelocityData = issueVelocityService.fetchIssueVelocityData(owner: owner, repo: name)
         async let openPRs = pullRequestService.fetchOpenPRs(owner: owner, repo: name)
 
-        let (dep, cs, ss, co, vel, prs) = await (
+        let (dep, cs, ss, co, vel, ivel, prs) = await (
             dependabotAlerts, codeScanningAlerts, secretScanningAlerts,
-            codeownersEntries, velocityData, openPRs
+            codeownersEntries, velocityData, issueVelocityData, openPRs
         )
 
         return RepoSyncFetch(
             owner: owner, name: name,
             dependabotAlerts: dep, codeScanningAlerts: cs, secretScanningAlerts: ss,
-            codeownersEntries: co, velocityData: vel, openPRs: prs
+            codeownersEntries: co, velocityData: vel, issueVelocityData: ivel, openPRs: prs
         )
     }
 
@@ -143,6 +148,7 @@ struct SyncService: Sendable {
         securityService.applySecretScanningAlerts(fetch.secretScanningAlerts, to: repository, in: context)
         codeownersService.applyCodeowners(fetch.codeownersEntries, to: repository, in: context)
         velocityService.applyVelocityData(fetch.velocityData, to: repository, in: context)
+        issueVelocityService.applyIssueVelocityData(fetch.issueVelocityData, to: repository, in: context)
         pullRequestService.applyOpenPRs(fetch.openPRs, to: repository, in: context)
 
         // Derive badge counts from the freshly synced relationship arrays.
@@ -166,5 +172,6 @@ private struct RepoSyncFetch: Sendable {
     let secretScanningAlerts: [SecretScanningAlertResponse]?
     let codeownersEntries: [(pattern: String, handle: String)]
     let velocityData: VelocityFetchResult?
+    let issueVelocityData: IssueVelocityFetchResult?
     let openPRs: [OpenPRData]?
 }
