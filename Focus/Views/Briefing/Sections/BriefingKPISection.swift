@@ -87,6 +87,12 @@ struct BriefingKPISection: View {
 
                     TimeToFirstReviewKPICardView(timeToFirstReview: t2fr)
                 }
+
+                if let hotfix = kpis.hotfixRate {
+                    divider
+
+                    HotfixRateKPICardView(hotfixRate: hotfix)
+                }
             }
         }
     }

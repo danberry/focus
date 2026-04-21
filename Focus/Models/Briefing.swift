@@ -103,7 +103,8 @@ struct Briefing: Sendable {
             activeContributors: BriefingKPIActiveContributors(value: 28, totalTracked: 34, priorWeekValue: 25),
             mergeRate: BriefingKPIMergeRate(value: 87, merged: 73, opened: 84, priorWeekValue: 79),
             stalePRCount: BriefingKPIStalePRCount(value: 5, oldestAgeDays: 23, priorWeekValue: 4),
-            timeToFirstReview: BriefingKPITimeToFirstReview(value: 6, dailyMedians: [8, 5, 6, 9, 4, 7, 6], priorWeekValue: 10)
+            timeToFirstReview: BriefingKPITimeToFirstReview(value: 6, dailyMedians: [8, 5, 6, 9, 4, 7, 6], priorWeekValue: 10),
+            hotfixRate: BriefingKPIHotfixRate(value: 11, hotfixCount: 8, totalMerged: 73, priorWeekValue: 15)
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -248,6 +249,9 @@ struct BriefingKPIs: Sendable {
 
     /// Median time from PR open to first review submission, or `nil` if no PRs received a review this week.
     let timeToFirstReview: BriefingKPITimeToFirstReview?
+
+    /// Hotfix rate: percentage of merged PRs identified as hotfixes, or `nil` if no PRs were merged.
+    let hotfixRate: BriefingKPIHotfixRate?
 }
 
 // MARK: - BriefingKPIShipping
@@ -409,6 +413,27 @@ struct BriefingKPITimeToFirstReview: Sendable {
     let dailyMedians: [Int]
 
     /// Same metric for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPIHotfixRate
+
+/// Hotfix Rate KPI (percentage of merged PRs identified as hotfixes for the week).
+///
+/// Hotfixes are detected by title prefix: `"hotfix:"`, `"[hotfix]"`, or `"hotfix/"` (case-insensitive).
+/// Lower is better — a high hotfix rate signals reactive rather than planned work.
+struct BriefingKPIHotfixRate: Sendable {
+
+    /// Percentage of merged PRs that are hotfixes this week (0–100).
+    let value: Int
+
+    /// Number of merged PRs identified as hotfixes this week.
+    let hotfixCount: Int
+
+    /// Total merged PRs this week (denominator used to compute `value`).
+    let totalMerged: Int
+
+    /// Same percentage for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 

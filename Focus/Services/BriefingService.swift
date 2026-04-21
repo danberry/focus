@@ -163,6 +163,10 @@ struct BriefingService: Sendable {
             medianFirstReviewHours: metrics.medianFirstReviewHours,
             dailyFirstReviewMedians: metrics.dailyFirstReviewMedians,
             priorMedianFirstReviewHours: priorMetrics.medianFirstReviewHours,
+            hotfixCount: metrics.hotfixCount,
+            totalMerged: metrics.totalMerged,
+            priorHotfixCount: priorMetrics.hotfixCount,
+            priorTotalMerged: priorMetrics.totalMerged,
             medianPRSize: metrics.medianPRSize,
             dailyPRSizeMedians: metrics.dailyPRSizeMedians,
             priorMedianPRSize: priorMetrics.medianPRSize,
@@ -518,13 +522,13 @@ struct BriefingService: Sendable {
     private func fetchMergedPRMetrics(
         repoKeys: [(owner: String, name: String)],
         interval: DateInterval
-    ) async -> (medianHours: Int?, dailyCounts: [Int], medianPRSize: Int?, dailyPRSizeMedians: [Int], dailyCycleTimeMedians: [Int], medianFirstReviewHours: Int?, dailyFirstReviewMedians: [Int]) {
+    ) async -> (medianHours: Int?, dailyCounts: [Int], medianPRSize: Int?, dailyPRSizeMedians: [Int], dailyCycleTimeMedians: [Int], medianFirstReviewHours: Int?, dailyFirstReviewMedians: [Int], hotfixCount: Int, totalMerged: Int) {
         let zeros7 = [Int](repeating: 0, count: 7)
-        guard !repoKeys.isEmpty else { return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7) }
+        guard !repoKeys.isEmpty else { return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0) }
         let service = MergedPRReportService(graphQL: graphQL)
         let endDate = interval.end.addingTimeInterval(-1)
         guard let prsByRepo = try? await service.fetchMergedPRs(for: repoKeys, from: interval.start, to: endDate) else {
-            return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7)
+            return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0)
         }
         let medianHours = computeMedianMergeHours(from: prsByRepo)
         let dailyCounts = computeDailyCounts(from: prsByRepo, interval: interval)
@@ -533,7 +537,9 @@ struct BriefingService: Sendable {
         let dailyCycleTimeMedians = computeDailyCycleTimeMedians(from: prsByRepo, interval: interval)
         let medianFirstReviewHours = computeMedianFirstReviewHours(from: prsByRepo)
         let dailyFirstReviewMedians = computeDailyFirstReviewMedians(from: prsByRepo, interval: interval)
-        return (medianHours, dailyCounts, medianPRSize, dailyPRSizeMedians, dailyCycleTimeMedians, medianFirstReviewHours, dailyFirstReviewMedians)
+        let hotfixCount = computeHotfixCount(from: prsByRepo)
+        let totalMerged = prsByRepo.values.reduce(0) { $0 + $1.count }
+        return (medianHours, dailyCounts, medianPRSize, dailyPRSizeMedians, dailyCycleTimeMedians, medianFirstReviewHours, dailyFirstReviewMedians, hotfixCount, totalMerged)
     }
 
     /// Computes the median open-to-merge cycle time in whole hours from a repo-keyed PR dictionary.
@@ -648,6 +654,16 @@ struct BriefingService: Sendable {
             let median = sorted.count % 2 == 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
             return Int(median.rounded())
         }
+    }
+
+    /// Returns the count of merged PRs whose title matches a hotfix naming convention.
+    ///
+    /// Matches (case-insensitive): titles prefixed with `"hotfix:"`, `"[hotfix]"`, or `"hotfix/"`.
+    private func computeHotfixCount(from prsByRepo: [String: [MergedPR]]) -> Int {
+        prsByRepo.values.flatMap { $0 }.filter { pr in
+            let lower = pr.title.lowercased()
+            return lower.hasPrefix("hotfix:") || lower.hasPrefix("[hotfix]") || lower.hasPrefix("hotfix/")
+        }.count
     }
 
     /// Computes the overall median lines-changed per PR for the week.
@@ -816,6 +832,10 @@ struct BriefingService: Sendable {
         medianFirstReviewHours: Int?,
         dailyFirstReviewMedians: [Int],
         priorMedianFirstReviewHours: Int?,
+        hotfixCount: Int,
+        totalMerged: Int,
+        priorHotfixCount: Int,
+        priorTotalMerged: Int,
         medianPRSize: Int?,
         dailyPRSizeMedians: [Int],
         priorMedianPRSize: Int?,
@@ -876,6 +896,15 @@ struct BriefingService: Sendable {
             oldestAgeDays: oldestStalePRAgeDays,
             priorWeekValue: priorStalePRCount
         ) : nil
+
+        // MARK: Hotfix Rate
+        let hotfixRate: BriefingKPIHotfixRate? = totalMerged > 0 ? {
+            let pct = Int((Double(hotfixCount) / Double(totalMerged) * 100).rounded())
+            let priorPct: Int? = priorTotalMerged > 0
+                ? Int((Double(priorHotfixCount) / Double(priorTotalMerged) * 100).rounded())
+                : nil
+            return BriefingKPIHotfixRate(value: pct, hotfixCount: hotfixCount, totalMerged: totalMerged, priorWeekValue: priorPct)
+        }() : nil
 
         // MARK: Security
         let securityTotal = repositories.reduce(0) { $0 + $1.totalSecurityAlerts }
@@ -1259,7 +1288,8 @@ struct BriefingService: Sendable {
                     : nil,
                 mergeRate: mergeRate,
                 stalePRCount: stalePRCount,
-                timeToFirstReview: timeToFirstReview
+                timeToFirstReview: timeToFirstReview,
+                hotfixRate: hotfixRate
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,
