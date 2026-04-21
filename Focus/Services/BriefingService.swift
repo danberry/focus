@@ -160,6 +160,9 @@ struct BriefingService: Sendable {
             medianMergeHours: metrics.medianHours,
             dailyCycleTimeMedians: metrics.dailyCycleTimeMedians,
             priorMedianMergeHours: priorMetrics.medianHours,
+            medianFirstReviewHours: metrics.medianFirstReviewHours,
+            dailyFirstReviewMedians: metrics.dailyFirstReviewMedians,
+            priorMedianFirstReviewHours: priorMetrics.medianFirstReviewHours,
             medianPRSize: metrics.medianPRSize,
             dailyPRSizeMedians: metrics.dailyPRSizeMedians,
             priorMedianPRSize: priorMetrics.medianPRSize,
@@ -515,19 +518,22 @@ struct BriefingService: Sendable {
     private func fetchMergedPRMetrics(
         repoKeys: [(owner: String, name: String)],
         interval: DateInterval
-    ) async -> (medianHours: Int?, dailyCounts: [Int], medianPRSize: Int?, dailyPRSizeMedians: [Int], dailyCycleTimeMedians: [Int]) {
-        guard !repoKeys.isEmpty else { return (nil, [Int](repeating: 0, count: 7), nil, [Int](repeating: 0, count: 7), [Int](repeating: 0, count: 7)) }
+    ) async -> (medianHours: Int?, dailyCounts: [Int], medianPRSize: Int?, dailyPRSizeMedians: [Int], dailyCycleTimeMedians: [Int], medianFirstReviewHours: Int?, dailyFirstReviewMedians: [Int]) {
+        let zeros7 = [Int](repeating: 0, count: 7)
+        guard !repoKeys.isEmpty else { return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7) }
         let service = MergedPRReportService(graphQL: graphQL)
         let endDate = interval.end.addingTimeInterval(-1)
         guard let prsByRepo = try? await service.fetchMergedPRs(for: repoKeys, from: interval.start, to: endDate) else {
-            return (nil, [Int](repeating: 0, count: 7), nil, [Int](repeating: 0, count: 7), [Int](repeating: 0, count: 7))
+            return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7)
         }
         let medianHours = computeMedianMergeHours(from: prsByRepo)
         let dailyCounts = computeDailyCounts(from: prsByRepo, interval: interval)
         let medianPRSize = computeMedianPRSize(from: prsByRepo)
         let dailyPRSizeMedians = computeDailyPRSizeMedians(from: prsByRepo, interval: interval)
         let dailyCycleTimeMedians = computeDailyCycleTimeMedians(from: prsByRepo, interval: interval)
-        return (medianHours, dailyCounts, medianPRSize, dailyPRSizeMedians, dailyCycleTimeMedians)
+        let medianFirstReviewHours = computeMedianFirstReviewHours(from: prsByRepo)
+        let dailyFirstReviewMedians = computeDailyFirstReviewMedians(from: prsByRepo, interval: interval)
+        return (medianHours, dailyCounts, medianPRSize, dailyPRSizeMedians, dailyCycleTimeMedians, medianFirstReviewHours, dailyFirstReviewMedians)
     }
 
     /// Computes the median open-to-merge cycle time in whole hours from a repo-keyed PR dictionary.
@@ -599,6 +605,48 @@ struct BriefingService: Sendable {
             let sorted = sizes.sorted()
             let mid = sorted.count / 2
             return sorted.count % 2 == 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+        }
+    }
+
+    /// Computes the median time from PR open to first review in whole hours.
+    ///
+    /// Only PRs that received at least one review are included. Returns `nil` when no reviewed PRs exist.
+    private func computeMedianFirstReviewHours(from prsByRepo: [String: [MergedPR]]) -> Int? {
+        let times: [Double] = prsByRepo.values.flatMap { $0 }.compactMap { pr in
+            guard let reviewAt = pr.firstReviewAt else { return nil }
+            let hours = reviewAt.timeIntervalSince(pr.createdAt) / 3600
+            return hours >= 0 ? hours : nil
+        }
+        guard !times.isEmpty else { return nil }
+        let sorted = times.sorted()
+        let mid = sorted.count / 2
+        let median = sorted.count % 2 == 0
+            ? (sorted[mid - 1] + sorted[mid]) / 2
+            : sorted[mid]
+        return Int(median.rounded())
+    }
+
+    /// Returns a 7-element array of median time-to-first-review hours per day (Mon=0…Sun=6).
+    /// Bucketed by the PR's merge date. Days with no reviewed PRs produce 0.
+    private func computeDailyFirstReviewMedians(from prsByRepo: [String: [MergedPR]], interval: DateInterval) -> [Int] {
+        var buckets: [[Double]] = Array(repeating: [], count: 7)
+        let cal = Calendar.current
+        let weekStart = cal.startOfDay(for: interval.start)
+        for pr in prsByRepo.values.flatMap({ $0 }) {
+            guard let reviewAt = pr.firstReviewAt else { continue }
+            let hours = reviewAt.timeIntervalSince(pr.createdAt) / 3600
+            guard hours >= 0 else { continue }
+            let dayIndex = cal.dateComponents([.day], from: weekStart, to: pr.mergedAt).day ?? -1
+            if dayIndex >= 0 && dayIndex < 7 {
+                buckets[dayIndex].append(hours)
+            }
+        }
+        return buckets.map { times in
+            guard !times.isEmpty else { return 0 }
+            let sorted = times.sorted()
+            let mid = sorted.count / 2
+            let median = sorted.count % 2 == 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+            return Int(median.rounded())
         }
     }
 
@@ -765,6 +813,9 @@ struct BriefingService: Sendable {
         medianMergeHours: Int?,
         dailyCycleTimeMedians: [Int],
         priorMedianMergeHours: Int?,
+        medianFirstReviewHours: Int?,
+        dailyFirstReviewMedians: [Int],
+        priorMedianFirstReviewHours: Int?,
         medianPRSize: Int?,
         dailyPRSizeMedians: [Int],
         priorMedianPRSize: Int?,
@@ -788,6 +839,11 @@ struct BriefingService: Sendable {
 
         // MARK: Shipping
         let shippingTotal = prCounts.values.reduce(0, +)
+
+        // MARK: Time to First Review
+        let timeToFirstReview: BriefingKPITimeToFirstReview? = medianFirstReviewHours.map {
+            BriefingKPITimeToFirstReview(value: $0, dailyMedians: dailyFirstReviewMedians, priorWeekValue: priorMedianFirstReviewHours)
+        }
 
         // MARK: Merge Rate
         let mergeRate: BriefingKPIMergeRate? = openedPRTotal > 0 ? {
@@ -1202,7 +1258,8 @@ struct BriefingService: Sendable {
                     ? BriefingKPIActiveContributors(value: activeContributorCount, totalTracked: totalTracked, priorWeekValue: priorActiveCount)
                     : nil,
                 mergeRate: mergeRate,
-                stalePRCount: stalePRCount
+                stalePRCount: stalePRCount,
+                timeToFirstReview: timeToFirstReview
             ),
             shipped: BriefingShipped(
                 verdict: shippedVerdict,

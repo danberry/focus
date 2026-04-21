@@ -81,6 +81,12 @@ struct BriefingKPISection: View {
 
                     StalePRCountKPICardView(stalePRCount: stale)
                 }
+
+                if let t2fr = kpis.timeToFirstReview {
+                    divider
+
+                    TimeToFirstReviewKPICardView(timeToFirstReview: t2fr)
+                }
             }
         }
     }

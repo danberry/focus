@@ -70,4 +70,36 @@ struct BriefingTests {
         let kpi = BriefingKPIMedianMerge(value: 48, dailyMedians: [], priorWeekValue: nil)
         #expect(kpi.value / 24 == 2)
     }
+
+    // MARK: - Time to First Review KPI
+
+    /// Verifies that the placeholder includes a non-nil time-to-first-review KPI.
+    @Test func placeholderTimeToFirstReviewIsNonNil() {
+        #expect(Briefing.placeholder.kpis.timeToFirstReview != nil)
+    }
+
+    /// Verifies that the placeholder time-to-first-review daily medians contain exactly seven values.
+    @Test func placeholderTimeToFirstReviewDailyMediansHasSevenValues() throws {
+        let t2fr = try #require(Briefing.placeholder.kpis.timeToFirstReview)
+        #expect(t2fr.dailyMedians.count == 7)
+    }
+
+    /// Verifies that a sub-24h time-to-first-review value is stored as hours.
+    @Test func timeToFirstReviewValueBelow24IsHours() {
+        let kpi = BriefingKPITimeToFirstReview(value: 6, dailyMedians: [], priorWeekValue: nil)
+        #expect(kpi.value < 24)
+    }
+
+    /// Verifies that a 48h time-to-first-review value divides to 2 days.
+    @Test func timeToFirstReview48hIsTwoDays() {
+        let kpi = BriefingKPITimeToFirstReview(value: 48, dailyMedians: [], priorWeekValue: nil)
+        #expect(kpi.value / 24 == 2)
+    }
+
+    /// Verifies that a lower time-to-first-review vs. prior week is an improvement (smaller is better).
+    @Test func timeToFirstReviewImprovementWhenValueLowerThanPrior() {
+        let kpi = BriefingKPITimeToFirstReview(value: 6, dailyMedians: [], priorWeekValue: 10)
+        let prior = try? #require(kpi.priorWeekValue)
+        #expect((prior ?? 0) > kpi.value)
+    }
 }
