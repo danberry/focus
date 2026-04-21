@@ -91,11 +91,14 @@ struct BriefingService: Sendable {
         )
         let criticalAlerts = (try? context.fetch(criticalDescriptor)) ?? []
 
-        // Collect createdAt dates from all three alert types for the security sparkline.
-        let dependabotDates = (try? context.fetch(FetchDescriptor<DependabotAlert>()))?.map(\.createdAt) ?? []
-        let codeScanningDates = (try? context.fetch(FetchDescriptor<CodeScanningAlert>()))?.map(\.createdAt) ?? []
-        let secretScanningDates = (try? context.fetch(FetchDescriptor<SecretScanningAlert>()))?.map(\.createdAt) ?? []
-        let allAlertDates = dependabotDates + codeScanningDates + secretScanningDates
+        // Fetch the full alert sets once; they're reused for the sparkline,
+        // the security insight generator, and the per-repo rollups.
+        let allDependabotAlerts = (try? context.fetch(FetchDescriptor<DependabotAlert>())) ?? []
+        let allCodeScanningAlerts = (try? context.fetch(FetchDescriptor<CodeScanningAlert>())) ?? []
+        let allSecretAlerts = (try? context.fetch(FetchDescriptor<SecretScanningAlert>())) ?? []
+        let allAlertDates = allDependabotAlerts.map(\.createdAt)
+            + allCodeScanningAlerts.map(\.createdAt)
+            + allSecretAlerts.map(\.createdAt)
 
         return assemble(
             weekInterval: weekInterval,
@@ -111,6 +114,9 @@ struct BriefingService: Sendable {
             releaseCount: releaseCount,
             priorReleaseCount: priorReleaseCount,
             criticalAlerts: criticalAlerts,
+            allDependabotAlerts: allDependabotAlerts,
+            allCodeScanningAlerts: allCodeScanningAlerts,
+            allSecretAlerts: allSecretAlerts,
             allAlertDates: allAlertDates,
             members: scopedMembers
         )
@@ -482,6 +488,9 @@ struct BriefingService: Sendable {
         releaseCount: Int?,
         priorReleaseCount: Int?,
         criticalAlerts: [DependabotAlert],
+        allDependabotAlerts: [DependabotAlert],
+        allCodeScanningAlerts: [CodeScanningAlert],
+        allSecretAlerts: [SecretScanningAlert],
         allAlertDates: [Date],
         members: [Member]
     ) -> Briefing {
@@ -604,29 +613,96 @@ struct BriefingService: Sendable {
         }
 
         // MARK: Attention items — §01 security, §02 idle, §03 shipping
-        var criticalPerRepo: [(repo: SavedRepository, critical: Int)] = []
-        for repo in repositories {
-            let count = criticalAlerts.filter { $0.repository?.githubId == repo.githubId }.count
-            criticalPerRepo.append((repo, count))
+
+        // Assemble the security input snapshot for the insight engine. Alert ages
+        // are computed relative to the week-end so that "days open" is stable
+        // regardless of when the briefing is rendered.
+        let ageReference = weekInterval.end
+        let cal2 = Calendar.current
+        func days(between start: Date, and end: Date) -> Int {
+            cal2.dateComponents([.day], from: start, to: end).day ?? 0
         }
-        let repoByMostCritical = criticalPerRepo.max { $0.critical < $1.critical }
+
+        let dependabotSummaries: [DependabotAlertSummary] = allDependabotAlerts.map { alert in
+            let repoName = alert.repository?.displayName ?? alert.repository?.name ?? "—"
+            return DependabotAlertSummary(
+                repoName: repoName,
+                severity: alert.severity,
+                ecosystem: alert.ecosystem,
+                packageName: alert.packageName,
+                ghsaId: alert.ghsaId,
+                cvssScore: alert.cvssScore,
+                ageInDays: days(between: alert.createdAt, and: ageReference),
+                hasAssignee: !alert.assignedLogins.isEmpty,
+                fixAvailable: alert.fixVersion != nil
+            )
+        }
+
+        let codeScanningAlertSummaries: [CodeScanningAlertSummary] = allCodeScanningAlerts.map { alert in
+            let repoName = alert.repository?.displayName ?? alert.repository?.name ?? "—"
+            return CodeScanningAlertSummary(
+                repoName: repoName,
+                ruleId: alert.ruleId,
+                ruleName: alert.ruleName,
+                severity: alert.securitySeverityLevel,
+                ageInDays: days(between: alert.createdAt, and: ageReference)
+            )
+        }
+
+        let secretAlertSummaries: [SecretAlertSummary] = allSecretAlerts.map { alert in
+            let repoName = alert.repository?.displayName ?? alert.repository?.name ?? "—"
+            return SecretAlertSummary(
+                repoName: repoName,
+                secretTypeDisplayName: alert.secretTypeDisplayName,
+                validity: alert.validity,
+                publiclyLeaked: alert.publiclyLeaked,
+                pushProtectionBypassed: alert.pushProtectionBypassed,
+                multiRepo: alert.multiRepo
+            )
+        }
+
+        let repoDetails: [SecurityRepoDetail] = repositories.map { repo in
+            let repoCriticals = criticalAlerts.filter { $0.repository?.githubId == repo.githubId }
+            let oldestAge = repoCriticals
+                .map { days(between: $0.createdAt, and: ageReference) }
+                .max()
+            return SecurityRepoDetail(
+                repoName: repo.displayName,
+                openAlerts: repo.totalSecurityAlerts,
+                criticalCount: repoCriticals.count,
+                oldestCriticalAgeInDays: oldestAge
+            )
+        }
+
+        let securityInput = SecurityInsightInput(
+            weekInterval: weekInterval,
+            dependabotSummaries: dependabotSummaries,
+            codeScanningAlerts: codeScanningAlertSummaries,
+            secretAlerts: secretAlertSummaries,
+            repoDetails: repoDetails,
+            currentWeekTotals: nil,
+            priorWeekTotals: nil,
+            weekHistory: []
+        )
 
         let attention01: BriefingAttentionItem = {
-            if let top = repoByMostCritical, top.critical > 0 {
+            if let top = SecurityInsightGenerator.default.topInsight(securityInput) {
                 return BriefingAttentionItem(
                     n: "1",
-                    tone: .red,
-                    title: "\(top.critical) critical alerts open in \(top.repo.name).",
-                    meta: "Escalate to security review",
-                    actionLabel: "Open alerts →"
+                    tone: top.tone,
+                    title: top.briefingInsight.title,
+                    meta: top.briefingInsight.meta,
+                    actionLabel: top.briefingInsight.actionLabel,
+                    insight: top.briefingInsight
                 )
             }
             return BriefingAttentionItem(
                 n: "1",
                 tone: .neutral,
-                title: "No critical security alerts this week.",
+                title: "No security alerts this week.",
                 meta: "All tracked repos clear",
-                actionLabel: "See security →"
+                actionLabel: "See security →",
+                insight: nil
             )
         }()
 
@@ -643,7 +719,8 @@ struct BriefingService: Sendable {
                         tone: .red,
                         title: "**\(only.name)** may not have GitHub linked.",
                         meta: "\(only.team) — no contributions on record",
-                        actionLabel: "DM \(firstName) →"
+                        actionLabel: "DM \(firstName) →",
+                        insight: nil
                     )
                 }
                 return BriefingAttentionItem(
@@ -651,7 +728,8 @@ struct BriefingService: Sendable {
                     tone: .red,
                     title: "**\(unlinked.count) members** may not have GitHub linked.",
                     meta: "No contributions detected — check account connections",
-                    actionLabel: "Review members →"
+                    actionLabel: "Review members →",
+                    insight: nil
                 )
             }
 
@@ -666,7 +744,8 @@ struct BriefingService: Sendable {
                     tone: .blue,
                     title: "**\(idle.count) members** haven't shipped this week.",
                     meta: "Longest idle: \(longestDesc)",
-                    actionLabel: "View team →"
+                    actionLabel: "View team →",
+                    insight: nil
                 )
             }
 
@@ -678,7 +757,8 @@ struct BriefingService: Sendable {
                     tone: .blue,
                     title: "\(first.name) idle \(first.idleLabel).",
                     meta: "\(first.team) team",
-                    actionLabel: "DM \(firstName) →"
+                    actionLabel: "DM \(firstName) →",
+                    insight: nil
                 )
             }
 
@@ -687,7 +767,8 @@ struct BriefingService: Sendable {
                 tone: .neutral,
                 title: "Every tracked member shipped this week.",
                 meta: "No idle members detected",
-                actionLabel: "See team →"
+                actionLabel: "See team →",
+                insight: nil
             )
         }()
 
@@ -698,7 +779,8 @@ struct BriefingService: Sendable {
                     tone: .neutral,
                     title: "Only \(low.count) PRs merged in \(low.name).",
                     meta: "Lowest volume of the week",
-                    actionLabel: "See repo →"
+                    actionLabel: "See repo →",
+                    insight: nil
                 )
             }
             return BriefingAttentionItem(
@@ -706,7 +788,8 @@ struct BriefingService: Sendable {
                 tone: .neutral,
                 title: "\(shippingTotal) PRs merged this week.",
                 meta: "Across \(repositories.count) tracked repos",
-                actionLabel: "See all →"
+                actionLabel: "See all →",
+                insight: nil
             )
         }()
 
