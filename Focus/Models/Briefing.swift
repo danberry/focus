@@ -101,7 +101,8 @@ struct Briefing: Sendable {
             releases: nil,
             prSize: nil,
             activeContributors: BriefingKPIActiveContributors(value: 28, totalTracked: 34, priorWeekValue: 25),
-            mergeRate: BriefingKPIMergeRate(value: 87, merged: 73, opened: 84, priorWeekValue: 79)
+            mergeRate: BriefingKPIMergeRate(value: 87, merged: 73, opened: 84, priorWeekValue: 79),
+            timeToFirstReview: BriefingKPITimeToFirstReview(value: 6, dailyMedians: [8, 5, 6, 9, 4, 7, 6], priorWeekValue: 10)
         ),
         shipped: BriefingShipped(
             verdict: "`payments-api` led the week with 24 merges.",
@@ -240,6 +241,9 @@ struct BriefingKPIs: Sendable {
 
     /// Merge rate: percentage of PRs opened this week that were merged this week, or `nil` if not tracked.
     let mergeRate: BriefingKPIMergeRate?
+
+    /// Median time from PR open to first review submission, or `nil` if no PRs received a review this week.
+    let timeToFirstReview: BriefingKPITimeToFirstReview?
 }
 
 // MARK: - BriefingKPIShipping
@@ -371,6 +375,21 @@ struct BriefingKPIMergeRate: Sendable {
     let opened: Int
 
     /// Same percentage for the prior week, used to compute week-over-week delta.
+    let priorWeekValue: Int?
+}
+
+// MARK: - BriefingKPITimeToFirstReview
+
+/// Time to First Review KPI (median hours from PR open to first review, with a 7-day sparkline).
+struct BriefingKPITimeToFirstReview: Sendable {
+
+    /// Median hours from PR open to first review submission this week.
+    let value: Int
+
+    /// Median time-to-first-review hours per day for the 7-day report period, ordered oldest to newest.
+    let dailyMedians: [Int]
+
+    /// Same metric for the prior week, used to compute week-over-week delta.
     let priorWeekValue: Int?
 }
 

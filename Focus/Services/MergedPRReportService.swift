@@ -151,6 +151,8 @@ struct MergedPRReportService: Sendable {
                 let repoName = node.repository?.nameWithOwner
             else { continue }
 
+            let firstReviewAt = node.reviews?.nodes.first?.submittedAt.flatMap { iso.date(from: $0) }
+
             let pr = MergedPR(
                 number: number,
                 title: title,
@@ -160,7 +162,8 @@ struct MergedPRReportService: Sendable {
                 url: url,
                 repoNameWithOwner: repoName,
                 additions: node.additions ?? 0,
-                deletions: node.deletions ?? 0
+                deletions: node.deletions ?? 0,
+                firstReviewAt: firstReviewAt
             )
             result[repoName, default: []].append(pr)
         }
@@ -240,6 +243,23 @@ private struct SearchResponse: Decodable, Sendable {
 
         /// The number of lines deleted by this pull request.
         let deletions: Int?
+
+        /// The first review submitted on this pull request, or `nil` if none.
+        let reviews: ReviewConnection?
+
+        /// A connection containing the first review submitted on a pull request.
+        struct ReviewConnection: Decodable, Sendable {
+
+            /// The review nodes returned by the connection (at most one, per the query's `first: 1`).
+            let nodes: [ReviewNode]
+
+            /// A single pull request review node.
+            struct ReviewNode: Decodable, Sendable {
+
+                /// The ISO 8601 timestamp when this review was submitted.
+                let submittedAt: String?
+            }
+        }
 
         /// The GitHub user who authored a pull request.
         struct Author: Decodable, Sendable {

@@ -75,6 +75,12 @@ struct BriefingKPISection: View {
 
                     MergeRateKPICardView(mergeRate: mr)
                 }
+
+                if let t2fr = kpis.timeToFirstReview {
+                    divider
+
+                    TimeToFirstReviewKPICardView(timeToFirstReview: t2fr)
+                }
             }
         }
     }

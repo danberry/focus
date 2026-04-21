@@ -33,6 +33,11 @@ enum ReportQueries {
                         repository { nameWithOwner }
                         additions
                         deletions
+                        reviews(first: 1) {
+                            nodes {
+                                submittedAt
+                            }
+                        }
                     }
                 }
             }

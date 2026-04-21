@@ -34,6 +34,9 @@ struct MergedPR: Identifiable, Sendable {
     /// The number of lines deleted by this pull request.
     let deletions: Int
 
+    /// The date and time the first review was submitted, or `nil` if no review has been submitted.
+    let firstReviewAt: Date?
+
     // MARK: - Computed
 
     /// A stable identifier combining the repository name and pull request number.
