@@ -79,6 +79,10 @@ struct BriefingService: Sendable {
         // Snapshot Sendable (owner, repo) pairs for the non-isolated fetch fan-out.
         let repoKeys: [(owner: String, name: String)] = scopedRepos.map { ($0.owner, $0.name) }
 
+        // Snapshot open PR creation dates as value types before the first await — applyOpenPRs()
+        // can delete OpenPullRequest objects at any suspension point, invalidating live references.
+        let openPRCreatedDates: [Date] = scopedRepos.flatMap { $0.openPullRequests.map(\.createdAt) }
+
         var cal = Calendar.current
         cal.firstWeekday = 1
         let priorWeekStart = weekInterval.start.addingTimeInterval(-1)
@@ -199,6 +203,7 @@ struct BriefingService: Sendable {
             allSecretAlerts: allSecretAlerts,
             allAlertDates: allAlertDates,
             members: scopedMembers,
+            openPRCreatedDates: openPRCreatedDates,
             currentWeekTotals: currentWeekTotals,
             priorWeekTotals: priorWeekTotals,
             weekHistory: weekHistory
@@ -970,6 +975,7 @@ struct BriefingService: Sendable {
         allSecretAlerts: [SecretScanningAlert],
         allAlertDates: [Date],
         members: [Member],
+        openPRCreatedDates: [Date],
         currentWeekTotals: SecurityWeekTotals?,
         priorWeekTotals: SecurityWeekTotals?,
         weekHistory: [SecurityWeekTotals]
@@ -1004,9 +1010,8 @@ struct BriefingService: Sendable {
 
         // MARK: Stale PRs
         let stalePRThresholdDays = 14
-        let allOpenPRs = repositories.flatMap { $0.openPullRequests }
         let staleDate = weekInterval.end.addingTimeInterval(-Double(stalePRThresholdDays) * 86_400)
-        let stalePRs = allOpenPRs.filter { $0.createdAt < staleDate }
+        let staleDates = openPRCreatedDates.filter { $0 < staleDate }
         let priorStaleDate: Date = {
             var cal = Calendar.current
             cal.firstWeekday = 1
@@ -1015,12 +1020,12 @@ struct BriefingService: Sendable {
             }
             return staleDate
         }()
-        let priorStalePRCount = allOpenPRs.filter { $0.createdAt < priorStaleDate }.count
-        let oldestStalePRAgeDays: Int? = stalePRs
-            .map { Calendar.current.dateComponents([.day], from: $0.createdAt, to: weekInterval.end).day ?? 0 }
+        let priorStalePRCount = openPRCreatedDates.filter { $0 < priorStaleDate }.count
+        let oldestStalePRAgeDays: Int? = staleDates
+            .map { Calendar.current.dateComponents([.day], from: $0, to: weekInterval.end).day ?? 0 }
             .max()
-        let stalePRCount: BriefingKPIStalePRCount? = !allOpenPRs.isEmpty ? BriefingKPIStalePRCount(
-            value: stalePRs.count,
+        let stalePRCount: BriefingKPIStalePRCount? = !openPRCreatedDates.isEmpty ? BriefingKPIStalePRCount(
+            value: staleDates.count,
             oldestAgeDays: oldestStalePRAgeDays,
             priorWeekValue: priorStalePRCount
         ) : nil
