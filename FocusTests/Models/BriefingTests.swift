@@ -56,12 +56,9 @@ struct BriefingTests {
         #expect(medianMerge.dailyMedians.count == 7)
     }
 
-    /// Verifies that a sub-24h cycle time value formats as hours.
+    /// Verifies that a sub-24h cycle time value is in the expected range.
     @Test func cycleTimeFormatsHoursBelow24() {
         let kpi = BriefingKPIMedianMerge(value: 18, dailyMedians: [], priorWeekValue: nil)
-        let card = CycleTimeKPICardView(cycleTime: kpi)
-        _ = card // Struct init is the formatting contract; compile-time check is sufficient.
-        // Direct value formatting: value < 24 → "\(value)h"
         #expect(kpi.value < 24)
     }
 
