@@ -90,23 +90,33 @@ struct BriefingService: Sendable {
             .map { githubDateRange(for: $0) } ?? ""
 
         let priorWeekInterval = cal.dateInterval(of: .weekOfYear, for: priorWeekStart) ?? weekInterval
+        let displayNames: [String] = scopedRepos.map(\.displayName)
         async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
         async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
-        async let releasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: weekInterval.start)
-        async let priorReleasesFetch = fetchReleaseCount(repoKeys: repoKeys, since: priorWeekStart, until: weekInterval.start)
-        async let priorPRCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: priorGhRange)
         async let priorMetricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: priorWeekInterval)
         async let ciPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: ghRange)
         async let priorCIPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: priorGhRange)
-        async let openedPRCountsFetch = fetchAllOpenedPRCounts(repoKeys: repoKeys, range: ghRange)
-        async let priorOpenedPRCountsFetch = fetchAllOpenedPRCounts(repoKeys: repoKeys, range: priorGhRange)
-        async let openedIssueCountsFetch = fetchAllOpenedIssueCounts(repoKeys: repoKeys, range: ghRange)
-        async let closedIssueCountsFetch = fetchAllClosedIssueCounts(repoKeys: repoKeys, range: ghRange)
-        async let priorClosedIssueCountsFetch = fetchAllClosedIssueCounts(repoKeys: repoKeys, range: priorGhRange)
-        let (prCounts, metrics, releaseCount, priorReleaseCount, priorPRCounts, priorMetrics, ciPassPct, priorCIPassPct, openedPRCounts, priorOpenedPRCounts) = await (prCountsFetch, metricsFetch, releasesFetch, priorReleasesFetch, priorPRCountsFetch, priorMetricsFetch, ciPassFetch, priorCIPassFetch, openedPRCountsFetch, priorOpenedPRCountsFetch)
-        let openedIssueCounts = await openedIssueCountsFetch
-        let closedIssueCounts = await closedIssueCountsFetch
-        let priorClosedIssueCounts = await priorClosedIssueCountsFetch
+        async let releaseCountsFetch = fetchBatchedReleaseCounts(repoKeys: repoKeys, since: weekInterval.start, until: weekInterval.end, priorSince: priorWeekStart, priorUntil: weekInterval.start)
+        async let priorPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr is:merged merged:", range: priorGhRange)
+        async let openedPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr created:", range: ghRange)
+        async let priorOpenedPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr created:", range: priorGhRange)
+        async let openedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue created:", range: ghRange)
+        async let closedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue is:closed closed:", range: ghRange)
+        async let priorClosedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue is:closed closed:", range: priorGhRange)
+        async let dismissedCountsFetch = fetchDismissedCountsOrEmpty(repoKeys: repoKeys, displayNames: displayNames, since: weekInterval.start, until: weekInterval.end)
+        let prCounts = await prCountsFetch
+        let metrics = await metricsFetch
+        let priorMetrics = await priorMetricsFetch
+        let ciPassPct = await ciPassFetch
+        let priorCIPassPct = await priorCIPassFetch
+        let (releaseCount, priorReleaseCount) = await releaseCountsFetch
+        let priorWeekPRTotal = await priorPRTotalFetch
+        let openedPRTotal = await openedPRTotalFetch
+        let priorOpenedPRTotal = await priorOpenedPRTotalFetch
+        let openedIssueTotal = await openedIssueTotalFetch
+        let closedIssueTotal = await closedIssueTotalFetch
+        let priorClosedIssueTotal = await priorClosedIssueTotalFetch
+        let repoClosedCounts = await dismissedCountsFetch
         let unreviewedCount = metrics.unreviewedCount
         let totalPRCount = metrics.totalPRCount
         let priorUnreviewedCount = priorMetrics.unreviewedCount
@@ -135,20 +145,7 @@ struct BriefingService: Sendable {
             context: context
         )
 
-        // Tier 3: fetch dismissed Dependabot alert counts per repo and merge into currentWeekTotals.
-        let repoClosedCounts: [String: Int]
-        if let restClient = rest {
-            let secService = SecurityService(rest: restClient)
-            repoClosedCounts = await fetchDismissedCounts(
-                repoKeys: repoKeys,
-                displayNames: scopedRepos.map(\.displayName),
-                securityService: secService,
-                since: weekInterval.start,
-                until: weekInterval.end
-            )
-        } else {
-            repoClosedCounts = [:]
-        }
+        // Tier 3: dismissed counts already fetched in parallel above.
         let totalClosed = repoClosedCounts.values.reduce(0, +)
         // Rebuild currentWeekTotals with actual closed counts; repoClosedCounts is always
         // empty in the snapshot since it is fetched live each session.
@@ -169,7 +166,7 @@ struct BriefingService: Sendable {
             weekRange: weekRange,
             repositories: scopedRepos,
             prCounts: prCounts,
-            priorWeekPRTotal: priorPRCounts.values.reduce(0, +),
+            priorWeekPRTotal: priorWeekPRTotal,
             shippingDailyCounts: metrics.dailyCounts,
             medianMergeHours: metrics.medianHours,
             dailyCycleTimeMedians: metrics.dailyCycleTimeMedians,
@@ -188,11 +185,11 @@ struct BriefingService: Sendable {
             priorCIPassPct: priorCIPassPct,
             releaseCount: releaseCount,
             priorReleaseCount: priorReleaseCount,
-            openedPRTotal: openedPRCounts.values.reduce(0, +),
-            priorOpenedPRTotal: priorOpenedPRCounts.values.reduce(0, +),
-            openedIssueTotal: openedIssueCounts.values.reduce(0, +),
-            closedIssueTotal: closedIssueCounts.values.reduce(0, +),
-            priorClosedIssueTotal: priorClosedIssueCounts.values.reduce(0, +),
+            openedPRTotal: openedPRTotal,
+            priorOpenedPRTotal: priorOpenedPRTotal,
+            openedIssueTotal: openedIssueTotal,
+            closedIssueTotal: closedIssueTotal,
+            priorClosedIssueTotal: priorClosedIssueTotal,
             unreviewedCount: unreviewedCount,
             totalPRCount: totalPRCount,
             priorUnreviewedCount: priorUnreviewedCount,
@@ -431,6 +428,25 @@ struct BriefingService: Sendable {
         }
     }
 
+    /// Fetches dismissed Dependabot alert counts, or returns an empty dictionary when
+    /// no REST client is configured (Tier 3 rules no-op gracefully in that case).
+    private func fetchDismissedCountsOrEmpty(
+        repoKeys: [(owner: String, name: String)],
+        displayNames: [String],
+        since: Date,
+        until: Date
+    ) async -> [String: Int] {
+        guard let restClient = rest else { return [:] }
+        let secService = SecurityService(rest: restClient)
+        return await fetchDismissedCounts(
+            repoKeys: repoKeys,
+            displayNames: displayNames,
+            securityService: secService,
+            since: since,
+            until: until
+        )
+    }
+
     // MARK: - PR Fetch
 
     /// Fans out merged-PR-count requests across all repositories in parallel.
@@ -460,147 +476,6 @@ struct BriefingService: Sendable {
         }
     }
 
-    /// Fans out opened-PR-count requests across all repositories in parallel.
-    ///
-    /// Uses the `created:` qualifier instead of `merged:`, so the count reflects how many
-    /// PRs were opened during the week regardless of whether they were merged.
-    ///
-    /// - Parameters:
-    ///   - repoKeys: The `(owner, name)` pairs to query.
-    ///   - range: The GitHub `created:` range string applied to each query.
-    /// - Returns: A dictionary keyed by `"owner/name"` mapping to opened PR count.
-    func fetchAllOpenedPRCounts(
-        repoKeys: [(owner: String, name: String)],
-        range: String
-    ) async -> [String: Int] {
-        await withTaskGroup(of: (String, Int).self) { group in
-            for key in repoKeys {
-                let owner = key.owner
-                let name = key.name
-                group.addTask {
-                    let count = await self.fetchOpenedPRCount(owner: owner, repo: name, range: range)
-                    return ("\(owner)/\(name)", count)
-                }
-            }
-            var result: [String: Int] = [:]
-            for await (key, count) in group {
-                result[key] = count
-            }
-            return result
-        }
-    }
-
-    /// Fetches the opened pull request count for a single repository and date range.
-    ///
-    /// Returns `0` on any network, decoding, or transport error.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login.
-    ///   - repo: The repository name.
-    ///   - range: The GitHub `created:` range string.
-    /// - Returns: The opened PR count for the window, or `0` on failure.
-    func fetchOpenedPRCount(owner: String, repo: String, range: String) async -> Int {
-        let query = "repo:\(owner)/\(repo) is:pr created:\(range)"
-        do {
-            let response: WeeklyPRCountResponse = try await graphQL.execute(
-                query: BriefingQueries.weeklyOpenedPRCount,
-                variables: ["q": query],
-                responseType: WeeklyPRCountResponse.self
-            )
-            return response.search.issueCount
-        } catch {
-            return 0
-        }
-    }
-
-    /// Fans out opened-issue-count requests across all repositories in parallel.
-    ///
-    /// - Parameters:
-    ///   - repoKeys: The `(owner, name)` pairs to query.
-    ///   - range: The GitHub `created:` range string applied to each query.
-    /// - Returns: A dictionary keyed by `"owner/name"` mapping to opened issue count.
-    func fetchAllOpenedIssueCounts(
-        repoKeys: [(owner: String, name: String)],
-        range: String
-    ) async -> [String: Int] {
-        await withTaskGroup(of: (String, Int).self) { group in
-            for key in repoKeys {
-                let owner = key.owner
-                let name = key.name
-                group.addTask {
-                    let count = await self.fetchOpenedIssueCount(owner: owner, repo: name, range: range)
-                    return ("\(owner)/\(name)", count)
-                }
-            }
-            var result: [String: Int] = [:]
-            for await (key, count) in group {
-                result[key] = count
-            }
-            return result
-        }
-    }
-
-    /// Fetches the opened issue count for a single repository and date range.
-    ///
-    /// Returns `0` on any network, decoding, or transport error.
-    func fetchOpenedIssueCount(owner: String, repo: String, range: String) async -> Int {
-        let query = "repo:\(owner)/\(repo) is:issue created:\(range)"
-        do {
-            let response: WeeklyPRCountResponse = try await graphQL.execute(
-                query: BriefingQueries.weeklyOpenedIssueCount,
-                variables: ["q": query],
-                responseType: WeeklyPRCountResponse.self
-            )
-            return response.search.issueCount
-        } catch {
-            return 0
-        }
-    }
-
-    /// Fans out closed-issue-count requests across all repositories in parallel.
-    ///
-    /// - Parameters:
-    ///   - repoKeys: The `(owner, name)` pairs to query.
-    ///   - range: The GitHub `closed:` range string applied to each query.
-    /// - Returns: A dictionary keyed by `"owner/name"` mapping to closed issue count.
-    func fetchAllClosedIssueCounts(
-        repoKeys: [(owner: String, name: String)],
-        range: String
-    ) async -> [String: Int] {
-        await withTaskGroup(of: (String, Int).self) { group in
-            for key in repoKeys {
-                let owner = key.owner
-                let name = key.name
-                group.addTask {
-                    let count = await self.fetchClosedIssueCount(owner: owner, repo: name, range: range)
-                    return ("\(owner)/\(name)", count)
-                }
-            }
-            var result: [String: Int] = [:]
-            for await (key, count) in group {
-                result[key] = count
-            }
-            return result
-        }
-    }
-
-    /// Fetches the closed issue count for a single repository and date range.
-    ///
-    /// Returns `0` on any network, decoding, or transport error.
-    func fetchClosedIssueCount(owner: String, repo: String, range: String) async -> Int {
-        let query = "repo:\(owner)/\(repo) is:issue is:closed closed:\(range)"
-        do {
-            let response: WeeklyPRCountResponse = try await graphQL.execute(
-                query: BriefingQueries.weeklyClosedIssueCount,
-                variables: ["q": query],
-                responseType: WeeklyPRCountResponse.self
-            )
-            return response.search.issueCount
-        } catch {
-            return 0
-        }
-    }
-
     /// Fetches the merged pull request count for a single repository and date range.
     ///
     /// Returns `0` on any network, decoding, or transport error.
@@ -616,6 +491,36 @@ struct BriefingService: Sendable {
             let response: WeeklyPRCountResponse = try await graphQL.execute(
                 query: BriefingQueries.weeklyMergedPRCount,
                 variables: ["q": query],
+                responseType: WeeklyPRCountResponse.self
+            )
+            return response.search.issueCount
+        } catch {
+            return 0
+        }
+    }
+
+    /// Combines all repo qualifiers into a single GitHub Search query and returns the total count.
+    ///
+    /// Used for metrics that only need a cross-repo total (not a per-repo breakdown).
+    /// Each call makes exactly one GraphQL request regardless of repo count.
+    ///
+    /// - Parameters:
+    ///   - repoKeys: The repositories to include in the combined query.
+    ///   - qualifier: The search qualifier prefix, e.g. `"is:pr created:"`.
+    ///   - range: The date range string appended directly after the qualifier.
+    /// - Returns: The total `issueCount` across all repos, or `0` on any error.
+    func fetchCombinedSearchCount(
+        repoKeys: [(owner: String, name: String)],
+        qualifier: String,
+        range: String
+    ) async -> Int {
+        guard !repoKeys.isEmpty else { return 0 }
+        let repos = repoKeys.map { "repo:\($0.owner)/\($0.name)" }.joined(separator: " ")
+        let q = "\(repos) \(qualifier)\(range)"
+        do {
+            let response: WeeklyPRCountResponse = try await graphQL.execute(
+                query: BriefingQueries.weeklyMergedPRCount,
+                variables: ["q": q],
                 responseType: WeeklyPRCountResponse.self
             )
             return response.search.issueCount
@@ -794,57 +699,47 @@ struct BriefingService: Sendable {
 
     // MARK: - Release Fetch
 
-    /// Fans out release-count requests across all repositories in parallel and sums the results.
+    /// Fetches the last 20 releases for all repositories in a single aliased GraphQL request,
+    /// then counts releases falling within both the current and prior week windows client-side.
+    ///
+    /// Replaces two separate N-request fan-outs with one batched query.
     ///
     /// - Parameters:
-    ///   - repoKeys: The `(owner, name)` pairs to query.
-    ///   - since: Only releases published on or after this date are counted.
-    /// - Returns: Total release count across all repos, or `nil` if there are no repos.
-    func fetchReleaseCount(
+    ///   - repoKeys: The repositories to query.
+    ///   - since: Start of the current week window (inclusive).
+    ///   - until: End of the current week window (exclusive).
+    ///   - priorSince: Start of the prior week window (inclusive).
+    ///   - priorUntil: End of the prior week window (exclusive).
+    /// - Returns: A tuple of `(current, prior)` release counts, or `(nil, nil)` when empty or on error.
+    func fetchBatchedReleaseCounts(
         repoKeys: [(owner: String, name: String)],
         since: Date,
-        until: Date? = nil
-    ) async -> Int? {
-        guard !repoKeys.isEmpty else { return nil }
-        return await withTaskGroup(of: Int.self) { group in
-            for key in repoKeys {
-                let owner = key.owner
-                let name = key.name
-                group.addTask {
-                    await self.fetchRepoReleaseCount(owner: owner, name: name, since: since, until: until)
-                }
-            }
-            var total = 0
-            for await count in group {
-                total += count
-            }
-            return total
-        }
-    }
+        until: Date,
+        priorSince: Date,
+        priorUntil: Date
+    ) async -> (current: Int?, prior: Int?) {
+        guard !repoKeys.isEmpty else { return (nil, nil) }
 
-    /// Fetches the release count for a single repository published on or after `since`.
-    ///
-    /// Drafts are excluded because their `publishedAt` is null. Returns `0` on any error.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login.
-    ///   - name: The repository name.
-    ///   - since: Releases published before this date are ignored.
-    /// - Returns: The number of qualifying releases, or `0` on failure.
-    func fetchRepoReleaseCount(owner: String, name: String, since: Date, until: Date? = nil) async -> Int {
-        do {
-            let response: WeeklyReleasesResponse = try await graphQL.execute(
-                query: BriefingQueries.recentReleases,
-                variables: ["owner": owner, "name": name],
-                responseType: WeeklyReleasesResponse.self
-            )
-            return response.repository?.releases.nodes
-                .compactMap(\.publishedAt)
-                .filter { date in date >= since && until.map { date < $0 } ?? true }
-                .count ?? 0
-        } catch {
-            return 0
+        let fields = repoKeys.enumerated().map { i, key in
+            "r\(i): repository(owner: \"\(key.owner)\", name: \"\(key.name)\") { releases(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { publishedAt } } }"
+        }.joined(separator: " ")
+
+        guard let response = try? await graphQL.execute(
+            query: "{ \(fields) }",
+            variables: nil,
+            responseType: [String: BatchedReleasesResult].self
+        ) else { return (nil, nil) }
+
+        var current = 0
+        var prior = 0
+        for (i, _) in repoKeys.enumerated() {
+            for node in response["r\(i)"]?.releases.nodes ?? [] {
+                guard let pub = node.publishedAt else { continue }
+                if pub >= since && pub < until { current += 1 }
+                if pub >= priorSince && pub < priorUntil { prior += 1 }
+            }
         }
+        return (current, prior)
     }
 
     // MARK: - CI Pass Rate Fetch
@@ -1534,23 +1429,19 @@ struct BriefingService: Sendable {
     }
 }
 
-// MARK: - WeeklyReleasesResponse
+// MARK: - BatchedReleasesResult
 
-/// The decoded response for a single ``BriefingQueries/recentReleases`` query.
-private struct WeeklyReleasesResponse: Decodable, Sendable {
+/// One entry in the aliased ``BriefingService/fetchBatchedReleaseCounts`` response.
+private struct BatchedReleasesResult: Decodable, Sendable {
 
-    struct Repository: Decodable, Sendable {
-        struct Releases: Decodable, Sendable {
-            struct Node: Decodable, Sendable {
-                /// Null for draft releases; the decoder's `.iso8601` strategy parses this directly.
-                let publishedAt: Date?
-            }
-            let nodes: [Node]
+    struct ReleasesConnection: Decodable, Sendable {
+        struct Node: Decodable, Sendable {
+            let publishedAt: Date?
         }
-        let releases: Releases
+        let nodes: [Node]
     }
 
-    let repository: Repository?
+    let releases: ReleasesConnection
 }
 
 // MARK: - CIPassRateResponse
