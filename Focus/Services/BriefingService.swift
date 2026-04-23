@@ -83,6 +83,14 @@ struct BriefingService: Sendable {
         // can delete OpenPullRequest objects at any suspension point, invalidating live references.
         let openPRCreatedDates: [Date] = scopedRepos.flatMap { $0.openPullRequests.map(\.createdAt) }
 
+        // Snapshot daily contributions as value types before the first await —
+        // ContributionService.syncDailyContributions() deletes DailyContribution objects at any
+        // suspension point, invalidating live SwiftData references.
+        let memberDailyContributions: [ObjectIdentifier: [(date: Date, count: Int)]] =
+            Dictionary(uniqueKeysWithValues: scopedMembers.map { m in
+                (ObjectIdentifier(m), m.dailyContributions.map { ($0.date, $0.count) })
+            })
+
         var cal = Calendar.current
         cal.firstWeekday = 1
         let priorWeekStart = weekInterval.start.addingTimeInterval(-1)
@@ -200,6 +208,7 @@ struct BriefingService: Sendable {
             allSecretAlerts: allSecretAlerts,
             allAlertDates: allAlertDates,
             members: scopedMembers,
+            memberDailyContributions: memberDailyContributions,
             openPRCreatedDates: openPRCreatedDates,
             currentWeekTotals: currentWeekTotals,
             priorWeekTotals: priorWeekTotals,
@@ -870,6 +879,7 @@ struct BriefingService: Sendable {
         allSecretAlerts: [SecretScanningAlert],
         allAlertDates: [Date],
         members: [Member],
+        memberDailyContributions: [ObjectIdentifier: [(date: Date, count: Int)]],
         openPRCreatedDates: [Date],
         currentWeekTotals: SecurityWeekTotals?,
         priorWeekTotals: SecurityWeekTotals?,
@@ -977,14 +987,15 @@ struct BriefingService: Sendable {
             guard member.jobTitle?.discipline?.tracksGitHubActivity != false else { continue }
             totalTracked += 1
 
-            let weekSum = member.dailyContributions
+            let contribs = memberDailyContributions[ObjectIdentifier(member)] ?? []
+            let weekSum = contribs
                 .filter { weekInterval.contains($0.date) }
                 .reduce(0) { $0 + $1.count }
 
             if weekSum == 0 {
                 idleMembers.append(member)
 
-                let lastActive = member.dailyContributions
+                let lastActive = contribs
                     .filter { $0.date < weekEnd && $0.count > 0 }
                     .map(\.date)
                     .max()
@@ -1006,7 +1017,7 @@ struct BriefingService: Sendable {
         let priorIdleCount: Int = priorWeekInterval.map { prior in
             members.filter { member in
                 guard member.jobTitle?.discipline?.tracksGitHubActivity != false else { return false }
-                return member.dailyContributions
+                return (memberDailyContributions[ObjectIdentifier(member)] ?? [])
                     .filter { prior.contains($0.date) }
                     .reduce(0) { $0 + $1.count } == 0
             }.count
@@ -1032,7 +1043,7 @@ struct BriefingService: Sendable {
         // MARK: Shipped — contributors (derived from Members' weekly contribution sums)
         var memberWeeklyCounts: [(member: Member, count: Int)] = []
         for member in members {
-            let weekSum = member.dailyContributions
+            let weekSum = (memberDailyContributions[ObjectIdentifier(member)] ?? [])
                 .filter { weekInterval.contains($0.date) }
                 .reduce(0) { $0 + $1.count }
             if weekSum > 0 {
@@ -1053,7 +1064,7 @@ struct BriefingService: Sendable {
         let priorActiveCount: Int? = priorWeekInterval.map { prior in
             members.filter { member in
                 guard member.jobTitle?.discipline?.tracksGitHubActivity != false else { return false }
-                return member.dailyContributions
+                return (memberDailyContributions[ObjectIdentifier(member)] ?? [])
                     .filter { prior.contains($0.date) }
                     .reduce(0) { $0 + $1.count } > 0
             }.count
