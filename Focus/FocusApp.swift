@@ -25,6 +25,9 @@ struct FocusApp: App {
     /// The background sync manager coordinating scheduled data synchronization.
     @State private var syncManager = BackgroundSyncManager()
 
+    /// The briefing manager caching the weekly Focus Briefing.
+    @State private var briefingManager = BriefingManager()
+
     // MARK: - Body
 
     /// The app's root scene.
@@ -65,6 +68,7 @@ struct FocusApp: App {
         }
         .environment(authService)
         .environment(syncManager)
+        .environment(briefingManager)
         .modelContainer(modelContainer)
     }
 }

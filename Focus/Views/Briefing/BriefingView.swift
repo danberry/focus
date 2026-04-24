@@ -7,9 +7,9 @@ import SwiftData
 ///
 /// `BriefingView` orchestrates the full briefing layout: the serif hero verdict,
 /// KPI strip, and three opinionated sections (Shipped, Blocked, Security). On
-/// appear it constructs a ``BriefingService`` from the ambient
-/// ``AuthenticationService`` and asks it to assemble a ``Briefing`` for the
-/// previous calendar week, rendering a loading indicator until the result lands.
+/// first appear it asks ``BriefingManager`` to generate a ``Briefing`` for the
+/// previous calendar week; on subsequent visits the cached result renders
+/// instantly without any network activity.
 struct BriefingView: View {
 
     // MARK: - Properties
@@ -20,6 +20,9 @@ struct BriefingView: View {
     /// The authentication service used to construct the GraphQL client for PR fetches.
     @Environment(AuthenticationService.self) private var authService
 
+    /// The briefing cache — holds generated briefings for each (week, scope) pair.
+    @Environment(BriefingManager.self) private var briefingManager
+
     /// All teams in the store, sorted by name for the scope picker.
     @Query(sort: \Team.name) private var teams: [Team]
 
@@ -29,12 +32,6 @@ struct BriefingView: View {
     /// All saved organizations in the store, sorted by login for the scope picker.
     @Query(sort: \SavedOrganization.login) private var organizations: [SavedOrganization]
 
-    /// The assembled briefing payload, or `nil` while loading.
-    @State private var briefing: Briefing?
-
-    /// Whether the briefing generation task is currently in flight.
-    @State private var isLoading = false
-
     /// Closure invoked when an attention card's action button is tapped.
     ///
     /// Defaults to a no-op — on iPad, `iPadContentView` injects a push action.
@@ -42,6 +39,11 @@ struct BriefingView: View {
 
     /// The currently selected scope used to filter the briefing.
     @State private var scope: BriefingScope = .all
+
+    // MARK: - Derived state
+
+    private var briefing: Briefing? { briefingManager.briefing(for: scope) }
+    private var isLoading: Bool { briefingManager.isLoading(for: scope) }
 
     // MARK: - Body
 
@@ -115,6 +117,22 @@ struct BriefingView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                if isLoading {
+                    ProgressView()
+                        .tint(BriefingColor.ink)
+                } else {
+                    Button {
+                        Task {
+                            let service = makeService()
+                            await briefingManager.refresh(scope: scope, service: service, context: context)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundStyle(BriefingColor.ink)
+                    }
+                }
+            }
+            ToolbarItem(placement: .topBarLeading) {
                 Menu {
                     Button("All") { scope = .all }
                     if !teams.isEmpty {
@@ -145,19 +163,13 @@ struct BriefingView: View {
             }
         }
         .task {
-            isLoading = true
-            let client = GraphQLClient(tokenProvider: authService.tokenProvider)
-            let service = BriefingService(graphQL: client, rest: RESTClient(tokenProvider: authService.tokenProvider))
-            briefing = await service.generate(scope: scope, in: context)
-            isLoading = false
+            let service = makeService()
+            await briefingManager.load(scope: scope, service: service, context: context)
         }
         .onChange(of: scope.displayName) {
             Task {
-                isLoading = true
-                let client = GraphQLClient(tokenProvider: authService.tokenProvider)
-                let service = BriefingService(graphQL: client, rest: RESTClient(tokenProvider: authService.tokenProvider))
-                briefing = await service.generate(scope: scope, in: context)
-                isLoading = false
+                let service = makeService()
+                await briefingManager.load(scope: scope, service: service, context: context)
             }
         }
     }
@@ -168,6 +180,13 @@ struct BriefingView: View {
     private var sectionDivider: some View {
         Divider()
             .foregroundStyle(BriefingColor.rule2)
+    }
+
+    private func makeService() -> BriefingService {
+        BriefingService(
+            graphQL: GraphQLClient(tokenProvider: authService.tokenProvider),
+            rest: RESTClient(tokenProvider: authService.tokenProvider)
+        )
     }
 }
 
@@ -195,4 +214,5 @@ struct BriefingView: View {
         inMemory: true
     )
     .environment(AuthenticationService())
+    .environment(BriefingManager())
 }
