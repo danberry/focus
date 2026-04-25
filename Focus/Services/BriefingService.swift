@@ -1065,8 +1065,8 @@ struct BriefingService: Sendable {
 
         let topRepoName = repoCounts.first?.name ?? "—"
         let topRepoCount = repoCounts.first?.count ?? 0
-        let lowestRepo = repoRanking
-            .filter { !$0.repo.isInMaintenance }
+        let activeRepoRanking = repoRanking.filter { !$0.repo.isInMaintenance }
+        let lowestRepo = activeRepoRanking
             .min { $0.count < $1.count }
             .map { BriefingRepoCount(name: $0.repo.displayName, count: $0.count, flag: false) }
 
@@ -1281,7 +1281,7 @@ struct BriefingService: Sendable {
         }()
 
         let attention03: BriefingAttentionItem = {
-            if let low = lowestRepo, repoCounts.count > 1 {
+            if let low = lowestRepo, activeRepoRanking.count > 1 {
                 return BriefingAttentionItem(
                     n: "3",
                     tone: .neutral,
@@ -1309,8 +1309,8 @@ struct BriefingService: Sendable {
             shippedVerdict = "No merges recorded this week."
         }
 
-        let activeRepoCount = repoCounts.filter { $0.count > 0 }.count
-        let quietRepoCount = repoCounts.count - activeRepoCount
+        let activeRepoCount = activeRepoRanking.filter { $0.count > 0 }.count
+        let quietRepoCount = activeRepoRanking.filter { $0.count == 0 }.count
         let shippedSummary: String
         if shippingTotal > 0 {
             let showTop6 = activeRepoCount >= 6
