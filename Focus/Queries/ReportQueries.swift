@@ -38,6 +38,15 @@ enum ReportQueries {
                                 submittedAt
                             }
                         }
+                        commits(last: 1) {
+                            nodes {
+                                commit {
+                                    statusCheckRollup {
+                                        state
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

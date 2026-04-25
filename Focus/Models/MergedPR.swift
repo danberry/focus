@@ -37,6 +37,11 @@ struct MergedPR: Identifiable, Sendable {
     /// The date and time the first review was submitted, or `nil` if no review has been submitted.
     let firstReviewAt: Date?
 
+    /// The `statusCheckRollup.state` of the head commit, or `nil` if no CI checks ran.
+    ///
+    /// Possible values: `"SUCCESS"`, `"FAILURE"`, `"PENDING"`, `"ERROR"`, `"EXPECTED"`.
+    let ciState: String?
+
     // MARK: - Computed
 
     /// A stable identifier combining the repository name and pull request number.

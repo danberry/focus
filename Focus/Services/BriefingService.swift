@@ -99,11 +99,8 @@ struct BriefingService: Sendable {
 
         let priorWeekInterval = cal.dateInterval(of: .weekOfYear, for: priorWeekStart) ?? weekInterval
         let displayNames: [String] = scopedRepos.map(\.displayName)
-        async let prCountsFetch = fetchAllPRCounts(repoKeys: repoKeys, range: ghRange)
         async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
         async let priorMetricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: priorWeekInterval)
-        async let ciPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: ghRange)
-        async let priorCIPassFetch = fetchCIPassRate(repoKeys: repoKeys, range: priorGhRange)
         async let releaseCountsFetch = fetchBatchedReleaseCounts(repoKeys: repoKeys, since: weekInterval.start, until: weekInterval.end, priorSince: priorWeekStart, priorUntil: weekInterval.start)
         async let priorPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr is:merged merged:", range: priorGhRange)
         async let openedPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr created:", range: ghRange)
@@ -112,12 +109,12 @@ struct BriefingService: Sendable {
         async let closedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue is:closed closed:", range: ghRange)
         async let priorClosedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue is:closed closed:", range: priorGhRange)
         async let dismissedCountsFetch = fetchDismissedCountsOrEmpty(repoKeys: repoKeys, displayNames: displayNames, since: weekInterval.start, until: weekInterval.end)
-        let prCounts = await prCountsFetch
         let metrics = await metricsFetch
         let priorMetrics = await priorMetricsFetch
-        let ciPassPct = await ciPassFetch
-        let priorCIPassPct = await priorCIPassFetch
         let (releaseCount, priorReleaseCount) = await releaseCountsFetch
+        let prCounts = metrics.repoCounts
+        let ciPassPct = metrics.ciPassPct
+        let priorCIPassPct = priorMetrics.ciPassPct
         let priorWeekPRTotal = await priorPRTotalFetch
         let openedPRTotal = await openedPRTotalFetch
         let priorOpenedPRTotal = await priorOpenedPRTotalFetch
@@ -458,56 +455,6 @@ struct BriefingService: Sendable {
 
     // MARK: - PR Fetch
 
-    /// Fans out merged-PR-count requests across all repositories in parallel.
-    ///
-    /// - Parameters:
-    ///   - repoKeys: The `(owner, name)` pairs to query.
-    ///   - range: The GitHub `merged:` range string applied to each query.
-    /// - Returns: A dictionary keyed by `"owner/name"` mapping to merged PR count.
-    func fetchAllPRCounts(
-        repoKeys: [(owner: String, name: String)],
-        range: String
-    ) async -> [String: Int] {
-        await withTaskGroup(of: (String, Int).self) { group in
-            for key in repoKeys {
-                let owner = key.owner
-                let name = key.name
-                group.addTask {
-                    let count = await self.fetchMergedPRCount(owner: owner, repo: name, range: range)
-                    return ("\(owner)/\(name)", count)
-                }
-            }
-            var result: [String: Int] = [:]
-            for await (key, count) in group {
-                result[key] = count
-            }
-            return result
-        }
-    }
-
-    /// Fetches the merged pull request count for a single repository and date range.
-    ///
-    /// Returns `0` on any network, decoding, or transport error.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login.
-    ///   - repo: The repository name.
-    ///   - range: The GitHub `merged:` range string.
-    /// - Returns: The merged PR count for the window, or `0` on failure.
-    func fetchMergedPRCount(owner: String, repo: String, range: String) async -> Int {
-        let query = "repo:\(owner)/\(repo) is:pr is:merged merged:\(range)"
-        do {
-            let response: WeeklyPRCountResponse = try await graphQL.execute(
-                query: BriefingQueries.weeklyMergedPRCount,
-                variables: ["q": query],
-                responseType: WeeklyPRCountResponse.self
-            )
-            return response.search.issueCount
-        } catch {
-            return 0
-        }
-    }
-
     /// Combines all repo qualifiers into a single GitHub Search query and returns the total count.
     ///
     /// Used for metrics that only need a cross-repo total (not a per-repo breakdown).
@@ -538,21 +485,21 @@ struct BriefingService: Sendable {
         }
     }
 
-    /// Fetches merged PR data for the week and derives the median cycle time, per-day merged counts,
-    /// PR size metrics, and daily cycle time medians (Monday = index 0 … Sunday = index 6).
+    /// Fetches merged PR data for the week and derives all computed metrics in a single pass.
     ///
     /// Returns `medianHours == nil` when there are no repos, no PRs, or on error.
     /// Returns `dailyCounts` and `dailyCycleTimeMedians` as seven zeros on error.
+    /// CI pass rate is computed from the same PR nodes — no separate network request needed.
     private func fetchMergedPRMetrics(
         repoKeys: [(owner: String, name: String)],
         interval: DateInterval
-    ) async -> (medianHours: Int?, dailyCounts: [Int], medianPRSize: Int?, dailyPRSizeMedians: [Int], dailyCycleTimeMedians: [Int], medianFirstReviewHours: Int?, dailyFirstReviewMedians: [Int], hotfixCount: Int, totalMerged: Int, unreviewedCount: Int, totalPRCount: Int) {
+    ) async -> (medianHours: Int?, dailyCounts: [Int], medianPRSize: Int?, dailyPRSizeMedians: [Int], dailyCycleTimeMedians: [Int], medianFirstReviewHours: Int?, dailyFirstReviewMedians: [Int], hotfixCount: Int, totalMerged: Int, unreviewedCount: Int, totalPRCount: Int, ciPassPct: Int?, repoCounts: [String: Int]) {
         let zeros7 = [Int](repeating: 0, count: 7)
-        guard !repoKeys.isEmpty else { return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0, 0, 0) }
+        guard !repoKeys.isEmpty else { return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0, 0, 0, nil, [:]) }
         let service = MergedPRReportService(graphQL: graphQL)
         let endDate = interval.end.addingTimeInterval(-1)
         guard let prsByRepo = try? await service.fetchMergedPRs(for: repoKeys, from: interval.start, to: endDate) else {
-            return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0, 0, 0)
+            return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0, 0, 0, nil, [:])
         }
         let medianHours = computeMedianMergeHours(from: prsByRepo)
         let dailyCounts = computeDailyCounts(from: prsByRepo, interval: interval)
@@ -564,7 +511,21 @@ struct BriefingService: Sendable {
         let hotfixCount = computeHotfixCount(from: prsByRepo)
         let totalMerged = prsByRepo.values.reduce(0) { $0 + $1.count }
         let (unreviewedCount, totalPRCount) = computeUnreviewedStats(from: prsByRepo)
-        return (medianHours, dailyCounts, medianPRSize, dailyPRSizeMedians, dailyCycleTimeMedians, medianFirstReviewHours, dailyFirstReviewMedians, hotfixCount, totalMerged, unreviewedCount, totalPRCount)
+        let ciPassPct = computeCIPassRate(from: prsByRepo)
+        let repoCounts = prsByRepo.mapValues(\.count)
+        return (medianHours, dailyCounts, medianPRSize, dailyPRSizeMedians, dailyCycleTimeMedians, medianFirstReviewHours, dailyFirstReviewMedians, hotfixCount, totalMerged, unreviewedCount, totalPRCount, ciPassPct, repoCounts)
+    }
+
+    private func computeCIPassRate(from prsByRepo: [String: [MergedPR]]) -> Int? {
+        var withChecks = 0
+        var passed = 0
+        for pr in prsByRepo.values.flatMap({ $0 }) {
+            guard let state = pr.ciState else { continue }
+            withChecks += 1
+            if state == "SUCCESS" { passed += 1 }
+        }
+        guard withChecks > 0 else { return nil }
+        return Int((Double(passed) / Double(withChecks) * 100).rounded())
     }
 
     private func computeUnreviewedStats(from prsByRepo: [String: [MergedPR]]) -> (unreviewed: Int, total: Int) {
@@ -749,78 +710,6 @@ struct BriefingService: Sendable {
             }
         }
         return (current, prior)
-    }
-
-    // MARK: - CI Pass Rate Fetch
-
-    /// Fans out CI pass rate requests across all repositories and returns an overall percentage.
-    ///
-    /// PRs whose head commit has no check rollup are excluded so they don't skew the rate.
-    /// Returns `nil` when there are no repos or no PRs with checks across any repo.
-    ///
-    /// - Parameters:
-    ///   - repoKeys: The `(owner, name)` pairs to query.
-    ///   - range: The GitHub `merged:` range string applied to each query.
-    /// - Returns: Percentage (0–100) of passing PRs, or `nil` if no PRs had checks.
-    func fetchCIPassRate(
-        repoKeys: [(owner: String, name: String)],
-        range: String
-    ) async -> Int? {
-        guard !repoKeys.isEmpty else { return nil }
-        var totalWithChecks = 0
-        var totalPassed = 0
-        await withTaskGroup(of: (withChecks: Int, passed: Int).self) { group in
-            for key in repoKeys {
-                let owner = key.owner
-                let name = key.name
-                group.addTask {
-                    await self.fetchRepoCIPassRate(owner: owner, name: name, range: range)
-                }
-            }
-            for await result in group {
-                totalWithChecks += result.withChecks
-                totalPassed += result.passed
-            }
-        }
-        guard totalWithChecks > 0 else { return nil }
-        return Int((Double(totalPassed) / Double(totalWithChecks) * 100).rounded())
-    }
-
-    /// Fetches CI pass/fail counts for a single repository by paginating through merged PRs.
-    ///
-    /// Only PRs whose head commit has a non-nil `statusCheckRollup` are counted.
-    /// `"SUCCESS"` conclusions are counted as passed; all other concluded states are failed.
-    ///
-    /// - Parameters:
-    ///   - owner: The repository owner login.
-    ///   - name: The repository name.
-    ///   - range: The GitHub `merged:` range string.
-    /// - Returns: A tuple of `(withChecks, passed)` counts.
-    private func fetchRepoCIPassRate(owner: String, name: String, range: String) async -> (withChecks: Int, passed: Int) {
-        let searchQuery = "repo:\(owner)/\(name) is:pr is:merged merged:\(range)"
-        var withChecks = 0
-        var passed = 0
-        var cursor: String? = nil
-        repeat {
-            var variables: [String: any Sendable] = ["q": searchQuery]
-            if let after = cursor { variables["after"] = after }
-            guard let response = try? await graphQL.execute(
-                query: BriefingQueries.ciPassRate,
-                variables: variables,
-                responseType: CIPassRateResponse.self
-            ) else { break }
-            for node in response.search.nodes {
-                guard let rollup = node.commits?.nodes.first?.commit.statusCheckRollup else { continue }
-                withChecks += 1
-                if rollup.state == "SUCCESS" { passed += 1 }
-            }
-            if response.search.pageInfo.hasNextPage {
-                cursor = response.search.pageInfo.endCursor
-            } else {
-                break
-            }
-        } while true
-        return (withChecks, passed)
     }
 
     // MARK: - Assembly
@@ -1453,51 +1342,6 @@ private struct BatchedReleasesResult: Decodable, Sendable {
     }
 
     let releases: ReleasesConnection
-}
-
-// MARK: - CIPassRateResponse
-
-/// The decoded response for a single page of a ``BriefingQueries/ciPassRate`` query.
-private struct CIPassRateResponse: Decodable, Sendable {
-
-    struct Search: Decodable, Sendable {
-
-        struct PageInfo: Decodable, Sendable {
-            let hasNextPage: Bool
-            let endCursor: String?
-        }
-
-        struct PRNode: Decodable, Sendable {
-
-            struct Commits: Decodable, Sendable {
-
-                struct CommitNode: Decodable, Sendable {
-
-                    struct Commit: Decodable, Sendable {
-
-                        struct StatusCheckRollup: Decodable, Sendable {
-                            /// `"SUCCESS"`, `"FAILURE"`, `"PENDING"`, `"ERROR"`, or `"EXPECTED"`.
-                            let state: String
-                        }
-
-                        let statusCheckRollup: StatusCheckRollup?
-                    }
-
-                    let commit: Commit
-                }
-
-                let nodes: [CommitNode]
-            }
-
-            /// Nil when the search node is not a PullRequest (shouldn't happen with `is:pr`).
-            let commits: Commits?
-        }
-
-        let pageInfo: PageInfo
-        let nodes: [PRNode]
-    }
-
-    let search: Search
 }
 
 // MARK: - WeeklyPRCountResponse

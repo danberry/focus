@@ -11,22 +11,36 @@ struct BriefingServiceTests {
 
     // MARK: - Setup
 
-    /// Creates a `BriefingService` wired to the shared `MockHTTPClient` whose
-    /// stubbed response reports `issueCount` as the supplied value.
-    private func makeService(issueCount: Int = 0) -> BriefingService {
-        mockHTTP.setSuccess(json: #"{"data":{"search":{"issueCount":\#(issueCount)}}}"#)
+    /// Creates a `BriefingService` wired to the shared `MockHTTPClient`.
+    ///
+    /// The stub returns a `MergedPRs` response with `count` nodes all attributed to
+    /// `repoKey`. Calls that expect a different shape (e.g. `issueCount`-only queries)
+    /// decode the same JSON and silently return 0, which is fine for shipping-agnostic tests.
+    private func makeService(mergedPRCount: Int = 0, repoKey: String = "") -> BriefingService {
+        let ts = "2026-04-14T10:00:00Z"
+        let nodeJSON = { (i: Int) -> String in
+            "{\"number\":\(i),\"title\":\"PR \(i)\",\"createdAt\":\"\(ts)\",\"mergedAt\":\"\(ts)\","
+            + "\"author\":{\"login\":\"user\"},\"url\":\"https://github.com/\(repoKey)/pull/\(i)\","
+            + "\"repository\":{\"nameWithOwner\":\"\(repoKey)\"},\"additions\":5,\"deletions\":3,"
+            + "\"reviews\":{\"nodes\":[]},\"commits\":{\"nodes\":[{\"commit\":{\"statusCheckRollup\":null}}]}}"
+        }
+        let nodesArray = mergedPRCount > 0 && !repoKey.isEmpty
+            ? (1...mergedPRCount).map(nodeJSON).joined(separator: ",")
+            : ""
+        let json = "{\"data\":{\"search\":{\"pageInfo\":{\"endCursor\":null,\"hasNextPage\":false},\"nodes\":[\(nodesArray)]}}}"
+        mockHTTP.setSuccess(json: json)
         let graphQL = GraphQLClient(httpClient: mockHTTP, tokenProvider: { "test-token" })
         return BriefingService(graphQL: graphQL)
     }
 
-    /// Creates an in-memory `ModelContainer` registering the model types
-    /// `BriefingService` reads from SwiftData.
+    /// Creates an in-memory `ModelContainer` with the same schema as the production container.
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
             for: SavedRepository.self, DependabotAlert.self,
-            Member.self, DailyContribution.self, Team.self, Department.self, SavedOrganization.self,
-            Discipline.self, JobTitle.self,
+            Member.self, MemberContribution.self, DailyContribution.self,
+            Team.self, Department.self, SavedOrganization.self,
+            Discipline.self, JobTitle.self, SecurityWeeklySnapshot.self,
             configurations: config
         )
     }
@@ -109,15 +123,15 @@ struct BriefingServiceTests {
         #expect(!briefing.blocked.members.contains { $0.name == "Cleo Park" })
     }
 
-    /// Verifies that the API-returned `issueCount` propagates to the shipping total.
-    @Test func apiIssueCountDrivesShippingValue() async throws {
+    /// Verifies that merged PR nodes returned by the API propagate to the shipping total.
+    @Test func apiMergedPRCountDrivesShippingValue() async throws {
         let container = try makeContainer()
         let context = container.mainContext
 
         let repo = SavedRepository(githubId: "1", owner: "acme", name: "widget", displayName: "Widget")
         context.insert(repo)
 
-        let briefing = await makeService(issueCount: 7).generate(scope: .all, in: context)
+        let briefing = await makeService(mergedPRCount: 7, repoKey: "acme/widget").generate(scope: .all, in: context)
 
         #expect(briefing.kpis.shipping.value == 7)
     }
@@ -136,9 +150,8 @@ struct BriefingServiceTests {
 
     /// Verifies that a team-scoped briefing only counts merged PRs for repositories assigned to that team.
     ///
-    /// Creates one repo assigned to the team and one unassigned. The stubbed GraphQL response
-    /// returns `issueCount == 5` for every search, so the shipping total equals the number of
-    /// repos whose PRs actually get counted (5 for the assigned repo, nothing for the unassigned one).
+    /// Creates one repo assigned to the team and one unassigned. The stub returns 5 nodes for
+    /// the assigned repo, so `shipping.value` equals 5 — the unassigned repo is never queried.
     @Test func scopedToTeamFiltersRepos() async throws {
         let container = try makeContainer()
         let context = container.mainContext
@@ -153,7 +166,7 @@ struct BriefingServiceTests {
         let unassignedRepo = SavedRepository(githubId: "2", owner: "acme", name: "loose", displayName: "Loose")
         context.insert(unassignedRepo)
 
-        let briefing = await makeService(issueCount: 5).generate(scope: .team(team), in: context)
+        let briefing = await makeService(mergedPRCount: 5, repoKey: "acme/assigned").generate(scope: .team(team), in: context)
 
         #expect(briefing.kpis.shipping.value == 5)
     }
@@ -171,9 +184,9 @@ struct BriefingServiceTests {
         maintenanceRepo.isInMaintenance = true
         context.insert(maintenanceRepo)
 
-        // Stub returns issueCount=10 for every repo query; the maintenance repo should not appear
-        // as the low-volume repo in attention[2] despite being tied with the active repo's count.
-        let briefing = await makeService(issueCount: 10).generate(scope: .all, in: context)
+        // Both repos get the same PR count; the maintenance repo must still be excluded from
+        // the lowest-volume attention slot regardless of count parity.
+        let briefing = await makeService(mergedPRCount: 10, repoKey: "acme/active").generate(scope: .all, in: context)
 
         #expect(!briefing.attention[2].title.contains("Legacy"))
     }
