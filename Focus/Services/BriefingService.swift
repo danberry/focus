@@ -1327,6 +1327,23 @@ struct BriefingService: Sendable {
             shippedSummary = "No activity this week"
         }
 
+        // Partition flagged members into the three inactivity categories.
+        let unlinkedMembers = blockedMembers.filter { $0.neverContributed }
+        let idleThisWeekMembers = blockedMembers.filter { member in
+            guard !member.neverContributed else { return false }
+            let days = member.idleLabel.hasSuffix("d")
+                ? Int(member.idleLabel.dropLast()) ?? Int.max
+                : Int.max
+            return days <= 14
+        }
+        let idleLongTermMembers = blockedMembers.filter { member in
+            guard !member.neverContributed else { return false }
+            let days = member.idleLabel.hasSuffix("d")
+                ? Int(member.idleLabel.dropLast()) ?? Int.max
+                : Int.max
+            return days > 14
+        }
+
         let blockedVerdict: String = switch blockedMembers.count {
         case 0: "Everyone shipped this week."
         case 1: "1 member went quiet this week."
@@ -1394,7 +1411,9 @@ struct BriefingService: Sendable {
             blocked: BriefingBlocked(
                 verdict: blockedVerdict,
                 summary: blockedSummary,
-                members: blockedMembers
+                unlinked: unlinkedMembers,
+                idleThisWeek: idleThisWeekMembers,
+                idleLongTerm: idleLongTermMembers
             ),
             security: BriefingSecurity(
                 verdict: securityVerdict,
