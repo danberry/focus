@@ -153,9 +153,6 @@ final class BackgroundSyncManager {
     }
 
     /// Fetches and persists contributions for every ``Member`` in the given context.
-    ///
-    /// Members are synced concurrently, capped at 5 in-flight requests to stay within
-    /// GitHub's secondary rate limits.
     private func syncAllContributions(using service: ContributionService, in context: ModelContext) async {
         let members: [Member]
         let organizations: [SavedOrganization]
@@ -168,30 +165,9 @@ final class BackgroundSyncManager {
 
         let organizationIDs = organizations.map(\.githubId)
 
-        await withTaskGroup(of: Void.self) { group in
-            var inFlight = 0
-            let maxConcurrency = 5
-
-            for member in members {
-                guard let login = member.githubLogin else { continue }
-
-                if inFlight >= maxConcurrency {
-                    await group.next()
-                    inFlight -= 1
-                }
-
-                group.addTask { @MainActor in
-                    await service.syncContributions(
-                        login: login,
-                        member: member,
-                        organizationIDs: organizationIDs,
-                        in: context
-                    )
-                }
-                inFlight += 1
-            }
-
-            await group.waitForAll()
+        for member in members {
+            guard let login = member.githubLogin else { continue }
+            await service.syncContributions(login: login, member: member, organizationIDs: organizationIDs, in: context)
         }
     }
 
