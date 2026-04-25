@@ -105,30 +105,42 @@ struct BriefingService: Sendable {
 
         let priorWeekInterval = cal.dateInterval(of: .weekOfYear, for: priorWeekStart) ?? weekInterval
         let displayNames: [String] = scopedRepos.map(\.displayName)
+
+        // Check whether we already have a snapshot for the prior week — if so, skip its
+        // paginated GitHub fetch entirely and reconstruct the metrics from SwiftData.
+        let fingerprint = repoFingerprint(for: repoKeys)
+        let priorCacheHit = loadCachedPRMetrics(weekStart: priorWeekInterval.start, fingerprint: fingerprint, context: context)
+
         onPhase?(.fetchingMetrics)
         async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
-        async let priorMetricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: priorWeekInterval)
+        async let priorMetricsFetch = fetchMergedPRMetricsOrCached(repoKeys: repoKeys, interval: priorWeekInterval, cached: priorCacheHit)
         async let releaseCountsFetch = fetchBatchedReleaseCounts(repoKeys: repoKeys, since: weekInterval.start, until: weekInterval.end, priorSince: priorWeekStart, priorUntil: weekInterval.start)
-        async let priorPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr is:merged merged:", range: priorGhRange)
-        async let openedPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr created:", range: ghRange)
-        async let priorOpenedPRTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:pr created:", range: priorGhRange)
-        async let openedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue created:", range: ghRange)
-        async let closedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue is:closed closed:", range: ghRange)
-        async let priorClosedIssueTotalFetch = fetchCombinedSearchCount(repoKeys: repoKeys, qualifier: "is:issue is:closed closed:", range: priorGhRange)
+        // Five count-only searches batched into a single GraphQL request.
+        async let countsFetch = fetchBatchedSearchCounts(repoKeys: repoKeys, queries: [
+            (qualifier: "is:pr created:", range: ghRange),
+            (qualifier: "is:pr created:", range: priorGhRange),
+            (qualifier: "is:issue created:", range: ghRange),
+            (qualifier: "is:issue is:closed closed:", range: ghRange),
+            (qualifier: "is:issue is:closed closed:", range: priorGhRange)
+        ])
         async let dismissedCountsFetch = fetchDismissedCountsOrEmpty(repoKeys: repoKeys, displayNames: displayNames, since: weekInterval.start, until: weekInterval.end)
         let metrics = await metricsFetch
         let priorMetrics = await priorMetricsFetch
         let (releaseCount, priorReleaseCount) = await releaseCountsFetch
-        let prCounts = metrics.repoCounts
-        let ciPassPct = metrics.ciPassPct
-        let priorCIPassPct = priorMetrics.ciPassPct
-        let priorWeekPRTotal = await priorPRTotalFetch
-        let openedPRTotal = await openedPRTotalFetch
-        let priorOpenedPRTotal = await priorOpenedPRTotalFetch
-        let openedIssueTotal = await openedIssueTotalFetch
-        let closedIssueTotal = await closedIssueTotalFetch
-        let priorClosedIssueTotal = await priorClosedIssueTotalFetch
+        let counts = await countsFetch
         let repoClosedCounts = await dismissedCountsFetch
+
+        // Persist the current-week metrics so next week's briefing can skip its prior-week fetch.
+        persistPRSnapshot(weekStart: weekInterval.start, fingerprint: fingerprint, metrics: metrics, context: context)
+
+        let prCounts = metrics.repoCounts
+        // Prior-week merged total comes from the detailed fetch — no separate count query needed.
+        let priorWeekPRTotal = priorMetrics.totalMerged
+        let openedPRTotal = counts[0]
+        let priorOpenedPRTotal = counts[1]
+        let openedIssueTotal = counts[2]
+        let closedIssueTotal = counts[3]
+        let priorClosedIssueTotal = counts[4]
         let unreviewedCount = metrics.unreviewedCount
         let totalPRCount = metrics.totalPRCount
         let priorUnreviewedCount = priorMetrics.unreviewedCount
@@ -195,8 +207,8 @@ struct BriefingService: Sendable {
             medianPRSize: metrics.medianPRSize,
             dailyPRSizeMedians: metrics.dailyPRSizeMedians,
             priorMedianPRSize: priorMetrics.medianPRSize,
-            ciPassPct: ciPassPct,
-            priorCIPassPct: priorCIPassPct,
+            ciPassPct: metrics.ciPassPct,
+            priorCIPassPct: priorMetrics.ciPassPct,
             releaseCount: releaseCount,
             priorReleaseCount: priorReleaseCount,
             openedPRTotal: openedPRTotal,
@@ -496,33 +508,150 @@ struct BriefingService: Sendable {
 
     /// Fetches merged PR data for the week and derives all computed metrics in a single pass.
     ///
-    /// Returns `medianHours == nil` when there are no repos, no PRs, or on error.
-    /// Returns `dailyCounts` and `dailyCycleTimeMedians` as seven zeros on error.
+    /// Returns ``PRMetrics/empty`` when there are no repos, no PRs, or on network error.
     /// CI pass rate is computed from the same PR nodes — no separate network request needed.
     private func fetchMergedPRMetrics(
         repoKeys: [(owner: String, name: String)],
         interval: DateInterval
-    ) async -> (medianHours: Int?, dailyCounts: [Int], medianPRSize: Int?, dailyPRSizeMedians: [Int], dailyCycleTimeMedians: [Int], medianFirstReviewHours: Int?, dailyFirstReviewMedians: [Int], hotfixCount: Int, totalMerged: Int, unreviewedCount: Int, totalPRCount: Int, ciPassPct: Int?, repoCounts: [String: Int]) {
-        let zeros7 = [Int](repeating: 0, count: 7)
-        guard !repoKeys.isEmpty else { return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0, 0, 0, nil, [:]) }
+    ) async -> PRMetrics {
+        guard !repoKeys.isEmpty else { return .empty }
         let service = MergedPRReportService(graphQL: graphQL)
         let endDate = interval.end.addingTimeInterval(-1)
         guard let prsByRepo = try? await service.fetchMergedPRs(for: repoKeys, from: interval.start, to: endDate) else {
-            return (nil, zeros7, nil, zeros7, zeros7, nil, zeros7, 0, 0, 0, 0, nil, [:])
+            return .empty
         }
-        let medianHours = computeMedianMergeHours(from: prsByRepo)
-        let dailyCounts = computeDailyCounts(from: prsByRepo, interval: interval)
-        let medianPRSize = computeMedianPRSize(from: prsByRepo)
-        let dailyPRSizeMedians = computeDailyPRSizeMedians(from: prsByRepo, interval: interval)
-        let dailyCycleTimeMedians = computeDailyCycleTimeMedians(from: prsByRepo, interval: interval)
-        let medianFirstReviewHours = computeMedianFirstReviewHours(from: prsByRepo)
-        let dailyFirstReviewMedians = computeDailyFirstReviewMedians(from: prsByRepo, interval: interval)
-        let hotfixCount = computeHotfixCount(from: prsByRepo)
-        let totalMerged = prsByRepo.values.reduce(0) { $0 + $1.count }
         let (unreviewedCount, totalPRCount) = computeUnreviewedStats(from: prsByRepo)
-        let ciPassPct = computeCIPassRate(from: prsByRepo)
-        let repoCounts = prsByRepo.mapValues(\.count)
-        return (medianHours, dailyCounts, medianPRSize, dailyPRSizeMedians, dailyCycleTimeMedians, medianFirstReviewHours, dailyFirstReviewMedians, hotfixCount, totalMerged, unreviewedCount, totalPRCount, ciPassPct, repoCounts)
+        return PRMetrics(
+            medianHours: computeMedianMergeHours(from: prsByRepo),
+            dailyCounts: computeDailyCounts(from: prsByRepo, interval: interval),
+            medianPRSize: computeMedianPRSize(from: prsByRepo),
+            dailyPRSizeMedians: computeDailyPRSizeMedians(from: prsByRepo, interval: interval),
+            dailyCycleTimeMedians: computeDailyCycleTimeMedians(from: prsByRepo, interval: interval),
+            medianFirstReviewHours: computeMedianFirstReviewHours(from: prsByRepo),
+            dailyFirstReviewMedians: computeDailyFirstReviewMedians(from: prsByRepo, interval: interval),
+            hotfixCount: computeHotfixCount(from: prsByRepo),
+            totalMerged: prsByRepo.values.reduce(0) { $0 + $1.count },
+            unreviewedCount: unreviewedCount,
+            totalPRCount: totalPRCount,
+            ciPassPct: computeCIPassRate(from: prsByRepo),
+            repoCounts: prsByRepo.mapValues(\.count)
+        )
+    }
+
+    /// Returns cached metrics when available, otherwise fetches from GitHub.
+    ///
+    /// Wrapping the conditional in an `async` function lets the caller use `async let`
+    /// so it runs concurrently with the current-week fetch regardless of cache state.
+    private func fetchMergedPRMetricsOrCached(
+        repoKeys: [(owner: String, name: String)],
+        interval: DateInterval,
+        cached: PRMetrics?
+    ) async -> PRMetrics {
+        if let cached { return cached }
+        return await fetchMergedPRMetrics(repoKeys: repoKeys, interval: interval)
+    }
+
+    /// Derives a stable fingerprint for a set of repositories.
+    ///
+    /// Sorting ensures the fingerprint is order-independent; joining with `","` produces
+    /// a string that can be stored in and queried from SwiftData.
+    private func repoFingerprint(for repoKeys: [(owner: String, name: String)]) -> String {
+        repoKeys.map { "\($0.owner)/\($0.name)" }.sorted().joined(separator: ",")
+    }
+
+    /// Loads cached PR metrics for the given week and repo fingerprint from SwiftData.
+    ///
+    /// Returns `nil` on a cache miss so the caller can fall back to a live fetch.
+    @MainActor
+    private func loadCachedPRMetrics(weekStart: Date, fingerprint: String, context: ModelContext) -> PRMetrics? {
+        let nextWeekStart = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: weekStart) ?? weekStart
+        let results = try? context.fetch(FetchDescriptor<PRWeeklySnapshot>(
+            predicate: #Predicate { $0.weekStart >= weekStart && $0.weekStart < nextWeekStart }
+        ))
+        guard let snapshot = results?.first(where: { $0.repoFingerprint == fingerprint }) else { return nil }
+        return PRMetrics(
+            medianHours: snapshot.medianHours,
+            dailyCounts: snapshot.dailyCounts,
+            medianPRSize: snapshot.medianPRSize,
+            dailyPRSizeMedians: snapshot.dailyPRSizeMedians,
+            dailyCycleTimeMedians: snapshot.dailyCycleTimeMedians,
+            medianFirstReviewHours: snapshot.medianFirstReviewHours,
+            dailyFirstReviewMedians: snapshot.dailyFirstReviewMedians,
+            hotfixCount: snapshot.hotfixCount,
+            totalMerged: snapshot.totalMerged,
+            unreviewedCount: snapshot.unreviewedCount,
+            totalPRCount: snapshot.totalPRCount,
+            ciPassPct: snapshot.ciPassPct,
+            repoCounts: snapshot.repoCounts
+        )
+    }
+
+    /// Writes or updates the ``PRWeeklySnapshot`` for the given week and fingerprint.
+    @MainActor
+    private func persistPRSnapshot(weekStart: Date, fingerprint: String, metrics: PRMetrics, context: ModelContext) {
+        let nextWeekStart = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: weekStart) ?? weekStart
+        let results = try? context.fetch(FetchDescriptor<PRWeeklySnapshot>(
+            predicate: #Predicate { $0.weekStart >= weekStart && $0.weekStart < nextWeekStart }
+        ))
+        if let snapshot = results?.first(where: { $0.repoFingerprint == fingerprint }) {
+            snapshot.medianHours = metrics.medianHours
+            snapshot.dailyCounts = metrics.dailyCounts
+            snapshot.medianPRSize = metrics.medianPRSize
+            snapshot.dailyPRSizeMedians = metrics.dailyPRSizeMedians
+            snapshot.dailyCycleTimeMedians = metrics.dailyCycleTimeMedians
+            snapshot.medianFirstReviewHours = metrics.medianFirstReviewHours
+            snapshot.dailyFirstReviewMedians = metrics.dailyFirstReviewMedians
+            snapshot.hotfixCount = metrics.hotfixCount
+            snapshot.totalMerged = metrics.totalMerged
+            snapshot.unreviewedCount = metrics.unreviewedCount
+            snapshot.totalPRCount = metrics.totalPRCount
+            snapshot.ciPassPct = metrics.ciPassPct
+            snapshot.repoCountsJSON = try? JSONEncoder().encode(metrics.repoCounts)
+        } else {
+            context.insert(PRWeeklySnapshot(
+                weekStart: weekStart,
+                repoFingerprint: fingerprint,
+                medianHours: metrics.medianHours,
+                dailyCounts: metrics.dailyCounts,
+                medianPRSize: metrics.medianPRSize,
+                dailyPRSizeMedians: metrics.dailyPRSizeMedians,
+                dailyCycleTimeMedians: metrics.dailyCycleTimeMedians,
+                medianFirstReviewHours: metrics.medianFirstReviewHours,
+                dailyFirstReviewMedians: metrics.dailyFirstReviewMedians,
+                hotfixCount: metrics.hotfixCount,
+                totalMerged: metrics.totalMerged,
+                unreviewedCount: metrics.unreviewedCount,
+                totalPRCount: metrics.totalPRCount,
+                ciPassPct: metrics.ciPassPct,
+                repoCounts: metrics.repoCounts
+            ))
+        }
+        try? context.save()
+    }
+
+    /// Executes multiple GitHub search count queries in a single batched GraphQL request.
+    ///
+    /// Each element of `queries` maps to one aliased `search` field. Returns an array of
+    /// `issueCount` values at the same indices as `queries`, defaulting to `0` on any error.
+    func fetchBatchedSearchCounts(
+        repoKeys: [(owner: String, name: String)],
+        queries: [(qualifier: String, range: String)]
+    ) async -> [Int] {
+        guard !repoKeys.isEmpty && !queries.isEmpty else { return Array(repeating: 0, count: queries.count) }
+        let repos = repoKeys.map { "repo:\($0.owner)/\($0.name)" }.joined(separator: " ")
+        let aliases = queries.enumerated().map { i, q in
+            let search = "\(repos) \(q.qualifier)\(q.range)"
+            let escaped = search
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+            return "s\(i): search(query: \"\(escaped)\", type: ISSUE, first: 1) { issueCount }"
+        }.joined(separator: " ")
+        guard let response = try? await graphQL.execute(
+            query: "{ \(aliases) }",
+            variables: nil,
+            responseType: [String: SearchCountResult].self
+        ) else { return Array(repeating: 0, count: queries.count) }
+        return queries.indices.map { response["s\($0)"]?.issueCount ?? 0 }
     }
 
     private func computeCIPassRate(from prsByRepo: [String: [MergedPR]]) -> Int? {
@@ -1367,4 +1496,49 @@ private struct WeeklyPRCountResponse: Decodable, Sendable {
 
     /// The `search` field of the response envelope.
     let search: Search
+}
+
+// MARK: - SearchCountResult
+
+/// One aliased field in the ``BriefingService/fetchBatchedSearchCounts`` response.
+private struct SearchCountResult: Decodable, Sendable {
+    let issueCount: Int
+}
+
+// MARK: - PRMetrics
+
+/// The computed metrics derived from a week of merged PR data.
+///
+/// Used as the return type of ``BriefingService/fetchMergedPRMetrics(repoKeys:interval:)``
+/// and as the in-memory representation of a ``PRWeeklySnapshot``.
+private struct PRMetrics: Sendable {
+    var medianHours: Int?
+    var dailyCounts: [Int]
+    var medianPRSize: Int?
+    var dailyPRSizeMedians: [Int]
+    var dailyCycleTimeMedians: [Int]
+    var medianFirstReviewHours: Int?
+    var dailyFirstReviewMedians: [Int]
+    var hotfixCount: Int
+    var totalMerged: Int
+    var unreviewedCount: Int
+    var totalPRCount: Int
+    var ciPassPct: Int?
+    var repoCounts: [String: Int]
+
+    static let empty = PRMetrics(
+        medianHours: nil,
+        dailyCounts: Array(repeating: 0, count: 7),
+        medianPRSize: nil,
+        dailyPRSizeMedians: Array(repeating: 0, count: 7),
+        dailyCycleTimeMedians: Array(repeating: 0, count: 7),
+        medianFirstReviewHours: nil,
+        dailyFirstReviewMedians: Array(repeating: 0, count: 7),
+        hotfixCount: 0,
+        totalMerged: 0,
+        unreviewedCount: 0,
+        totalPRCount: 0,
+        ciPassPct: nil,
+        repoCounts: [:]
+    )
 }
