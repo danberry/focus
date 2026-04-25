@@ -17,17 +17,7 @@ struct OrgDashboardViewTests {
     // MARK: - Helpers
 
     /// Creates an in-memory `ModelContainer` with the dashboard-related types registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedOrganization.self,
-            Department.self,
-            Team.self,
-            SavedRepository.self,
-            Member.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     // MARK: - Department metrics
 

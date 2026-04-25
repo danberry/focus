@@ -11,10 +11,7 @@ import SwiftData
 struct DisciplineTests {
 
     /// Creates an in-memory `ModelContainer` with `Discipline` and `JobTitle` registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(for: Discipline.self, JobTitle.self, configurations: config)
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     // MARK: - init
 

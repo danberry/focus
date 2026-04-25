@@ -20,13 +20,7 @@ struct CodeownersServiceTests {
     }
 
     /// Creates an in-memory `ModelContainer` with the relevant model types registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedRepository.self, Team.self, Department.self, SavedOrganization.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     /// Encodes a CODEOWNERS file content as a GitHub Contents API JSON response.
     private func contentsResponse(for codeownersText: String) -> String {

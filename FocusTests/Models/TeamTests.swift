@@ -11,13 +11,7 @@ import SwiftData
 struct TeamTests {
 
     /// Creates an in-memory `ModelContainer` configured for `Team` objects.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: Team.self, Department.self, SavedOrganization.self, SavedRepository.self, Member.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     // MARK: - init
 

@@ -18,14 +18,7 @@ struct SecurityServiceTests {
     }
 
     /// Creates an in-memory ``ModelContainer`` with the alert model types registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedRepository.self, DependabotAlert.self, CodeScanningAlert.self, SecretScanningAlert.self,
-            Team.self, Department.self, SavedOrganization.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     // MARK: - fetchMetrics
 
@@ -447,14 +440,16 @@ struct SecurityServiceTests {
                 "secret_type_display_name": "GitHub Personal Access Token",
                 "validity": "active",
                 "publicly_leaked": false,
-                "created_at": "2024-01-15T10:00:00Z"
+                "created_at": "2024-01-15T10:00:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/1"
             },
             {
                 "number": 2,
                 "secret_type_display_name": "AWS Access Key",
                 "validity": "unknown",
                 "publicly_leaked": true,
-                "created_at": "2024-02-20T12:30:00Z"
+                "created_at": "2024-02-20T12:30:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/2"
             }
         ]
         """
@@ -469,7 +464,7 @@ struct SecurityServiceTests {
         await makeService().syncSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
-        #expect(alerts.count == 2)
+        try #require(alerts.count == 2)
 
         #expect(alerts[0].alertNumber == 1)
         #expect(alerts[0].secretTypeDisplayName == "GitHub Personal Access Token")
@@ -508,7 +503,8 @@ struct SecurityServiceTests {
                 "secret_type_display_name": "GitHub Personal Access Token",
                 "validity": "active",
                 "publicly_leaked": false,
-                "created_at": "2024-01-15T10:00:00Z"
+                "created_at": "2024-01-15T10:00:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/1"
             }
         ]
         """
@@ -517,7 +513,7 @@ struct SecurityServiceTests {
         await makeService().syncSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         let alerts = repo.secretScanningAlertDetails
-        #expect(alerts.count == 1)
+        try #require(alerts.count == 1)
         #expect(alerts[0].alertNumber == 1)
     }
 

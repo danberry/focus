@@ -34,11 +34,12 @@ struct MergedPRReportServiceTests {
     }
 
     /// Creates a JSON fragment representing a single merged PR node.
-    private func prNode(number: Int, title: String, mergedAt: String, login: String, url: String, repo: String) -> String {
+    private func prNode(number: Int, title: String, createdAt: String = "2026-04-06T08:00:00Z", mergedAt: String, login: String, url: String, repo: String) -> String {
         """
         {
           "number": \(number),
           "title": "\(title)",
+          "createdAt": "\(createdAt)",
           "mergedAt": "\(mergedAt)",
           "author": { "login": "\(login)" },
           "url": "\(url)",

@@ -16,14 +16,7 @@ struct ContributionServiceTests {
     }
 
     /// Creates an in-memory `ModelContainer` with the contribution model types registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: Team.self, Member.self, MemberContribution.self, DailyContribution.self,
-            Department.self, SavedOrganization.self, SavedRepository.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     /// Builds a minimal GraphQL contribution response JSON string with configurable contribution counts.
     private func makeResponse(commits: Int = 10, prs: Int = 3, reviews: Int = 2, issues: Int = 1) -> String {
