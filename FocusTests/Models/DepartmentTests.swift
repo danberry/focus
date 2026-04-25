@@ -11,17 +11,7 @@ import SwiftData
 struct DepartmentTests {
 
     /// Creates an in-memory `ModelContainer` with the department and its related types registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: Department.self,
-            Team.self,
-            SavedOrganization.self,
-            SavedRepository.self,
-            Member.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     // MARK: - init
 

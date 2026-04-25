@@ -13,13 +13,7 @@ struct DependabotAlertAssignmentTests {
     // MARK: - Setup
 
     /// Creates an in-memory `ModelContainer` with `SavedRepository` and `DependabotAlert` registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedRepository.self, DependabotAlert.self, Team.self, Department.self, SavedOrganization.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     /// Creates a `DependabotAlert` with representative test values.
     private func makeAlert() -> DependabotAlert {

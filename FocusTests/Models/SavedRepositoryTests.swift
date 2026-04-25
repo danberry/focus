@@ -11,14 +11,7 @@ import SwiftData
 struct SavedRepositoryTests {
 
     /// Creates an in-memory `ModelContainer` with `SavedRepository` and all cascade-delete alert types registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedRepository.self, DependabotAlert.self, CodeScanningAlert.self, SecretScanningAlert.self,
-            Team.self, Department.self, SavedOrganization.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     // MARK: - init
 

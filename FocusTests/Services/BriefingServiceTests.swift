@@ -34,16 +34,7 @@ struct BriefingServiceTests {
     }
 
     /// Creates an in-memory `ModelContainer` with the same schema as the production container.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedRepository.self, DependabotAlert.self,
-            Member.self, MemberContribution.self, DailyContribution.self,
-            Team.self, Department.self, SavedOrganization.self,
-            Discipline.self, JobTitle.self, SecurityWeeklySnapshot.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     // MARK: - generate
 

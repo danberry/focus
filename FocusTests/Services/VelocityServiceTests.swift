@@ -18,13 +18,7 @@ struct VelocityServiceTests {
     }
 
     /// Creates an in-memory `ModelContainer` with velocity model types registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedRepository.self, RepositoryVelocity.self, Team.self, Department.self, SavedOrganization.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     /// Creates a JSON response string with configurable merged PR counts for all four velocity periods.
     private func makeResponse(

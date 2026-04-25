@@ -98,11 +98,7 @@ struct BackgroundSyncManagerTests {
         let manager = BackgroundSyncManager()
         // setup() has not been called — isSetup is false.
         // syncIfNeeded should return immediately without setting isSyncing.
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self,
-            configurations: config
-        )
+        let container = try makeTestContainer()
         await manager.syncIfNeeded(context: container.mainContext)
         #expect(!manager.isSyncing)
     }
@@ -122,11 +118,7 @@ struct BackgroundSyncManagerTests {
 
         let manager = BackgroundSyncManager()
         // isSetup is still false — guard fires first. But we verify state is unchanged.
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self,
-            configurations: config
-        )
+        let container = try makeTestContainer()
         await manager.syncIfNeeded(context: container.mainContext)
         #expect(!manager.isSyncing)
 

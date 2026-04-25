@@ -18,13 +18,7 @@ struct PullRequestServiceTests {
     }
 
     /// Creates an in-memory `ModelContainer` with `SavedRepository` and `OpenPullRequest` registered.
-    private func makeContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(
-            for: SavedRepository.self, OpenPullRequest.self, Team.self, Department.self, SavedOrganization.self,
-            configurations: config
-        )
-    }
+    private func makeContainer() throws -> ModelContainer { try makeTestContainer() }
 
     /// Builds a GraphQL-shaped JSON response string containing the given pull request stubs.
     private func makeResponse(prs: [(number: Int, title: String, createdAt: String, login: String, url: String)]) -> String {
