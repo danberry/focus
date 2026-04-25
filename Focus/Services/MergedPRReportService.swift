@@ -152,6 +152,7 @@ struct MergedPRReportService: Sendable {
             else { continue }
 
             let firstReviewAt = node.reviews?.nodes.first?.submittedAt.flatMap { iso.date(from: $0) }
+            let ciState = node.commits?.nodes.first?.commit.statusCheckRollup?.state
 
             let pr = MergedPR(
                 number: number,
@@ -163,7 +164,8 @@ struct MergedPRReportService: Sendable {
                 repoNameWithOwner: repoName,
                 additions: node.additions ?? 0,
                 deletions: node.deletions ?? 0,
-                firstReviewAt: firstReviewAt
+                firstReviewAt: firstReviewAt,
+                ciState: ciState
             )
             result[repoName, default: []].append(pr)
         }
@@ -247,6 +249,9 @@ private struct SearchResponse: Decodable, Sendable {
         /// The first review submitted on this pull request, or `nil` if none.
         let reviews: ReviewConnection?
 
+        /// The last commit on this pull request, used to read CI check results.
+        let commits: CommitConnection?
+
         /// A connection containing the first review submitted on a pull request.
         struct ReviewConnection: Decodable, Sendable {
 
@@ -258,6 +263,27 @@ private struct SearchResponse: Decodable, Sendable {
 
                 /// The ISO 8601 timestamp when this review was submitted.
                 let submittedAt: String?
+            }
+        }
+
+        /// A connection containing the last commit of a pull request.
+        struct CommitConnection: Decodable, Sendable {
+
+            let nodes: [CommitNode]
+
+            struct CommitNode: Decodable, Sendable {
+
+                let commit: Commit
+
+                struct Commit: Decodable, Sendable {
+
+                    let statusCheckRollup: StatusCheckRollup?
+
+                    struct StatusCheckRollup: Decodable, Sendable {
+                        /// `"SUCCESS"`, `"FAILURE"`, `"PENDING"`, `"ERROR"`, or `"EXPECTED"`.
+                        let state: String
+                    }
+                }
             }
         }
 
