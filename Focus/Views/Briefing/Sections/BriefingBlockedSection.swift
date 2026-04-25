@@ -2,11 +2,8 @@ import SwiftUI
 
 // MARK: - BriefingBlockedSection
 
-/// The "Who Looks Blocked" section — quiet or stuck members with quick actions.
-///
-/// Renders a section header above one card per blocked member. Each card carries
-/// avatar initials, team and idle metadata, an italic recommendation, and two
-/// pill buttons that surface the DM and Open actions.
+/// The "Inactive Members" section — three summary cards covering unlinked accounts,
+/// members idle this week, and members idle for more than a week.
 struct BriefingBlockedSection: View {
 
     // MARK: - Properties
@@ -33,92 +30,97 @@ struct BriefingBlockedSection: View {
                 summary: blocked.summary
             )
 
-            // MARK: Member cards
+            // MARK: Category cards
             VStack(spacing: 10) {
-                ForEach(Array(blocked.members.enumerated()), id: \.offset) { _, member in
-                    BlockedMemberCard(
-                        member: member,
-                        onDM: { onDM?(member) },
-                        onOpen: { onOpen?(member) }
-                    )
-                }
+                InactiveCategoryCard(
+                    title: "No GitHub linked",
+                    subtitle: "No contribution history detected",
+                    members: blocked.unlinked,
+                    tone: .red
+                )
+
+                InactiveCategoryCard(
+                    title: "No contributions this week",
+                    subtitle: "Idle for up to one week",
+                    members: blocked.idleThisWeek,
+                    tone: .blue
+                )
+
+                InactiveCategoryCard(
+                    title: "No contributions for 1+ week",
+                    subtitle: "Missing for more than a week",
+                    members: blocked.idleLongTerm,
+                    tone: .red
+                )
             }
         }
     }
 }
 
-// MARK: - BlockedMemberCard
+// MARK: - InactiveCategoryCard
 
-/// A single blocked-member card inside the "Who Looks Blocked" section.
-private struct BlockedMemberCard: View {
+/// A summary card for one inactivity category in the "Inactive Members" section.
+private struct InactiveCategoryCard: View {
 
     // MARK: - Properties
 
-    /// The blocked member payload to render.
-    let member: BriefingBlockedMember
+    /// The category label shown as the card title.
+    let title: String
 
-    /// Closure invoked when the DM pill button is tapped.
-    let onDM: () -> Void
+    /// A short description shown when the category has no members.
+    let subtitle: String
 
-    /// Closure invoked when the Open pill button is tapped.
-    let onOpen: () -> Void
+    /// The members flagged in this category.
+    let members: [BriefingBlockedMember]
+
+    /// The semantic tone that drives the card's color when members are present.
+    let tone: BriefingTone
+
+    // MARK: - Helpers
+
+    private var isEmpty: Bool { members.isEmpty }
+
+    private var toneColor: Color {
+        switch tone {
+        case .red: return BriefingColor.red2
+        case .blue: return BriefingColor.blue2
+        case .neutral: return BriefingColor.ink2
+        }
+    }
+
+    /// Up to three member names followed by an overflow count if needed, e.g. "Alice, Bob, +2 more".
+    private var namesSummary: String {
+        let visible = members.prefix(3).map(\.name)
+        let overflow = members.count - visible.count
+        var parts = Array(visible)
+        if overflow > 0 { parts.append("+\(overflow) more") }
+        return parts.joined(separator: ", ")
+    }
 
     // MARK: - Body
 
     /// The view's content.
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                BriefingAvatarView(initials: member.initials, githubLogin: member.githubLogin, size: 36)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(isEmpty ? "—" : "\(members.count)")
+                .font(.system(size: 30, weight: .bold, design: .monospaced))
+                .foregroundStyle(isEmpty ? Color.gray400 : Color.gray700)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(member.name)
-                        .font(BriefingFont.attentionTitle)
-                        .foregroundStyle(BriefingColor.ink)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(BriefingFont.attentionTitle)
+                    .foregroundStyle(BriefingColor.ink)
 
-                    Text(member.neverContributed ? "\(member.team) · no contributions on record" : "\(member.team) · \(member.idleLabel) idle")
-                        .font(BriefingFont.meta)
-                        .foregroundStyle(BriefingColor.ink3)
-                }
-
-                Spacer()
+                Text(isEmpty ? subtitle : namesSummary)
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(isEmpty ? BriefingColor.ink3 : toneColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Text(member.recommendation)
-                .font(BriefingFont.body)
-                .foregroundStyle(BriefingColor.ink3)
-                .italic()
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack(spacing: 8) {
-                Button("DM", action: onDM)
-                    .buttonStyle(BlockedPillButtonStyle())
-
-                Button("Open", action: onOpen)
-                    .buttonStyle(BlockedPillButtonStyle())
-            }
+            Spacer()
         }
         .padding(14)
-        .briefingCard(tone: member.neverContributed ? .red : (member.urgent ? .blue : .neutral))
-    }
-}
-
-// MARK: - BlockedPillButtonStyle
-
-/// A capsule pill style used by the blocked-member card's quick action buttons.
-private struct BlockedPillButtonStyle: ButtonStyle {
-
-    // MARK: - Body
-
-    /// Builds the styled button label.
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(BriefingFont.meta)
-            .foregroundStyle(BriefingColor.ink2)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(BriefingColor.paper3))
-            .opacity(configuration.isPressed ? 0.85 : 1)
+        .briefingCard(tone: isEmpty ? .neutral : tone)
     }
 }
 

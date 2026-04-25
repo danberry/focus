@@ -137,28 +137,42 @@ struct Briefing: Sendable {
             ]
         ),
         blocked: BriefingBlocked(
-            verdict: "2 members went quiet this week.",
-            summary: "Heuristic: no commits this week · 2 of 34 people flagged",
-            members: [
+            verdict: "3 members went quiet this week.",
+            summary: "Heuristic: no commits this week · 3 of 34 people flagged",
+            unlinked: [
                 BriefingBlockedMember(
-                    initials: "PS",
-                    name: "Priya Shah",
-                    team: "Platform",
-                    idleLabel: "6d",
-                    recommendation: "Usually ships 4+ PRs / week. Check in.",
-                    urgent: true,
-                    neverContributed: false,
-                    githubLogin: "priyashah"
-                ),
+                    initials: "JL",
+                    name: "Jamie Lee",
+                    team: "Mobile",
+                    idleLabel: "—",
+                    recommendation: "No contributions on record. Verify their account is linked and active.",
+                    urgent: false,
+                    neverContributed: true,
+                    githubLogin: nil
+                )
+            ],
+            idleThisWeek: [
                 BriefingBlockedMember(
                     initials: "MT",
                     name: "Miguel Torres",
                     team: "Payments",
-                    idleLabel: "4d",
+                    idleLabel: "10d",
                     recommendation: "Blocked on review for 3 open PRs.",
                     urgent: false,
                     neverContributed: false,
                     githubLogin: "mtorres"
+                )
+            ],
+            idleLongTerm: [
+                BriefingBlockedMember(
+                    initials: "PS",
+                    name: "Priya Shah",
+                    team: "Platform",
+                    idleLabel: "18d",
+                    recommendation: "Usually ships 4+ PRs / week. Check in.",
+                    urgent: true,
+                    neverContributed: false,
+                    githubLogin: "priyashah"
                 )
             ]
         ),
@@ -570,8 +584,17 @@ struct BriefingBlocked: Sendable {
     /// A one-line heuristic description and flagged-vs-total count shown beneath the verdict.
     let summary: String
 
-    /// The list of idle or blocked members.
-    let members: [BriefingBlockedMember]
+    /// Members with no GitHub account linked or no contribution history at all.
+    let unlinked: [BriefingBlockedMember]
+
+    /// Members who had prior activity but contributed nothing in the briefing week (idle ≤ 14 days).
+    let idleThisWeek: [BriefingBlockedMember]
+
+    /// Members with no contributions for more than a week (idle > 14 days).
+    let idleLongTerm: [BriefingBlockedMember]
+
+    /// All flagged members across the three categories, combined.
+    var members: [BriefingBlockedMember] { unlinked + idleThisWeek + idleLongTerm }
 }
 
 // MARK: - BriefingBlockedMember
