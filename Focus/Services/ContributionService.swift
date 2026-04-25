@@ -46,6 +46,100 @@ struct ContributionService: Sendable {
     ///   - member: The ``Member`` SwiftData object to update.
     ///   - organizationIDs: GitHub global node IDs of tracked organizations; pass `[]` for the global query.
     ///   - context: The SwiftData model context used for persistence.
+    /// Syncs contributions for a single member using an isolated ``ModelContext`` created from
+    /// the supplied container. All parameters are `Sendable`, making this overload safe to call
+    /// from concurrent `withTaskGroup` child tasks without capturing non-Sendable types.
+    nonisolated func syncContributions(
+        login: String,
+        memberID: PersistentIdentifier,
+        organizationIDs: [String] = [],
+        in container: ModelContainer
+    ) async {
+        let context = ModelContext(container)
+        let all = (try? context.fetch(FetchDescriptor<Member>())) ?? []
+        guard let member = all.first(where: { $0.persistentModelID == memberID }) else { return }
+
+        let now = Date()
+        guard let oneYearAgo = Calendar.current.date(byAdding: .day, value: -365, to: now) else { return }
+
+        let formatter = ISO8601DateFormatter()
+        let fromString = formatter.string(from: oneYearAgo)
+        let toString = formatter.string(from: now)
+
+        do {
+            var totalCommits = 0
+            var totalPRs = 0
+            var totalReviews = 0
+            var totalIssues = 0
+            var dailyCounts: [String: Int] = [:]
+
+            if organizationIDs.isEmpty {
+                let response: ContributionsResponse = try await graphQL.execute(
+                    query: ContributionQueries.contributions,
+                    variables: ["login": login, "from": fromString, "to": toString],
+                    responseType: ContributionsResponse.self
+                )
+                guard let collection = response.user?.contributionsCollection else { return }
+                totalCommits = collection.totalCommitContributions
+                totalPRs = collection.totalPullRequestContributions
+                totalReviews = collection.totalPullRequestReviewContributions
+                totalIssues = collection.totalIssueContributions
+                accumulateDailyCounts(from: collection.contributionCalendar, into: &dailyCounts)
+            } else {
+                var receivedAnyData = false
+                for orgID in organizationIDs {
+                    let response: ContributionsResponse = try await graphQL.execute(
+                        query: ContributionQueries.contributionsInOrganization,
+                        variables: ["login": login, "from": fromString, "to": toString, "organizationID": orgID],
+                        responseType: ContributionsResponse.self
+                    )
+                    guard let collection = response.user?.contributionsCollection else { continue }
+                    totalCommits += collection.totalCommitContributions
+                    totalPRs += collection.totalPullRequestContributions
+                    totalReviews += collection.totalPullRequestReviewContributions
+                    totalIssues += collection.totalIssueContributions
+                    accumulateDailyCounts(from: collection.contributionCalendar, into: &dailyCounts)
+                    receivedAnyData = true
+                }
+                guard receivedAnyData else { return }
+            }
+
+            if let existing = member.contributions.first {
+                existing.commits = totalCommits
+                existing.pullRequests = totalPRs
+                existing.reviews = totalReviews
+                existing.issues = totalIssues
+                existing.periodStart = oneYearAgo
+                existing.periodEnd = now
+                existing.fetchedAt = now
+                for extra in member.contributions.dropFirst() {
+                    extra.member = nil
+                    context.delete(extra)
+                }
+            } else {
+                let contribution = MemberContribution(
+                    commits: totalCommits,
+                    pullRequests: totalPRs,
+                    reviews: totalReviews,
+                    issues: totalIssues,
+                    periodStart: oneYearAgo,
+                    periodEnd: now,
+                    fetchedAt: now
+                )
+                contribution.member = member
+                context.insert(contribution)
+            }
+
+            member.contributionCount = totalCommits + totalPRs + totalReviews + totalIssues
+
+            syncDailyContributions(from: dailyCounts, member: member, in: context)
+
+            try? context.save()
+        } catch {
+            // Silent failure — keeps any existing data intact.
+        }
+    }
+
     @MainActor
     func syncContributions(
         login: String,
@@ -166,7 +260,6 @@ struct ContributionService: Sendable {
     ///
     /// Existing objects are updated in-place (preserving their `PersistentIdentifier`) so views
     /// holding live references are not invalidated. Stale dates are deleted; new dates are inserted.
-    @MainActor
     private func syncDailyContributions(
         from dailyCounts: [String: Int],
         member: Member,

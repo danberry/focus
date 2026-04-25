@@ -155,8 +155,11 @@ final class BackgroundSyncManager {
     /// Fetches and persists contributions for every ``Member`` in the given context.
     ///
     /// Members are synced concurrently, capped at 5 in-flight requests to stay within
-    /// GitHub's secondary rate limits.
+    /// GitHub's secondary rate limits. Each child task creates its own ``ModelContext``
+    /// from the shared ``ModelContainer``, so all captures in the task group are `Sendable`.
     private func syncAllContributions(using service: ContributionService, in context: ModelContext) async {
+        guard let container = modelContainer else { return }
+
         let members: [Member]
         let organizations: [SavedOrganization]
         do {
@@ -168,24 +171,29 @@ final class BackgroundSyncManager {
 
         let organizationIDs = organizations.map(\.githubId)
 
+        // Extract only Sendable values before entering the task group so child-task
+        // closures capture nothing non-Sendable.
+        let memberData: [(login: String, id: PersistentIdentifier)] = members.compactMap { member in
+            guard let login = member.githubLogin else { return nil }
+            return (login, member.persistentModelID)
+        }
+
         await withTaskGroup(of: Void.self) { group in
             var inFlight = 0
             let maxConcurrency = 5
 
-            for member in members {
-                guard let login = member.githubLogin else { continue }
-
+            for data in memberData {
                 if inFlight >= maxConcurrency {
                     await group.next()
                     inFlight -= 1
                 }
 
-                group.addTask { @MainActor in
+                group.addTask {
                     await service.syncContributions(
-                        login: login,
-                        member: member,
+                        login: data.login,
+                        memberID: data.id,
                         organizationIDs: organizationIDs,
-                        in: context
+                        in: container
                     )
                 }
                 inFlight += 1
