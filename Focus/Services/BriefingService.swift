@@ -133,7 +133,10 @@ struct BriefingService: Sendable {
         // Persist the current-week metrics so next week's briefing can skip its prior-week fetch.
         persistPRSnapshot(weekStart: weekInterval.start, fingerprint: fingerprint, metrics: metrics, context: context)
 
-        let prCounts = metrics.repoCounts
+        let prCounts = Dictionary(
+            metrics.repoCounts.map { ($0.key.lowercased(), $0.value) },
+            uniquingKeysWith: +
+        )
         // Prior-week merged total comes from the detailed fetch — no separate count query needed.
         let priorWeekPRTotal = priorMetrics.totalMerged
         let openedPRTotal = counts[0]
@@ -1053,7 +1056,7 @@ struct BriefingService: Sendable {
 
         // MARK: Shipped — repo ranking
         var repoRanking: [(repo: SavedRepository, count: Int)] = repositories.map { repo in
-            (repo, prCounts["\(repo.owner)/\(repo.name)"] ?? 0)
+            (repo, prCounts["\(repo.owner)/\(repo.name)".lowercased()] ?? 0)
         }
         repoRanking.sort { $0.count > $1.count }
         let repoCounts: [BriefingRepoCount] = repoRanking.enumerated().map { index, pair in
