@@ -105,9 +105,19 @@ struct BriefingView: View {
                 } else {
 
                     // MARK: Loading state
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.top, 60)
+                    VStack(spacing: 10) {
+                        ProgressView()
+                            .tint(BriefingColor.ink)
+                        if let phase = briefingManager.loadingPhase(for: scope) {
+                            Text(phase.label)
+                                .font(BriefingFont.meta)
+                                .foregroundStyle(BriefingColor.ink3)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 60)
+                    .animation(.easeInOut(duration: 0.25), value: briefingManager.loadingPhase(for: scope))
                 }
             }
         }

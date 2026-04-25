@@ -56,7 +56,13 @@ struct BriefingService: Sendable {
     ///   - context: The SwiftData model context used to read the local graph.
     /// - Returns: An assembled ``Briefing`` for the previous week.
     @MainActor
-    func generate(scope: BriefingScope = .all, in context: ModelContext) async -> Briefing {
+    func generate(
+        scope: BriefingScope = .all,
+        in context: ModelContext,
+        onPhase: ((BriefingLoadingPhase) -> Void)? = nil
+    ) async -> Briefing {
+        onPhase?(.loadingData)
+
         guard let weekInterval = previousWeekInterval() else {
             return Briefing.placeholder
         }
@@ -99,6 +105,7 @@ struct BriefingService: Sendable {
 
         let priorWeekInterval = cal.dateInterval(of: .weekOfYear, for: priorWeekStart) ?? weekInterval
         let displayNames: [String] = scopedRepos.map(\.displayName)
+        onPhase?(.fetchingMetrics)
         async let metricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: weekInterval)
         async let priorMetricsFetch = fetchMergedPRMetrics(repoKeys: repoKeys, interval: priorWeekInterval)
         async let releaseCountsFetch = fetchBatchedReleaseCounts(repoKeys: repoKeys, since: weekInterval.start, until: weekInterval.end, priorSince: priorWeekStart, priorUntil: weekInterval.start)
@@ -127,6 +134,7 @@ struct BriefingService: Sendable {
         let priorUnreviewedCount = priorMetrics.unreviewedCount
         let priorTotalPRCount = priorMetrics.totalPRCount
 
+        onPhase?(.fetchingSecurityAlerts)
         let criticalDescriptor = FetchDescriptor<DependabotAlert>(
             predicate: #Predicate { $0.severity == "critical" }
         )
@@ -166,6 +174,7 @@ struct BriefingService: Sendable {
             )
         }
 
+        onPhase?(.assembling)
         return assemble(
             weekInterval: weekInterval,
             weekRange: weekRange,

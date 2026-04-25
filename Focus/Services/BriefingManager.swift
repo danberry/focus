@@ -2,6 +2,25 @@ import Foundation
 import SwiftData
 import Observation
 
+// MARK: - BriefingLoadingPhase
+
+/// A discrete stage in the brief generation pipeline, surfaced to the UI as loading feedback.
+enum BriefingLoadingPhase: Equatable, Sendable {
+    case loadingData
+    case fetchingMetrics
+    case fetchingSecurityAlerts
+    case assembling
+
+    var label: String {
+        switch self {
+        case .loadingData:           return "Reading local data…"
+        case .fetchingMetrics:       return "Fetching PR metrics from GitHub…"
+        case .fetchingSecurityAlerts: return "Fetching security data…"
+        case .assembling:            return "Assembling your briefing…"
+        }
+    }
+}
+
 // MARK: - BriefingManager
 
 /// Caches the weekly ``Briefing`` so the Focus tab renders instantly on revisit.
@@ -23,6 +42,9 @@ final class BriefingManager {
     /// Cache keys for which generation is currently in flight.
     private var loadingKeys: Set<String> = []
 
+    /// Current loading phase per cache key, cleared when generation completes.
+    private var loadingPhases: [String: BriefingLoadingPhase] = [:]
+
     // MARK: - Public Interface
 
     /// The cached briefing for the given scope, or `nil` if not yet generated.
@@ -33,6 +55,11 @@ final class BriefingManager {
     /// Whether generation is currently in flight for the given scope.
     func isLoading(for scope: BriefingScope) -> Bool {
         loadingKeys.contains(cacheKey(for: scope))
+    }
+
+    /// The current loading phase for the given scope, or `nil` if not loading.
+    func loadingPhase(for scope: BriefingScope) -> BriefingLoadingPhase? {
+        loadingPhases[cacheKey(for: scope)]
     }
 
     /// Generates the briefing for `scope` if it is not already cached or in flight.
@@ -60,9 +87,12 @@ final class BriefingManager {
         context: ModelContext
     ) async {
         loadingKeys.insert(key)
-        let result = await service.generate(scope: scope, in: context)
+        let result = await service.generate(scope: scope, in: context) { [weak self] phase in
+            self?.loadingPhases[key] = phase
+        }
         cache[key] = result
         loadingKeys.remove(key)
+        loadingPhases.removeValue(forKey: key)
     }
 
     /// Returns a stable cache key for the given scope within the current briefing week.
