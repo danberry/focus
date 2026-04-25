@@ -31,7 +31,7 @@ struct BriefingBlockedSection: View {
             )
 
             // MARK: Category cards
-            VStack(spacing: 10) {
+            HStack(spacing: 10) {
                 InactiveCategoryCard(
                     title: "No GitHub linked",
                     subtitle: "No contribution history detected",
@@ -101,24 +101,22 @@ private struct InactiveCategoryCard: View {
 
     /// The view's content.
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(isEmpty ? "—" : "\(members.count)")
                 .font(.system(size: 30, weight: .bold, design: .monospaced))
                 .foregroundStyle(isEmpty ? Color.gray400 : Color.gray700)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(BriefingFont.attentionTitle)
-                    .foregroundStyle(BriefingColor.ink)
+            Text(title)
+                .font(BriefingFont.attentionTitle)
+                .foregroundStyle(BriefingColor.ink)
 
-                Text(isEmpty ? subtitle : namesSummary)
-                    .font(BriefingFont.meta)
-                    .foregroundStyle(isEmpty ? BriefingColor.ink3 : toneColor)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            Text(isEmpty ? subtitle : namesSummary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(isEmpty ? BriefingColor.ink3 : toneColor)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .briefingCard(tone: isEmpty ? .neutral : tone)
     }
