@@ -13,8 +13,6 @@ enum ContributionQueries {
 
     // MARK: - Properties
 
-    // TODO: Add `restrictedContributionsCount` to both queries — without it, private contributions are silently excluded from all totals when the token lacks `read:user` scope.
-
     /// Fetches aggregate contribution counts and per-day calendar data for a user within a date range.
     ///
     /// Use this variant when no organization filter is required. Results include contributions
