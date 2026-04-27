@@ -39,6 +39,15 @@ struct ReportsView: View {
                         Text("PRs merged across your saved repos this week")
                     }
                 }
+                NavigationLink {
+                    MergedPRsLastWeekView()
+                } label: {
+                    LabeledContent {
+                    } label: {
+                        Text("Merged PRs Last Week")
+                        Text("PRs merged across your saved repos last week (Sun–Sat)")
+                    }
+                }
                 // MARK: Velocity
                 NavigationLink {
                     IssueVelocityReportView()
