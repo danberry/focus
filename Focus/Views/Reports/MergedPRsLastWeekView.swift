@@ -135,6 +135,9 @@ struct MergedPRsLastWeekView: View {
     // MARK: - Private
 
     /// Fetches merged PRs for all saved repositories within the previous week and updates `prsByRepo`.
+    ///
+    /// Queries one day at a time rather than a single 7-day range to avoid GitHub search API
+    /// timeouts (502s) that occur when wide date ranges produce large result sets.
     @MainActor
     private func loadData() async {
         guard !isLoading else { return }
@@ -147,7 +150,18 @@ struct MergedPRsLastWeekView: View {
 
         do {
             let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
-            prsByRepo = try await service.fetchMergedPRs(for: repos, from: lastWeekStart, to: lastWeekEnd)
+            var merged: [String: [MergedPR]] = [:]
+
+            var day = lastWeekStart
+            while day <= lastWeekEnd {
+                let dayResults = try await service.fetchMergedPRs(for: repos, on: day)
+                for (repo, prs) in dayResults {
+                    merged[repo, default: []].append(contentsOf: prs)
+                }
+                day = localCalendar.date(byAdding: .day, value: 1, to: day)!
+            }
+
+            prsByRepo = merged
         } catch let ghError as GitHubError {
             error = ghError
         } catch {
