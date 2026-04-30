@@ -17,6 +17,12 @@ struct MergedPRsThisWeekView: View {
     /// Whether a data fetch is currently in progress.
     @State private var isLoading = false
 
+    /// The number of repositories whose results have been received during the current fetch.
+    @State private var loadedRepoCount = 0
+
+    /// The total number of repositories being fetched in the current load.
+    @State private var totalRepoCount = 0
+
     /// The last error returned by the data fetch, or `nil` if the last fetch succeeded.
     @State private var error: GitHubError?
 
@@ -81,8 +87,15 @@ struct MergedPRsThisWeekView: View {
     var body: some View {
         Group {
             if isLoading && allPRs.isEmpty {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 12) {
+                    ProgressView(value: Double(loadedRepoCount), total: Double(max(totalRepoCount, 1)))
+                        .frame(maxWidth: 240)
+                        .animation(.easeInOut(duration: 0.25), value: loadedRepoCount)
+                    Text("\(loadedRepoCount) of \(totalRepoCount) repos")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error {
                 ContentUnavailableView(
                     "Unable to Load Report",
@@ -130,6 +143,9 @@ struct MergedPRsThisWeekView: View {
     // MARK: - Private
 
     /// Fetches merged PRs for all saved repositories within the current week and updates `prsByRepo`.
+    ///
+    /// Queries each repository concurrently for the full week-to-date range, keeping individual
+    /// search queries simple and avoiding GitHub search API timeouts (502s).
     @MainActor
     private func loadData() async {
         guard !isLoading else { return }
@@ -142,7 +158,28 @@ struct MergedPRsThisWeekView: View {
 
         do {
             let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
-            prsByRepo = try await service.fetchMergedPRs(for: repos, from: weekStart, to: today)
+            let start = weekStart
+            let end = today
+
+            totalRepoCount = repos.count
+            loadedRepoCount = 0
+            var merged: [String: [MergedPR]] = [:]
+
+            try await withThrowingTaskGroup(of: [String: [MergedPR]].self) { group in
+                for repo in repos {
+                    group.addTask {
+                        try await service.fetchMergedPRs(for: [repo], from: start, to: end)
+                    }
+                }
+                for try await repoResult in group {
+                    for (repo, prs) in repoResult {
+                        merged[repo, default: []].append(contentsOf: prs)
+                    }
+                    loadedRepoCount += 1
+                }
+            }
+
+            prsByRepo = merged
         } catch let ghError as GitHubError {
             error = ghError
         } catch {
