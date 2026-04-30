@@ -17,6 +17,12 @@ struct MergedPRsLastWeekView: View {
     /// Whether a data fetch is currently in progress.
     @State private var isLoading = false
 
+    /// The number of repositories whose results have been received during the current fetch.
+    @State private var loadedRepoCount = 0
+
+    /// The total number of repositories being fetched in the current load.
+    @State private var totalRepoCount = 0
+
     /// The last error returned by the data fetch, or `nil` if the last fetch succeeded.
     @State private var error: GitHubError?
 
@@ -86,8 +92,15 @@ struct MergedPRsLastWeekView: View {
     var body: some View {
         Group {
             if isLoading && allPRs.isEmpty {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 12) {
+                    ProgressView(value: Double(loadedRepoCount), total: Double(max(totalRepoCount, 1)))
+                        .frame(maxWidth: 240)
+                        .animation(.easeInOut(duration: 0.25), value: loadedRepoCount)
+                    Text("\(loadedRepoCount) of \(totalRepoCount) repos")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error {
                 ContentUnavailableView(
                     "Unable to Load Report",
@@ -136,8 +149,9 @@ struct MergedPRsLastWeekView: View {
 
     /// Fetches merged PRs for all saved repositories within the previous week and updates `prsByRepo`.
     ///
-    /// Queries one day at a time rather than a single 7-day range to avoid GitHub search API
-    /// timeouts (502s) that occur when wide date ranges produce large result sets.
+    /// Queries each repository concurrently for the full week range rather than querying all
+    /// repositories at once, keeping individual search queries simple and avoiding GitHub search
+    /// API timeouts (502s) caused by complex multi-repo range queries.
     @MainActor
     private func loadData() async {
         guard !isLoading else { return }
@@ -150,15 +164,25 @@ struct MergedPRsLastWeekView: View {
 
         do {
             let repos = savedRepositories.map { (owner: $0.owner, name: $0.name) }
+            let start = lastWeekStart
+            let end = lastWeekEnd
+
+            totalRepoCount = repos.count
+            loadedRepoCount = 0
             var merged: [String: [MergedPR]] = [:]
 
-            var day = lastWeekStart
-            while day <= lastWeekEnd {
-                let dayResults = try await service.fetchMergedPRs(for: repos, on: day)
-                for (repo, prs) in dayResults {
-                    merged[repo, default: []].append(contentsOf: prs)
+            try await withThrowingTaskGroup(of: [String: [MergedPR]].self) { group in
+                for repo in repos {
+                    group.addTask {
+                        try await service.fetchMergedPRs(for: [repo], from: start, to: end)
+                    }
                 }
-                day = localCalendar.date(byAdding: .day, value: 1, to: day)!
+                for try await repoResult in group {
+                    for (repo, prs) in repoResult {
+                        merged[repo, default: []].append(contentsOf: prs)
+                    }
+                    loadedRepoCount += 1
+                }
             }
 
             prsByRepo = merged
