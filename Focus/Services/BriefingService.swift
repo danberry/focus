@@ -157,8 +157,12 @@ struct BriefingService: Sendable {
 
         // Fetch the full alert sets once; they're reused for the sparkline,
         // the security insight generator, and the per-repo rollups.
+        // Code scanning only includes open alerts; dismissed and fixed records are retained
+        // for history but excluded from security insight rules and badge counts.
         let allDependabotAlerts = (try? context.fetch(FetchDescriptor<DependabotAlert>())) ?? []
-        let allCodeScanningAlerts = (try? context.fetch(FetchDescriptor<CodeScanningAlert>())) ?? []
+        var codeScanningDescriptor = FetchDescriptor<CodeScanningAlert>()
+        codeScanningDescriptor.predicate = #Predicate { $0.state == "open" }
+        let allCodeScanningAlerts = (try? context.fetch(codeScanningDescriptor)) ?? []
         let allSecretAlerts = (try? context.fetch(FetchDescriptor<SecretScanningAlert>())) ?? []
         let allAlertDates = allDependabotAlerts.map(\.createdAt)
             + allCodeScanningAlerts.map(\.createdAt)

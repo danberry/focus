@@ -84,6 +84,31 @@ struct SecurityService: Sendable {
         )
     }
 
+    /// Fetches code scanning alerts of all states (open, dismissed, fixed) from the GitHub REST API.
+    ///
+    /// Used on initial repository add to capture the full alert history. Returns `nil` on any
+    /// network or decoding error; does not write to SwiftData.
+    func fetchAllCodeScanningAlerts(owner: String, repo: String) async -> [CodeScanningAlertResponse]? {
+        let queryItems = [
+            URLQueryItem(name: "state", value: "open,dismissed,fixed"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        return try? await rest.getAll(
+            path: Endpoint.codeScanningAlerts(owner: owner, repo: repo).path,
+            queryItems: queryItems
+        )
+    }
+
+    /// Fetches a single code scanning alert by its alert number.
+    ///
+    /// Used during incremental sync to retrieve resolution details for alerts that
+    /// have transitioned out of the open state. Returns `nil` on any error.
+    func fetchCodeScanningAlert(owner: String, repo: String, alertNumber: Int) async -> CodeScanningAlertResponse? {
+        return try? await rest.get(
+            path: Endpoint.codeScanningAlert(owner: owner, repo: repo, alertNumber: alertNumber).path
+        )
+    }
+
     /// Fetches open secret scanning alerts from the GitHub REST API.
     ///
     /// Returns `nil` on any network or decoding error; does not write to SwiftData.
@@ -163,8 +188,9 @@ struct SecurityService: Sendable {
 
     /// Persists fetched code scanning alerts to SwiftData using an upsert strategy.
     ///
-    /// Existing objects are updated in-place (preserving their `PersistentIdentifier`)
-    /// so views holding live references are not invalidated.
+    /// Existing records are updated in-place (preserving their `PersistentIdentifier`) so views
+    /// holding live references are not invalidated. Records absent from `alerts` are left untouched —
+    /// resolved alerts persist in the store with their state and resolution timestamps.
     ///
     /// Does nothing when `alerts` is `nil` (preserving any existing data).
     @MainActor
@@ -174,12 +200,6 @@ struct SecurityService: Sendable {
         let existingByNumber = Dictionary(
             uniqueKeysWithValues: repository.codeScanningAlertDetails.map { ($0.alertNumber, $0) }
         )
-        let incomingNumbers = Set(alerts.map(\.number))
-
-        for (number, record) in existingByNumber where !incomingNumbers.contains(number) {
-            record.repository = nil
-            context.delete(record)
-        }
 
         for response in alerts {
             if let existing = existingByNumber[response.number] {
@@ -193,6 +213,11 @@ struct SecurityService: Sendable {
                 existing.locationPath = response.mostRecentInstance?.location?.path
                 existing.locationStartLine = response.mostRecentInstance?.location?.startLine
                 existing.messageText = response.mostRecentInstance?.message?.text
+                existing.state = response.state
+                existing.fixedAt = response.fixedAt
+                existing.dismissedAt = response.dismissedAt
+                existing.dismissedReason = response.dismissedReason
+                existing.dismissedComment = response.dismissedComment
             } else {
                 let alert = CodeScanningAlert(
                     alertNumber: response.number,
@@ -200,17 +225,66 @@ struct SecurityService: Sendable {
                     securitySeverityLevel: response.rule.securitySeverityLevel,
                     createdAt: response.createdAt,
                     htmlUrl: response.htmlUrl,
+                    state: response.state,
                     ruleId: response.rule.id,
                     ruleDescription: response.rule.description,
                     toolName: response.tool?.name,
                     locationPath: response.mostRecentInstance?.location?.path,
                     locationStartLine: response.mostRecentInstance?.location?.startLine,
-                    messageText: response.mostRecentInstance?.message?.text
+                    messageText: response.mostRecentInstance?.message?.text,
+                    fixedAt: response.fixedAt,
+                    dismissedAt: response.dismissedAt,
+                    dismissedReason: response.dismissedReason,
+                    dismissedComment: response.dismissedComment
                 )
                 alert.repository = repository
                 context.insert(alert)
             }
         }
+    }
+
+    /// Incrementally syncs code scanning alerts during a periodic sync.
+    ///
+    /// Upserts the incoming open alerts, then detects any previously-open alerts that have
+    /// dropped off the open list (meaning they were resolved since the last sync). For each
+    /// such alert, fetches the individual record from GitHub to capture the final state,
+    /// `fixed_at`, `dismissed_at`, and dismissal reason, then persists those details.
+    @MainActor
+    func deltaApplyCodeScanningAlerts(
+        openAlerts: [CodeScanningAlertResponse]?,
+        owner: String,
+        repo: String,
+        to repository: SavedRepository,
+        in context: ModelContext
+    ) async {
+        // Upsert all incoming open alerts.
+        applyCodeScanningAlerts(openAlerts, to: repository, in: context)
+
+        guard let openAlerts else { return }
+
+        // Find alerts that were open in the DB but absent from the incoming open list.
+        let incomingOpenNumbers = Set(openAlerts.map(\.number))
+        let newlyResolvedRecords = repository.codeScanningAlertDetails.filter {
+            $0.state == "open" && !incomingOpenNumbers.contains($0.alertNumber)
+        }
+
+        guard !newlyResolvedRecords.isEmpty else { return }
+
+        // Fetch resolution details for each newly resolved alert concurrently.
+        let resolvedResponses: [CodeScanningAlertResponse] = await withTaskGroup(of: CodeScanningAlertResponse?.self) { group in
+            for record in newlyResolvedRecords {
+                let number = record.alertNumber
+                group.addTask { await self.fetchCodeScanningAlert(owner: owner, repo: repo, alertNumber: number) }
+            }
+            var results: [CodeScanningAlertResponse] = []
+            for await response in group {
+                if let r = response { results.append(r) }
+            }
+            return results
+        }
+
+        // Apply the resolution details (state, fixedAt, dismissedAt, etc.).
+        applyCodeScanningAlerts(resolvedResponses, to: repository, in: context)
     }
 
     /// Persists fetched secret scanning alerts to SwiftData using an upsert strategy.
@@ -272,10 +346,22 @@ struct SecurityService: Sendable {
         applyDependabotAlerts(alerts, to: repository, in: context)
     }
 
+    /// Fetches the full code scanning alert history (all states) and persists it to SwiftData.
+    ///
+    /// Fetches open, dismissed, and fixed alerts in a single paginated sweep. Used when adding
+    /// a new repository so the complete history is captured immediately. Returns without writing
+    /// on any network error.
+    @MainActor
+    func syncAllCodeScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let alerts = await fetchAllCodeScanningAlerts(owner: owner, repo: repo)
+        applyCodeScanningAlerts(alerts, to: repository, in: context)
+    }
+
     /// Fetches open code scanning alerts and persists them to SwiftData for the given repository.
     ///
-    /// Performs a full-replace sync: all existing ``CodeScanningAlert`` records for `repository`
-    /// are deleted before new alerts are inserted. Returns without writing on any network error.
+    /// Deprecated in favour of ``syncAllCodeScanningAlerts(owner:repo:repository:in:)`` for initial
+    /// adds and ``deltaApplyCodeScanningAlerts(openAlerts:owner:repo:to:in:)`` (via ``SyncService``)
+    /// for periodic syncs. Retained for test use.
     @MainActor
     func syncCodeScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
         let alerts = await fetchCodeScanningAlerts(owner: owner, repo: repo)
@@ -511,6 +597,21 @@ struct CodeScanningAlertResponse: Decodable, Sendable {
 
     /// The URL of the alert detail page on GitHub.
     let htmlUrl: String
+
+    /// The current state of the alert: `"open"`, `"dismissed"`, or `"fixed"`.
+    let state: String
+
+    /// The date and time when the alert was resolved by a code change, or `nil` if not fixed.
+    let fixedAt: Date?
+
+    /// The date and time when the alert was manually dismissed, or `nil` if not dismissed.
+    let dismissedAt: Date?
+
+    /// The reason the alert was dismissed (e.g. `"false positive"`), or `nil` if not dismissed.
+    let dismissedReason: String?
+
+    /// A free-text comment left on dismissal, or `nil` if none was provided.
+    let dismissedComment: String?
 
     /// The code scanning rule that triggered this alert.
     let rule: Rule

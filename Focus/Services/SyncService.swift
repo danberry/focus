@@ -94,7 +94,7 @@ struct SyncService: Sendable {
                 onProgress?(completed, total)
 
                 if let repo = repoMap["\(result.owner)/\(result.name)"] {
-                    applyAll(result, to: repo, in: context)
+                    await applyAll(result, to: repo, in: context)
                 }
 
                 if submitted < total {
@@ -137,17 +137,28 @@ struct SyncService: Sendable {
     }
 
     /// Writes a completed ``RepoSyncFetch`` to SwiftData and updates badge counts.
-    private func applyAll(_ fetch: RepoSyncFetch, to repository: SavedRepository, in context: ModelContext) {
+    ///
+    /// Code scanning uses the delta path: open alerts are upserted first, then any alert
+    /// that was open in the DB but absent from the incoming list is fetched individually to
+    /// capture its resolution state (fixed or dismissed).
+    private func applyAll(_ fetch: RepoSyncFetch, to repository: SavedRepository, in context: ModelContext) async {
         securityService.applyDependabotAlerts(fetch.dependabotAlerts, to: repository, in: context)
-        securityService.applyCodeScanningAlerts(fetch.codeScanningAlerts, to: repository, in: context)
+        await securityService.deltaApplyCodeScanningAlerts(
+            openAlerts: fetch.codeScanningAlerts,
+            owner: fetch.owner,
+            repo: fetch.name,
+            to: repository,
+            in: context
+        )
         securityService.applySecretScanningAlerts(fetch.secretScanningAlerts, to: repository, in: context)
         codeownersService.applyCodeowners(fetch.codeownersEntries, to: repository, in: context)
         velocityService.applyVelocityData(fetch.velocityData, to: repository, in: context)
         pullRequestService.applyOpenPRs(fetch.openPRs, to: repository, in: context)
 
         // Derive badge counts from the freshly synced relationship arrays.
+        // Code scanning counts only open alerts; dismissed and fixed records are retained for history.
         repository.dependabotAlerts = repository.dependabotAlertDetails.count
-        repository.codeScanningAlerts = repository.codeScanningAlertDetails.count
+        repository.codeScanningAlerts = repository.codeScanningAlertDetails.filter { $0.state == "open" }.count
         repository.secretScanningAlerts = repository.secretScanningAlertDetails.count
     }
 }

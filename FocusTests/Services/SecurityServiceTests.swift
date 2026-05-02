@@ -290,10 +290,10 @@ struct SecurityServiceTests {
         #expect(repo.dependabotAlertDetails.count == 1)
     }
 
-    // MARK: - syncCodeScanningAlerts
+    // MARK: - syncAllCodeScanningAlerts
 
-    /// Verifies that a two-alert response is decoded and persisted correctly.
-    @Test func syncCodeScanningAlertsCreatesAlerts() async throws {
+    /// Verifies that a two-alert response is decoded and persisted with all expected fields.
+    @Test func syncAllCodeScanningAlertsCreatesAlerts() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
         let repo = SavedRepository(githubId: "id1", owner: "apple", name: "swift", displayName: "Apple Swift")
@@ -303,16 +303,22 @@ struct SecurityServiceTests {
         [
           {
             "number": 42,
+            "state": "open",
             "created_at": "2024-01-15T10:00:00Z",
             "html_url": "https://github.com/apple/swift/security/code-scanning/42",
             "rule": {
+              "id": "java/sql-injection",
               "name": "java/sql-injection",
               "security_severity_level": "high"
             }
           },
           {
             "number": 7,
+            "state": "dismissed",
             "created_at": "2024-02-20T08:30:00Z",
+            "dismissed_at": "2024-03-01T00:00:00Z",
+            "dismissed_reason": "false positive",
+            "dismissed_comment": "Not reachable from prod",
             "html_url": "https://github.com/apple/swift/security/code-scanning/7",
             "rule": {
               "name": "js/xss",
@@ -322,92 +328,127 @@ struct SecurityServiceTests {
         ]
         """)
 
-        await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         let alerts = repo.codeScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
-        #expect(alerts[0].alertNumber == 7)
-        #expect(alerts[0].ruleName == "js/xss")
-        #expect(alerts[0].securitySeverityLevel == nil)
-        #expect(alerts[1].alertNumber == 42)
-        #expect(alerts[1].ruleName == "java/sql-injection")
-        #expect(alerts[1].securitySeverityLevel == "high")
+
+        let open = alerts[1]
+        #expect(open.alertNumber == 42)
+        #expect(open.ruleName == "java/sql-injection")
+        #expect(open.securitySeverityLevel == "high")
+        #expect(open.state == "open")
+        #expect(open.fixedAt == nil)
+        #expect(open.dismissedAt == nil)
+
+        let dismissed = alerts[0]
+        #expect(dismissed.alertNumber == 7)
+        #expect(dismissed.ruleName == "js/xss")
+        #expect(dismissed.state == "dismissed")
+        #expect(dismissed.dismissedReason == "false positive")
+        #expect(dismissed.dismissedComment == "Not reachable from prod")
+        #expect(dismissed.dismissedAt != nil)
     }
 
-    /// Verifies that a second sync replaces all previously persisted alerts.
-    @Test func syncCodeScanningAlertsReplacesExistingAlerts() async throws {
+    /// Verifies that a second full sync upserts existing alerts without removing resolved ones.
+    @Test func syncAllCodeScanningAlertsUpsertsWithoutDeletion() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
         let repo = SavedRepository(githubId: "id1", owner: "apple", name: "swift", displayName: "Apple Swift")
         context.insert(repo)
 
-        // First sync: two alerts
+        // First sync: two open alerts
         mockHTTP.setSuccess(json: """
         [
           {
             "number": 1,
+            "state": "open",
             "created_at": "2024-01-01T00:00:00Z",
             "html_url": "https://github.com/apple/swift/security/code-scanning/1",
             "rule": { "name": "old-rule", "security_severity_level": "low" }
           },
           {
             "number": 2,
+            "state": "open",
             "created_at": "2024-01-02T00:00:00Z",
             "html_url": "https://github.com/apple/swift/security/code-scanning/2",
-            "rule": { "name": "another-old-rule", "security_severity_level": "medium" }
+            "rule": { "name": "another-rule", "security_severity_level": "medium" }
           }
         ]
         """)
-        await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
         #expect(repo.codeScanningAlertDetails.count == 2)
 
-        // Second sync: one new alert
+        // Second sync: alert 1 is now fixed, alert 2 is still open, alert 99 is new
         mockHTTP.setSuccess(json: """
         [
           {
+            "number": 1,
+            "state": "fixed",
+            "fixed_at": "2024-02-01T00:00:00Z",
+            "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/1",
+            "rule": { "name": "old-rule", "security_severity_level": "low" }
+          },
+          {
+            "number": 2,
+            "state": "open",
+            "created_at": "2024-01-02T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/2",
+            "rule": { "name": "another-rule", "security_severity_level": "medium" }
+          },
+          {
             "number": 99,
+            "state": "open",
             "created_at": "2024-03-01T00:00:00Z",
             "html_url": "https://github.com/apple/swift/security/code-scanning/99",
             "rule": { "name": "new-rule", "security_severity_level": "critical" }
           }
         ]
         """)
-        await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        #expect(repo.codeScanningAlertDetails.count == 1)
-        #expect(repo.codeScanningAlertDetails[0].alertNumber == 99)
-        #expect(repo.codeScanningAlertDetails[0].ruleName == "new-rule")
+        let alerts = repo.codeScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 3)
+
+        let fixed = alerts[0]
+        #expect(fixed.alertNumber == 1)
+        #expect(fixed.state == "fixed")
+        #expect(fixed.fixedAt != nil)
+
+        #expect(alerts[1].state == "open")
+        #expect(alerts[2].alertNumber == 99)
+        #expect(alerts[2].state == "open")
     }
 
     /// Verifies that an empty array response leaves the alert list empty.
-    @Test func syncCodeScanningAlertsHandlesEmptyResponse() async throws {
+    @Test func syncAllCodeScanningAlertsHandlesEmptyResponse() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
         let repo = SavedRepository(githubId: "id1", owner: "apple", name: "swift", displayName: "Apple Swift")
         context.insert(repo)
 
         mockHTTP.setSuccess(json: "[]")
-        await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         #expect(repo.codeScanningAlertDetails.isEmpty)
     }
 
     /// Verifies that a 403 response does not crash and leaves alerts unchanged.
-    @Test func syncCodeScanningAlertsHandlesError() async throws {
+    @Test func syncAllCodeScanningAlertsHandlesError() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
         let repo = SavedRepository(githubId: "id1", owner: "apple", name: "swift", displayName: "Apple Swift")
         context.insert(repo)
 
         mockHTTP.setSuccess(json: "{}", statusCode: 403)
-        await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        // Should not crash and leave alerts unchanged
         #expect(repo.codeScanningAlertDetails.isEmpty)
     }
 
     /// Verifies that each created alert has its repository relationship set to the source repository.
-    @Test func syncCodeScanningAlertsSetsRepository() async throws {
+    @Test func syncAllCodeScanningAlertsSetsRepository() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
         let repo = SavedRepository(githubId: "id1", owner: "apple", name: "swift", displayName: "Apple Swift")
@@ -417,16 +458,60 @@ struct SecurityServiceTests {
         [
           {
             "number": 5,
+            "state": "open",
             "created_at": "2024-06-01T12:00:00Z",
             "html_url": "https://github.com/apple/swift/security/code-scanning/5",
             "rule": { "name": "some-rule", "security_severity_level": "medium" }
           }
         ]
         """)
-        await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         let alert = try #require(repo.codeScanningAlertDetails.first)
         #expect(alert.repository === repo)
+    }
+
+    // MARK: - syncCodeScanningAlerts (open-only, used for incremental tests)
+
+    /// Verifies that open-only sync inserts new alerts without deleting unmentioned ones.
+    @Test func syncCodeScanningAlertsUpsertsOpenAlerts() async throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let repo = SavedRepository(githubId: "id1", owner: "apple", name: "swift", displayName: "Apple Swift")
+        context.insert(repo)
+
+        // Pre-populate a dismissed alert that should survive the open-only sync.
+        let dismissed = CodeScanningAlert(
+            alertNumber: 1,
+            ruleName: "old-rule",
+            securitySeverityLevel: "low",
+            createdAt: Date(),
+            htmlUrl: "https://github.com",
+            state: "dismissed"
+        )
+        dismissed.repository = repo
+        context.insert(dismissed)
+
+        mockHTTP.setSuccess(json: """
+        [
+          {
+            "number": 99,
+            "state": "open",
+            "created_at": "2024-03-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/99",
+            "rule": { "name": "new-rule", "security_severity_level": "critical" }
+          }
+        ]
+        """)
+        await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        // Dismissed alert is preserved; new open alert was inserted.
+        let alerts = repo.codeScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+        #expect(alerts[0].alertNumber == 1)
+        #expect(alerts[0].state == "dismissed")
+        #expect(alerts[1].alertNumber == 99)
+        #expect(alerts[1].state == "open")
     }
 
     // MARK: - syncSecretScanningAlerts
