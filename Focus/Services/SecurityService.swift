@@ -70,6 +70,31 @@ struct SecurityService: Sendable {
         )
     }
 
+    /// Fetches Dependabot alerts of all states (open, dismissed, fixed, auto_dismissed).
+    ///
+    /// Used on initial repository add to capture the full alert history. Returns `nil` on any
+    /// network or decoding error; does not write to SwiftData.
+    func fetchAllDependabotAlerts(owner: String, repo: String) async -> [DependabotAlertResponse]? {
+        let queryItems = [
+            URLQueryItem(name: "state", value: "open,dismissed,fixed,auto_dismissed"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        return try? await rest.getAll(
+            path: Endpoint.dependabotAlerts(owner: owner, repo: repo).path,
+            queryItems: queryItems
+        )
+    }
+
+    /// Fetches a single Dependabot alert by its alert number.
+    ///
+    /// Used during incremental sync to retrieve resolution details for alerts that
+    /// have transitioned out of the open state. Returns `nil` on any error.
+    func fetchDependabotAlert(owner: String, repo: String, alertNumber: Int) async -> DependabotAlertResponse? {
+        return try? await rest.get(
+            path: Endpoint.dependabotAlert(owner: owner, repo: repo, alertNumber: alertNumber).path
+        )
+    }
+
     /// Fetches open code scanning alerts from the GitHub REST API.
     ///
     /// Returns `nil` on any network or decoding error; does not write to SwiftData.
@@ -123,12 +148,38 @@ struct SecurityService: Sendable {
         )
     }
 
+    /// Fetches secret scanning alerts of all states (open, resolved).
+    ///
+    /// Used on initial repository add to capture the full alert history. Returns `nil` on any
+    /// network or decoding error; does not write to SwiftData.
+    func fetchAllSecretScanningAlerts(owner: String, repo: String) async -> [SecretScanningAlertResponse]? {
+        let queryItems = [
+            URLQueryItem(name: "state", value: "open,resolved"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        return try? await rest.getAll(
+            path: Endpoint.secretScanningAlerts(owner: owner, repo: repo).path,
+            queryItems: queryItems
+        )
+    }
+
+    /// Fetches a single secret scanning alert by its alert number.
+    ///
+    /// Used during incremental sync to retrieve resolution details for alerts that
+    /// have transitioned out of the open state. Returns `nil` on any error.
+    func fetchSecretScanningAlert(owner: String, repo: String, alertNumber: Int) async -> SecretScanningAlertResponse? {
+        return try? await rest.get(
+            path: Endpoint.secretScanningAlert(owner: owner, repo: repo, alertNumber: alertNumber).path
+        )
+    }
+
     // MARK: - Apply (@MainActor, writes to SwiftData)
 
     /// Persists fetched Dependabot alerts to SwiftData using an upsert strategy.
     ///
-    /// Existing objects are updated in-place (preserving their `PersistentIdentifier`)
-    /// so views holding live references are not invalidated.
+    /// Existing records are updated in-place (preserving their `PersistentIdentifier`) so views
+    /// holding live references are not invalidated. Records absent from `alerts` are left untouched —
+    /// resolved alerts persist in the store with their state and resolution timestamps.
     ///
     /// Does nothing when `alerts` is `nil` (preserving any existing data).
     @MainActor
@@ -138,12 +189,6 @@ struct SecurityService: Sendable {
         let existingByNumber = Dictionary(
             uniqueKeysWithValues: repository.dependabotAlertDetails.map { ($0.alertNumber, $0) }
         )
-        let incomingNumbers = Set(alerts.map(\.number))
-
-        for (number, record) in existingByNumber where !incomingNumbers.contains(number) {
-            record.repository = nil
-            context.delete(record)
-        }
 
         for alert in alerts {
             if let existing = existingByNumber[alert.number] {
@@ -161,6 +206,11 @@ struct SecurityService: Sendable {
                 existing.htmlUrl = alert.htmlUrl
                 existing.manifestPath = alert.dependency.manifestPath
                 existing.assignedLogins = alert.assignees.map(\.login)
+                existing.state = alert.state
+                existing.fixedAt = alert.fixedAt
+                existing.dismissedAt = alert.dismissedAt
+                existing.dismissedReason = alert.dismissedReason
+                existing.autoDismissedAt = alert.autoDismissedAt
             } else {
                 let model = DependabotAlert(
                     alertNumber: alert.number,
@@ -176,7 +226,12 @@ struct SecurityService: Sendable {
                     cveId: alert.securityAdvisory.cveId,
                     cvssScore: alert.securityAdvisory.cvss?.score,
                     htmlUrl: alert.htmlUrl,
-                    manifestPath: alert.dependency.manifestPath
+                    manifestPath: alert.dependency.manifestPath,
+                    state: alert.state,
+                    fixedAt: alert.fixedAt,
+                    dismissedAt: alert.dismissedAt,
+                    dismissedReason: alert.dismissedReason,
+                    autoDismissedAt: alert.autoDismissedAt
                 )
                 model.assignedLogins = alert.assignees.map(\.login)
                 model.repository = repository
@@ -184,6 +239,46 @@ struct SecurityService: Sendable {
             }
         }
         try? context.save()
+    }
+
+    /// Incrementally syncs Dependabot alerts during a periodic sync.
+    ///
+    /// Upserts the incoming open alerts, then detects any previously-open alerts that have
+    /// dropped off the open list (meaning they were resolved since the last sync). For each
+    /// such alert, fetches the individual record from GitHub to capture the final state,
+    /// `fixed_at`, `dismissed_at`, and dismissal reason, then persists those details.
+    @MainActor
+    func deltaApplyDependabotAlerts(
+        openAlerts: [DependabotAlertResponse]?,
+        owner: String,
+        repo: String,
+        to repository: SavedRepository,
+        in context: ModelContext
+    ) async {
+        applyDependabotAlerts(openAlerts, to: repository, in: context)
+
+        guard let openAlerts else { return }
+
+        let incomingOpenNumbers = Set(openAlerts.map(\.number))
+        let newlyResolvedRecords = repository.dependabotAlertDetails.filter {
+            $0.state == "open" && !incomingOpenNumbers.contains($0.alertNumber)
+        }
+
+        guard !newlyResolvedRecords.isEmpty else { return }
+
+        let resolvedResponses: [DependabotAlertResponse] = await withTaskGroup(of: DependabotAlertResponse?.self) { group in
+            for record in newlyResolvedRecords {
+                let number = record.alertNumber
+                group.addTask { await self.fetchDependabotAlert(owner: owner, repo: repo, alertNumber: number) }
+            }
+            var results: [DependabotAlertResponse] = []
+            for await response in group {
+                if let r = response { results.append(r) }
+            }
+            return results
+        }
+
+        applyDependabotAlerts(resolvedResponses, to: repository, in: context)
     }
 
     /// Persists fetched code scanning alerts to SwiftData using an upsert strategy.
@@ -289,8 +384,9 @@ struct SecurityService: Sendable {
 
     /// Persists fetched secret scanning alerts to SwiftData using an upsert strategy.
     ///
-    /// Existing objects are updated in-place (preserving their `PersistentIdentifier`)
-    /// so views holding live references are not invalidated.
+    /// Existing records are updated in-place (preserving their `PersistentIdentifier`) so views
+    /// holding live references are not invalidated. Records absent from `alerts` are left untouched —
+    /// resolved alerts persist in the store with their state and resolution timestamp.
     ///
     /// Does nothing when `alerts` is `nil` (preserving any existing data).
     @MainActor
@@ -300,12 +396,6 @@ struct SecurityService: Sendable {
         let existingByNumber = Dictionary(
             uniqueKeysWithValues: repository.secretScanningAlertDetails.map { ($0.alertNumber, $0) }
         )
-        let incomingNumbers = Set(alerts.map(\.number))
-
-        for (number, record) in existingByNumber where !incomingNumbers.contains(number) {
-            record.repository = nil
-            context.delete(record)
-        }
 
         for response in alerts {
             if let existing = existingByNumber[response.number] {
@@ -316,6 +406,9 @@ struct SecurityService: Sendable {
                 existing.htmlUrl = response.htmlUrl
                 existing.pushProtectionBypassed = response.pushProtectionBypassed ?? false
                 existing.multiRepo = response.multiRepo ?? false
+                existing.state = response.state
+                existing.resolvedAt = response.resolvedAt
+                existing.resolution = response.resolution
             } else {
                 let alert = SecretScanningAlert(
                     alertNumber: response.number,
@@ -325,7 +418,10 @@ struct SecurityService: Sendable {
                     createdAt: response.createdAt,
                     htmlUrl: response.htmlUrl,
                     pushProtectionBypassed: response.pushProtectionBypassed ?? false,
-                    multiRepo: response.multiRepo ?? false
+                    multiRepo: response.multiRepo ?? false,
+                    state: response.state,
+                    resolvedAt: response.resolvedAt,
+                    resolution: response.resolution
                 )
                 alert.repository = repository
                 context.insert(alert)
@@ -333,13 +429,64 @@ struct SecurityService: Sendable {
         }
     }
 
+    /// Incrementally syncs secret scanning alerts during a periodic sync.
+    ///
+    /// Upserts the incoming open alerts, then detects any previously-open alerts that have
+    /// dropped off the open list (meaning they were resolved since the last sync). For each
+    /// such alert, fetches the individual record from GitHub to capture the final state,
+    /// `resolved_at`, and resolution reason, then persists those details.
+    @MainActor
+    func deltaApplySecretScanningAlerts(
+        openAlerts: [SecretScanningAlertResponse]?,
+        owner: String,
+        repo: String,
+        to repository: SavedRepository,
+        in context: ModelContext
+    ) async {
+        applySecretScanningAlerts(openAlerts, to: repository, in: context)
+
+        guard let openAlerts else { return }
+
+        let incomingOpenNumbers = Set(openAlerts.map(\.number))
+        let newlyResolvedRecords = repository.secretScanningAlertDetails.filter {
+            $0.state == "open" && !incomingOpenNumbers.contains($0.alertNumber)
+        }
+
+        guard !newlyResolvedRecords.isEmpty else { return }
+
+        let resolvedResponses: [SecretScanningAlertResponse] = await withTaskGroup(of: SecretScanningAlertResponse?.self) { group in
+            for record in newlyResolvedRecords {
+                let number = record.alertNumber
+                group.addTask { await self.fetchSecretScanningAlert(owner: owner, repo: repo, alertNumber: number) }
+            }
+            var results: [SecretScanningAlertResponse] = []
+            for await response in group {
+                if let r = response { results.append(r) }
+            }
+            return results
+        }
+
+        applySecretScanningAlerts(resolvedResponses, to: repository, in: context)
+    }
+
     // MARK: - Sync (fetch + apply, used by tests and legacy call sites)
+
+    /// Fetches the full Dependabot alert history (all states) and persists it to SwiftData.
+    ///
+    /// Fetches open, dismissed, fixed, and auto-dismissed alerts in a single paginated sweep.
+    /// Used when adding a new repository so the complete history is captured immediately.
+    /// Returns without writing on any network error.
+    @MainActor
+    func syncAllDependabotAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let alerts = await fetchAllDependabotAlerts(owner: owner, repo: repo)
+        applyDependabotAlerts(alerts, to: repository, in: context)
+    }
 
     /// Fetches open Dependabot alerts and persists them to SwiftData for the given repository.
     ///
-    /// Performs a full-replace sync: all existing ``DependabotAlert`` records for `repository`
-    /// are deleted before new alerts are inserted.
-    /// Silently discards errors to preserve any existing data.
+    /// Deprecated in favour of ``syncAllDependabotAlerts(owner:repo:repository:in:)`` for initial
+    /// adds and ``deltaApplyDependabotAlerts(openAlerts:owner:repo:to:in:)`` (via ``SyncService``)
+    /// for periodic syncs. Retained for test use.
     @MainActor
     func syncDependabotAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
         let alerts = await fetchDependabotAlerts(owner: owner, repo: repo)
@@ -368,10 +515,22 @@ struct SecurityService: Sendable {
         applyCodeScanningAlerts(alerts, to: repository, in: context)
     }
 
+    /// Fetches the full secret scanning alert history (all states) and persists it to SwiftData.
+    ///
+    /// Fetches open and resolved alerts in a single paginated sweep. Used when adding
+    /// a new repository so the complete history is captured immediately. Returns without writing
+    /// on any network error.
+    @MainActor
+    func syncAllSecretScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
+        let alerts = await fetchAllSecretScanningAlerts(owner: owner, repo: repo)
+        applySecretScanningAlerts(alerts, to: repository, in: context)
+    }
+
     /// Fetches open secret scanning alerts and persists them to SwiftData for the given repository.
     ///
-    /// Performs a full-replace sync: all existing ``SecretScanningAlert`` records for `repository`
-    /// are deleted before new alerts are inserted. Returns without writing on any network error.
+    /// Deprecated in favour of ``syncAllSecretScanningAlerts(owner:repo:repository:in:)`` for initial
+    /// adds and ``deltaApplySecretScanningAlerts(openAlerts:owner:repo:to:in:)`` (via ``SyncService``)
+    /// for periodic syncs. Retained for test use.
     @MainActor
     func syncSecretScanningAlerts(owner: String, repo: String, repository: SavedRepository, in context: ModelContext) async {
         let alerts = await fetchSecretScanningAlerts(owner: owner, repo: repo)
@@ -485,6 +644,21 @@ struct DependabotAlertResponse: Decodable, Sendable {
 
     /// The URL of the alert detail page on GitHub.
     let htmlUrl: String
+
+    /// The current state of the alert: `"open"`, `"dismissed"`, `"fixed"`, or `"auto_dismissed"`.
+    let state: String
+
+    /// The date the alert was resolved by a dependency update, or `nil` if not yet fixed.
+    let fixedAt: Date?
+
+    /// The date the alert was manually dismissed, or `nil` if not dismissed.
+    let dismissedAt: Date?
+
+    /// The reason the alert was dismissed, or `nil` if not dismissed.
+    let dismissedReason: String?
+
+    /// The date the alert was automatically dismissed, or `nil` if not auto-dismissed.
+    let autoDismissedAt: Date?
 
     /// The security advisory associated with this alert.
     let securityAdvisory: SecurityAdvisory
@@ -695,4 +869,13 @@ struct SecretScanningAlertResponse: Decodable, Sendable {
 
     /// Whether this secret has been detected in more than one repository. Nil means not applicable.
     let multiRepo: Bool?
+
+    /// The current state of the alert: `"open"` or `"resolved"`.
+    let state: String
+
+    /// The date the alert was resolved, or `nil` if still open.
+    let resolvedAt: Date?
+
+    /// The reason the alert was resolved (e.g., `"false_positive"`, `"revoked"`), or `nil` if not resolved.
+    let resolution: String?
 }

@@ -66,14 +66,185 @@ struct SecurityServiceTests {
         #expect(path.hasPrefix("/repos/octocat/hello-world/"))
     }
 
-    // MARK: - syncDependabotAlerts
+    // MARK: - syncAllDependabotAlerts
 
-    /// Verifies that a two-alert response is decoded and persisted with all expected fields.
+    /// Verifies that an all-states sync captures open and dismissed alerts.
+    @Test func syncAllDependabotAlertsCreatesAlerts() async throws {
+        let json = """
+        [
+          {
+            "number": 42,
+            "state": "open",
+            "created_at": "2024-01-15T10:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/42",
+            "security_advisory": {
+              "ghsa_id": "GHSA-1234-5678-abcd",
+              "cve_id": "CVE-2024-0001",
+              "summary": "Prototype pollution in lodash",
+              "description": "Lodash versions prior to 4.17.21 are vulnerable to prototype pollution.",
+              "severity": "high",
+              "cvss": { "score": 7.5 }
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "npm", "name": "lodash" },
+              "first_patched_version": { "identifier": "4.17.21" },
+              "vulnerable_version_range": "< 4.17.21"
+            },
+            "dependency": { "manifest_path": "package-lock.json" },
+            "assignees": [{ "login": "alice" }]
+          },
+          {
+            "number": 7,
+            "state": "dismissed",
+            "dismissed_at": "2024-03-01T00:00:00Z",
+            "dismissed_reason": "tolerable_risk",
+            "created_at": "2024-02-20T08:30:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/7",
+            "security_advisory": {
+              "ghsa_id": "GHSA-abcd-1234-5678",
+              "cve_id": null,
+              "summary": "Server-side request forgery in axios",
+              "description": "Axios is vulnerable to SSRF.",
+              "severity": "critical",
+              "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "npm", "name": "axios" },
+              "first_patched_version": null,
+              "vulnerable_version_range": ">= 0.8.1, < 1.6.0"
+            },
+            "dependency": { "manifest_path": null },
+            "assignees": []
+          }
+        ]
+        """
+        mockHTTP.setSuccess(json: json)
+
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        await makeService().syncAllDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+
+        let dismissed = alerts[0]
+        #expect(dismissed.alertNumber == 7)
+        #expect(dismissed.state == "dismissed")
+        #expect(dismissed.dismissedAt != nil)
+        #expect(dismissed.dismissedReason == "tolerable_risk")
+
+        let open = alerts[1]
+        #expect(open.alertNumber == 42)
+        #expect(open.state == "open")
+        #expect(open.packageName == "lodash")
+        #expect(open.severity == "high")
+        #expect(open.fixVersion == "4.17.21")
+        #expect(open.summary == "Prototype pollution in lodash")
+        #expect(open.ecosystem == "npm")
+        #expect(open.vulnerableVersionRange == "< 4.17.21")
+        #expect(open.ghsaId == "GHSA-1234-5678-abcd")
+        #expect(open.cveId == "CVE-2024-0001")
+        #expect(open.cvssScore == 7.5)
+        #expect(open.htmlUrl == "https://github.com/apple/swift/security/dependabot/42")
+        #expect(open.manifestPath == "package-lock.json")
+        #expect(open.assignedLogins == ["alice"])
+    }
+
+    /// Verifies that a second all-states sync upserts without removing resolved alerts.
+    @Test func syncAllDependabotAlertsUpsertsWithoutDeletion() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        // First sync: one open alert
+        mockHTTP.setSuccess(json: """
+        [
+          {
+            "number": 1,
+            "state": "open",
+            "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/1",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0000-0000-0001", "cve_id": null,
+              "summary": "Alert 1", "description": "Desc.", "severity": "low", "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "npm", "name": "pkg-a" },
+              "first_patched_version": null, "vulnerable_version_range": ">= 1.0, < 2.0"
+            },
+            "dependency": { "manifest_path": null },
+            "assignees": []
+          }
+        ]
+        """)
+        await makeService().syncAllDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        #expect(repo.dependabotAlertDetails.count == 1)
+
+        // Second sync: alert 1 is now fixed, alert 2 is new
+        mockHTTP.setSuccess(json: """
+        [
+          {
+            "number": 1,
+            "state": "fixed",
+            "fixed_at": "2024-02-01T00:00:00Z",
+            "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/1",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0000-0000-0001", "cve_id": null,
+              "summary": "Alert 1", "description": "Desc.", "severity": "low", "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "npm", "name": "pkg-a" },
+              "first_patched_version": null, "vulnerable_version_range": ">= 1.0, < 2.0"
+            },
+            "dependency": { "manifest_path": null },
+            "assignees": []
+          },
+          {
+            "number": 2,
+            "state": "open",
+            "created_at": "2024-03-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/2",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0000-0000-0002", "cve_id": null,
+              "summary": "Alert 2", "description": "Desc.", "severity": "high", "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "pip", "name": "pkg-b" },
+              "first_patched_version": null, "vulnerable_version_range": ">= 0.1, < 1.0"
+            },
+            "dependency": { "manifest_path": null },
+            "assignees": []
+          }
+        ]
+        """)
+        await makeService().syncAllDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+
+        let fixed = alerts[0]
+        #expect(fixed.alertNumber == 1)
+        #expect(fixed.state == "fixed")
+        #expect(fixed.fixedAt != nil)
+
+        #expect(alerts[1].alertNumber == 2)
+        #expect(alerts[1].state == "open")
+    }
+
+    // MARK: - syncDependabotAlerts (open-only, used for incremental tests)
+
+    /// Verifies that a two-alert open-only response is decoded and persisted with all expected fields.
     @Test func syncDependabotAlertsCreatesAlerts() async throws {
         let json = """
         [
           {
             "number": 42,
+            "state": "open",
             "created_at": "2024-01-15T10:00:00Z",
             "html_url": "https://github.com/apple/swift/security/dependabot/42",
             "security_advisory": {
@@ -94,6 +265,7 @@ struct SecurityServiceTests {
           },
           {
             "number": 99,
+            "state": "open",
             "created_at": "2024-02-20T08:30:00Z",
             "html_url": "https://github.com/apple/swift/security/dependabot/99",
             "security_advisory": {
@@ -151,17 +323,17 @@ struct SecurityServiceTests {
         #expect(second.manifestPath == nil)
     }
 
-    /// Verifies that a second sync replaces previously persisted alerts rather than appending.
-    @Test func syncDependabotAlertsReplacesExistingAlerts() async throws {
+    /// Verifies that open-only sync upserts new alerts without removing existing ones.
+    @Test func syncDependabotAlertsPreservesExistingAlerts() async throws {
         let container = try makeContainer()
         let context = container.mainContext
         let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
         context.insert(repo)
 
-        // Insert a stale alert and persist it
-        let stale = DependabotAlert(alertNumber: 1, packageName: "old-pkg", severity: "low", fixVersion: nil, createdAt: Date())
-        stale.repository = repo
-        context.insert(stale)
+        // Insert a previously-open alert and persist it
+        let existing = DependabotAlert(alertNumber: 1, packageName: "old-pkg", severity: "low", fixVersion: nil, createdAt: Date())
+        existing.repository = repo
+        context.insert(existing)
         try context.save()
         #expect(repo.dependabotAlertDetails.count == 1)
 
@@ -169,6 +341,7 @@ struct SecurityServiceTests {
         [
           {
             "number": 7,
+            "state": "open",
             "created_at": "2024-03-01T00:00:00Z",
             "html_url": "https://github.com/apple/swift/security/dependabot/7",
             "security_advisory": {
@@ -193,10 +366,12 @@ struct SecurityServiceTests {
 
         await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        #expect(repo.dependabotAlertDetails.count == 1)
-        let alert = try #require(repo.dependabotAlertDetails.first)
-        #expect(alert.alertNumber == 7)
-        #expect(alert.packageName == "new-pkg")
+        // Existing alert (1) persists; new alert (7) was inserted. Delta resolution happens via SyncService.
+        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+        #expect(alerts[0].alertNumber == 1)
+        #expect(alerts[1].alertNumber == 7)
+        #expect(alerts[1].packageName == "new-pkg")
     }
 
     /// Verifies that alerts from multiple pages are all persisted when the API returns a `Link: rel="next"` header.
@@ -205,6 +380,7 @@ struct SecurityServiceTests {
         [
           {
             "number": 1,
+            "state": "open",
             "created_at": "2024-01-01T00:00:00Z",
             "html_url": "https://github.com/apple/swift/security/dependabot/1",
             "security_advisory": {
@@ -229,6 +405,7 @@ struct SecurityServiceTests {
         [
           {
             "number": 2,
+            "state": "open",
             "created_at": "2024-02-01T00:00:00Z",
             "html_url": "https://github.com/apple/swift/security/dependabot/2",
             "security_advisory": {
@@ -514,14 +691,15 @@ struct SecurityServiceTests {
         #expect(alerts[1].state == "open")
     }
 
-    // MARK: - syncSecretScanningAlerts
+    // MARK: - syncAllSecretScanningAlerts
 
-    /// Verifies that a two-alert response is decoded and persisted with all expected fields.
-    @Test func syncSecretScanningAlertsCreatesAlerts() async throws {
+    /// Verifies that an all-states sync captures open and resolved alerts.
+    @Test func syncAllSecretScanningAlertsCreatesAlerts() async throws {
         let json = """
         [
             {
                 "number": 1,
+                "state": "open",
                 "secret_type_display_name": "GitHub Personal Access Token",
                 "validity": "active",
                 "publicly_leaked": false,
@@ -530,6 +708,128 @@ struct SecurityServiceTests {
             },
             {
                 "number": 2,
+                "state": "resolved",
+                "resolved_at": "2024-03-01T00:00:00Z",
+                "resolution": "revoked",
+                "secret_type_display_name": "AWS Access Key",
+                "validity": "revoked",
+                "publicly_leaked": true,
+                "created_at": "2024-02-20T12:30:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/2"
+            }
+        ]
+        """
+        mockHTTP.setSuccess(json: json)
+
+        let container = try makeContainer()
+        let context = ModelContext(container)
+
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "apple/swift")
+        context.insert(repo)
+
+        await makeService().syncAllSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        try #require(alerts.count == 2)
+
+        let open = alerts[0]
+        #expect(open.alertNumber == 1)
+        #expect(open.state == "open")
+        #expect(open.secretTypeDisplayName == "GitHub Personal Access Token")
+        #expect(open.validity == "active")
+        #expect(open.publiclyLeaked == false)
+        #expect(open.resolvedAt == nil)
+        #expect(open.resolution == nil)
+
+        let resolved = alerts[1]
+        #expect(resolved.alertNumber == 2)
+        #expect(resolved.state == "resolved")
+        #expect(resolved.resolvedAt != nil)
+        #expect(resolved.resolution == "revoked")
+    }
+
+    /// Verifies that a second all-states sync upserts without removing resolved alerts.
+    @Test func syncAllSecretScanningAlertsUpsertsWithoutDeletion() async throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "apple/swift")
+        context.insert(repo)
+
+        // First sync: one open alert
+        mockHTTP.setSuccess(json: """
+        [
+            {
+                "number": 1,
+                "state": "open",
+                "secret_type_display_name": "GitHub PAT",
+                "validity": "active",
+                "publicly_leaked": false,
+                "created_at": "2024-01-01T00:00:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/1"
+            }
+        ]
+        """)
+        await makeService().syncAllSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        #expect(repo.secretScanningAlertDetails.count == 1)
+
+        // Second sync: alert 1 is resolved, alert 2 is new and open
+        mockHTTP.setSuccess(json: """
+        [
+            {
+                "number": 1,
+                "state": "resolved",
+                "resolved_at": "2024-02-01T00:00:00Z",
+                "resolution": "revoked",
+                "secret_type_display_name": "GitHub PAT",
+                "validity": "revoked",
+                "publicly_leaked": false,
+                "created_at": "2024-01-01T00:00:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/1"
+            },
+            {
+                "number": 2,
+                "state": "open",
+                "secret_type_display_name": "AWS Key",
+                "validity": "active",
+                "publicly_leaked": false,
+                "created_at": "2024-03-01T00:00:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/2"
+            }
+        ]
+        """)
+        await makeService().syncAllSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+
+        let resolved = alerts[0]
+        #expect(resolved.alertNumber == 1)
+        #expect(resolved.state == "resolved")
+        #expect(resolved.resolvedAt != nil)
+        #expect(resolved.resolution == "revoked")
+
+        #expect(alerts[1].alertNumber == 2)
+        #expect(alerts[1].state == "open")
+    }
+
+    // MARK: - syncSecretScanningAlerts (open-only, used for incremental tests)
+
+    /// Verifies that a two-alert open-only response is decoded and persisted with all expected fields.
+    @Test func syncSecretScanningAlertsCreatesAlerts() async throws {
+        let json = """
+        [
+            {
+                "number": 1,
+                "state": "open",
+                "secret_type_display_name": "GitHub Personal Access Token",
+                "validity": "active",
+                "publicly_leaked": false,
+                "created_at": "2024-01-15T10:00:00Z",
+                "html_url": "https://github.com/apple/swift/security/secret-scanning/1"
+            },
+            {
+                "number": 2,
+                "state": "open",
                 "secret_type_display_name": "AWS Access Key",
                 "validity": "unknown",
                 "publicly_leaked": true,
@@ -562,15 +862,15 @@ struct SecurityServiceTests {
         #expect(alerts[1].publiclyLeaked == true)
     }
 
-    /// Verifies that a second sync replaces the previously persisted stale alert.
-    @Test func syncSecretScanningAlertsReplacesExisting() async throws {
+    /// Verifies that open-only sync upserts new alerts without removing existing ones.
+    @Test func syncSecretScanningAlertsPreservesExistingAlerts() async throws {
         let container = try makeContainer()
         let context = ModelContext(container)
 
         let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "apple/swift")
         context.insert(repo)
 
-        // Insert a stale alert
+        // Insert a stale open alert
         let stale = SecretScanningAlert(
             alertNumber: 99,
             secretTypeDisplayName: "Old Secret",
@@ -585,6 +885,7 @@ struct SecurityServiceTests {
         [
             {
                 "number": 1,
+                "state": "open",
                 "secret_type_display_name": "GitHub Personal Access Token",
                 "validity": "active",
                 "publicly_leaked": false,
@@ -597,9 +898,11 @@ struct SecurityServiceTests {
 
         await makeService().syncSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.secretScanningAlertDetails
-        try #require(alerts.count == 1)
+        // Existing alert (99) persists; new alert (1) was inserted. Delta resolution happens via SyncService.
+        let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        try #require(alerts.count == 2)
         #expect(alerts[0].alertNumber == 1)
+        #expect(alerts[1].alertNumber == 99)
     }
 
     /// Verifies that a 403 response leaves the alert list empty.
