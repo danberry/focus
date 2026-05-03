@@ -14,7 +14,7 @@ struct FocusApp: App {
     // MARK: - Properties
 
     /// The SwiftData model container, created once and shared with `BackgroundSyncManager`.
-    private let modelContainer = try! ModelContainer(for: SavedRepository.self, Team.self, Member.self, MemberContribution.self, DailyContribution.self, Discipline.self, JobTitle.self, RepositoryVelocity.self, SavedOrganization.self, Department.self, SecurityWeeklySnapshot.self, PRWeeklySnapshot.self)
+    private let modelContainer: ModelContainer = makeFocusModelContainer()
 
     /// The current scene phase, used to trigger a sync when the app becomes active.
     @Environment(\.scenePhase) private var scenePhase
@@ -71,4 +71,44 @@ struct FocusApp: App {
         .environment(briefingManager)
         .modelContainer(modelContainer)
     }
+}
+
+// MARK: - ModelContainer
+
+/// Builds the app's SwiftData model container, preferring a CloudKit-backed store.
+///
+/// Attempts to open the existing store at the default SwiftData URL with
+/// `cloudKitDatabase: .automatic` so iCloud sync is enabled and existing local
+/// data migrates transparently. Falls back to a local-only store at the same
+/// URL if CloudKit initialisation fails (e.g. no iCloud account signed in,
+/// entitlement mismatch in a development build, or simulator without iCloud).
+private func makeFocusModelContainer() -> ModelContainer {
+    let storeURL = URL.applicationSupportDirectory.appending(path: "default.store")
+
+    let allTypes: [any PersistentModel.Type] = [
+        SavedRepository.self,
+        Team.self,
+        Member.self,
+        MemberContribution.self,
+        DailyContribution.self,
+        Discipline.self,
+        JobTitle.self,
+        RepositoryVelocity.self,
+        SavedOrganization.self,
+        Department.self,
+        SecurityWeeklySnapshot.self,
+        PRWeeklySnapshot.self,
+    ]
+
+    // Prefer CloudKit-backed store so data roams across the user's devices.
+    let cloudConfig = ModelConfiguration(url: storeURL, cloudKitDatabase: .automatic)
+    if let container = try? ModelContainer(for: Schema(allTypes), configurations: cloudConfig) {
+        return container
+    }
+
+    // Fallback: local-only store at the same URL — preserves existing data even
+    // when CloudKit is unavailable (no iCloud account, simulator, CI, etc.).
+    let localConfig = ModelConfiguration(url: storeURL, cloudKitDatabase: .none)
+    // swiftlint:disable:next force_try
+    return try! ModelContainer(for: Schema(allTypes), configurations: localConfig)
 }
