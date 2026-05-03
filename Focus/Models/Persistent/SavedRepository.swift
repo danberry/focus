@@ -64,7 +64,7 @@ final class SavedRepository {
 
     // MARK: - Relationships
 
-    /// Open Dependabot alerts for this repository.
+    /// Dependabot alerts for this repository, including dismissed, fixed, and auto-dismissed.
     ///
     /// Cascade-deleted when the repository is removed. Inverse of ``DependabotAlert/repository``.
     @Relationship(deleteRule: .cascade, inverse: \DependabotAlert.repository)
@@ -76,7 +76,7 @@ final class SavedRepository {
     @Relationship(deleteRule: .cascade, inverse: \CodeScanningAlert.repository)
     var codeScanningAlertDetails: [CodeScanningAlert] = []
 
-    /// Open secret scanning alerts for this repository.
+    /// Secret scanning alerts for this repository, including resolved ones.
     ///
     /// Cascade-deleted when the repository is removed. Inverse of ``SecretScanningAlert/repository``.
     @Relationship(deleteRule: .cascade, inverse: \SecretScanningAlert.repository)
@@ -108,7 +108,9 @@ final class SavedRepository {
     // MARK: - Computed
 
     /// The number of open Dependabot alerts, derived from ``dependabotAlertDetails``.
-    var dependabotAlerts: Int { dependabotAlertDetails.count }
+    ///
+    /// The relationship may include dismissed, fixed, and auto-dismissed alerts; only `"open"` ones count.
+    var dependabotAlerts: Int { dependabotAlertDetails.filter { $0.state == "open" }.count }
 
     /// The number of open code scanning alerts, derived from ``codeScanningAlertDetails``.
     ///
@@ -116,7 +118,9 @@ final class SavedRepository {
     var codeScanningAlerts: Int { codeScanningAlertDetails.filter { $0.state == "open" }.count }
 
     /// The number of open secret scanning alerts, derived from ``secretScanningAlertDetails``.
-    var secretScanningAlerts: Int { secretScanningAlertDetails.count }
+    ///
+    /// The relationship may include resolved alerts; only `"open"` ones count.
+    var secretScanningAlerts: Int { secretScanningAlertDetails.filter { $0.state == "open" }.count }
 
     /// The sum of all three security alert type counts.
     ///

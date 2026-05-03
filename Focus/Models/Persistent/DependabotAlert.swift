@@ -8,6 +8,9 @@ import SwiftData
 /// `DependabotAlert` stores the full advisory detail synced from the GitHub REST API.
 /// It is the inverse entity of `SavedRepository`'s `dependabotAlertDetails` relationship
 /// and is cascade-deleted when the parent repository is removed.
+///
+/// The relationship stores alerts of all states (open, dismissed, fixed, auto_dismissed);
+/// only `"open"` ones count towards ``SavedRepository/dependabotAlerts``.
 @Model
 final class DependabotAlert {
 
@@ -58,6 +61,26 @@ final class DependabotAlert {
     /// The GitHub login names of users assigned to remediate this alert.
     var assignedLogins: [String] = []
 
+    /// The current state of this alert: `"open"`, `"dismissed"`, `"fixed"`, or `"auto_dismissed"`.
+    var state: String = "open"
+
+    /// The date the alert was resolved by a dependency update, or `nil` if not yet fixed.
+    var fixedAt: Date?
+
+    /// The date the alert was manually dismissed, or `nil` if not dismissed.
+    var dismissedAt: Date?
+
+    /// The reason given when this alert was dismissed (e.g. `"tolerable_risk"`), or `nil` if not dismissed.
+    var dismissedReason: String?
+
+    /// The date the alert was automatically dismissed by Dependabot, or `nil` if not auto-dismissed.
+    var autoDismissedAt: Date?
+
+    // MARK: - Computed
+
+    /// The date the alert was resolved, regardless of how it was resolved.
+    var resolvedAt: Date? { fixedAt ?? dismissedAt ?? autoDismissedAt }
+
     // MARK: - Init
 
     /// Creates a new Dependabot alert.
@@ -77,6 +100,11 @@ final class DependabotAlert {
     ///   - cvssScore: The CVSS score, or `nil` if not reported.
     ///   - htmlUrl: The URL of the alert on GitHub.com; defaults to an empty string until synced.
     ///   - manifestPath: The path to the manifest file, or `nil` if not reported.
+    ///   - state: The current alert state; defaults to `"open"`.
+    ///   - fixedAt: The date the alert was resolved by a dependency update, or `nil`.
+    ///   - dismissedAt: The date the alert was manually dismissed, or `nil`.
+    ///   - dismissedReason: The dismissal reason string, or `nil`.
+    ///   - autoDismissedAt: The date the alert was automatically dismissed, or `nil`.
     init(
         alertNumber: Int,
         packageName: String,
@@ -91,7 +119,12 @@ final class DependabotAlert {
         cveId: String? = nil,
         cvssScore: Double? = nil,
         htmlUrl: String = "",
-        manifestPath: String? = nil
+        manifestPath: String? = nil,
+        state: String = "open",
+        fixedAt: Date? = nil,
+        dismissedAt: Date? = nil,
+        dismissedReason: String? = nil,
+        autoDismissedAt: Date? = nil
     ) {
         self.alertNumber = alertNumber
         self.packageName = packageName
@@ -107,6 +140,11 @@ final class DependabotAlert {
         self.cvssScore = cvssScore
         self.htmlUrl = htmlUrl
         self.manifestPath = manifestPath
+        self.state = state
+        self.fixedAt = fixedAt
+        self.dismissedAt = dismissedAt
+        self.dismissedReason = dismissedReason
+        self.autoDismissedAt = autoDismissedAt
     }
 
     // MARK: - Relationships

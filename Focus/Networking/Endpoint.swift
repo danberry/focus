@@ -46,6 +46,9 @@ enum Endpoint {
     /// Returns a single code scanning alert identified by its alert number.
     case codeScanningAlert(owner: String, repo: String, alertNumber: Int)
 
+    /// Returns a single secret scanning alert identified by its alert number.
+    case secretScanningAlert(owner: String, repo: String, alertNumber: Int)
+
     /// Returns the public profile for a GitHub user.
     case userProfile(login: String)
 
@@ -75,6 +78,8 @@ enum Endpoint {
             "/repos/\(owner)/\(repo)/dependabot/alerts/\(alertNumber)"
         case .codeScanningAlert(let owner, let repo, let alertNumber):
             "/repos/\(owner)/\(repo)/code-scanning/alerts/\(alertNumber)"
+        case .secretScanningAlert(let owner, let repo, let alertNumber):
+            "/repos/\(owner)/\(repo)/secret-scanning/alerts/\(alertNumber)"
         case .userProfile(let login):
             "/users/\(login)"
         case .organization(let login):

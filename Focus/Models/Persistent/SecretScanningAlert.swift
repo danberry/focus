@@ -7,6 +7,9 @@ import SwiftData
 ///
 /// `SecretScanningAlert` records the presence of an exposed secret detected by
 /// GitHub's secret scanning feature. Each alert belongs to a single ``SavedRepository``.
+///
+/// The relationship stores alerts of all states (open, resolved); only `"open"` ones
+/// count towards ``SavedRepository/secretScanningAlerts``.
 @Model
 final class SecretScanningAlert {
 
@@ -36,6 +39,15 @@ final class SecretScanningAlert {
     /// Whether this secret has been detected in more than one repository.
     var multiRepo: Bool = false
 
+    /// The current state of this alert: `"open"` or `"resolved"`.
+    var state: String = "open"
+
+    /// The date the alert was resolved, or `nil` if still open.
+    var resolvedAt: Date?
+
+    /// The reason the alert was resolved (e.g., `"false_positive"`, `"revoked"`), or `nil` if not resolved.
+    var resolution: String?
+
     // MARK: - Init
 
     /// Creates a new secret scanning alert.
@@ -49,6 +61,9 @@ final class SecretScanningAlert {
     ///   - htmlUrl: The URL of the alert on GitHub.com.
     ///   - pushProtectionBypassed: Whether push protection was bypassed to introduce this secret.
     ///   - multiRepo: Whether this secret has been detected in more than one repository.
+    ///   - state: The current alert state; defaults to `"open"`.
+    ///   - resolvedAt: The date the alert was resolved, or `nil` if still open.
+    ///   - resolution: The resolution reason string, or `nil` if not resolved.
     init(
         alertNumber: Int,
         secretTypeDisplayName: String,
@@ -57,7 +72,10 @@ final class SecretScanningAlert {
         createdAt: Date,
         htmlUrl: String = "",
         pushProtectionBypassed: Bool = false,
-        multiRepo: Bool = false
+        multiRepo: Bool = false,
+        state: String = "open",
+        resolvedAt: Date? = nil,
+        resolution: String? = nil
     ) {
         self.alertNumber = alertNumber
         self.secretTypeDisplayName = secretTypeDisplayName
@@ -67,6 +85,9 @@ final class SecretScanningAlert {
         self.htmlUrl = htmlUrl
         self.pushProtectionBypassed = pushProtectionBypassed
         self.multiRepo = multiRepo
+        self.state = state
+        self.resolvedAt = resolvedAt
+        self.resolution = resolution
     }
 
     // MARK: - Relationships

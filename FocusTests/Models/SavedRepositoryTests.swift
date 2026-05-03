@@ -106,18 +106,40 @@ struct SavedRepositoryTests {
 
     // MARK: - totalSecurityAlerts
 
-    /// Verifies that `totalSecurityAlerts` returns the sum of all three alert type counts.
-    @Test func totalSecurityAlertsReturnsSumOfAllCounts() {
-        let repo = SavedRepository(
-            githubId: "abc123",
-            owner: "apple",
-            name: "swift",
-            displayName: "Apple Swift",
-            dependabotAlerts: 3,
-            codeScanningAlerts: 5,
-            secretScanningAlerts: 1
-        )
-        #expect(repo.totalSecurityAlerts == 9)
+    /// Verifies that `totalSecurityAlerts` returns the sum of open alerts across all three types.
+    @Test func totalSecurityAlertsReturnsSumOfAllCounts() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+
+        let repo = SavedRepository(githubId: "abc123", owner: "apple", name: "swift", displayName: "Apple Swift")
+        context.insert(repo)
+
+        // 2 open Dependabot alerts (1 dismissed should not count)
+        for i in 1...2 {
+            let a = DependabotAlert(alertNumber: i, packageName: "pkg", severity: "low", fixVersion: nil, createdAt: Date(), state: "open")
+            a.repository = repo; context.insert(a)
+        }
+        let dismissed = DependabotAlert(alertNumber: 3, packageName: "pkg", severity: "low", fixVersion: nil, createdAt: Date(), state: "dismissed")
+        dismissed.repository = repo; context.insert(dismissed)
+
+        // 3 open code scanning alerts (1 fixed should not count)
+        for i in 1...3 {
+            let a = CodeScanningAlert(alertNumber: i, ruleName: "rule", securitySeverityLevel: nil, createdAt: Date(), htmlUrl: "", state: "open")
+            a.repository = repo; context.insert(a)
+        }
+        let fixed = CodeScanningAlert(alertNumber: 4, ruleName: "rule", securitySeverityLevel: nil, createdAt: Date(), htmlUrl: "", state: "fixed")
+        fixed.repository = repo; context.insert(fixed)
+
+        // 1 open secret scanning alert (1 resolved should not count)
+        let open = SecretScanningAlert(alertNumber: 1, secretTypeDisplayName: "PAT", validity: "active", publiclyLeaked: false, createdAt: Date(), state: "open")
+        open.repository = repo; context.insert(open)
+        let resolved = SecretScanningAlert(alertNumber: 2, secretTypeDisplayName: "PAT", validity: "revoked", publiclyLeaked: false, createdAt: Date(), state: "resolved")
+        resolved.repository = repo; context.insert(resolved)
+
+        #expect(repo.dependabotAlerts == 2)
+        #expect(repo.codeScanningAlerts == 3)
+        #expect(repo.secretScanningAlerts == 1)
+        #expect(repo.totalSecurityAlerts == 6)
     }
 
     /// Verifies that `totalSecurityAlerts` returns `0` when all alert counts are at their default value.

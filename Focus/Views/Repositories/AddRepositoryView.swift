@@ -150,9 +150,9 @@ struct AddRepositoryView: View {
             )
             modelContext.insert(saved)
 
-            await securityService.syncDependabotAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await securityService.syncAllDependabotAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await securityService.syncAllCodeScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
-            await securityService.syncSecretScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await securityService.syncAllSecretScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await codeownersService.syncCodeowners(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await velocityService.syncVelocity(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await pullRequestService.syncOpenPullRequests(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
