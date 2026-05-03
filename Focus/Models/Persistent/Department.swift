@@ -16,7 +16,7 @@ final class Department {
     // MARK: - Properties
 
     /// The display name of the department (e.g., "Platform", "Infrastructure").
-    var name: String
+    var name: String = ""
 
     /// A human-readable description of the department's purpose, or `nil` if none is set.
     var departmentDescription: String?

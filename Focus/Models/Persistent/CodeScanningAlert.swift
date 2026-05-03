@@ -14,19 +14,19 @@ final class CodeScanningAlert {
     // MARK: - Properties
 
     /// The unique number identifying this alert within the repository.
-    var alertNumber: Int
+    var alertNumber: Int = 0
 
     /// The name of the code scanning rule that triggered this alert.
-    var ruleName: String
+    var ruleName: String = ""
 
     /// The security severity level reported for this alert, or `nil` if the rule has no associated severity.
     var securitySeverityLevel: String?
 
     /// The date and time when this alert was created on GitHub.
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// The GitHub web URL for viewing this alert's detail page.
-    var htmlUrl: String
+    var htmlUrl: String = ""
 
     /// The stable identifier for the rule (e.g., `"js/sql-injection"`), or `nil` if not provided.
     var ruleId: String?

@@ -16,19 +16,19 @@ final class SecretScanningAlert {
     // MARK: - Properties
 
     /// The GitHub-assigned alert number, unique within the repository.
-    var alertNumber: Int
+    var alertNumber: Int = 0
 
     /// The human-readable name of the secret type detected (e.g., "GitHub Personal Access Token").
-    var secretTypeDisplayName: String
+    var secretTypeDisplayName: String = ""
 
     /// The validity state of the detected secret as reported by GitHub (e.g., "active", "revoked").
-    var validity: String
+    var validity: String = ""
 
     /// Whether the secret has been detected in a public location outside the repository.
-    var publiclyLeaked: Bool
+    var publiclyLeaked: Bool = false
 
     /// The date the alert was created on GitHub.
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// The URL of the alert on GitHub.com; empty string until synced.
     var htmlUrl: String = ""

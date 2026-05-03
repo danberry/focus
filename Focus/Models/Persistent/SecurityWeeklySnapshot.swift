@@ -14,25 +14,25 @@ final class SecurityWeeklySnapshot {
     // MARK: - Properties
 
     /// The Monday that begins the briefing week (midnight, user's locale).
-    var weekStart: Date
+    var weekStart: Date = Date()
 
     /// Total open alerts across all scanners at week end.
-    var totalOpen: Int
+    var totalOpen: Int = 0
 
     /// Total open critical Dependabot alerts at week end.
-    var totalCritical: Int
+    var totalCritical: Int = 0
 
     /// Alerts with `createdAt` inside the week interval that are still open.
     ///
     /// This is an approximation of intake — alerts opened and then resolved within
     /// the same week are not counted here. Tier 3 will add a more accurate figure
     /// once the dismissed-alert REST fetch lands.
-    var opened: Int
+    var opened: Int = 0
 
     /// Alerts dismissed or fixed during the week.
     ///
     /// Stubbed as `0` until the Tier 3 closure API fetch ships.
-    var closed: Int
+    var closed: Int = 0
 
     /// JSON-encoded `[String: Int]` mapping repo display name → open critical count.
     ///

@@ -14,7 +14,7 @@ final class Discipline {
     // MARK: - Properties
 
     /// The display name of the discipline (e.g., "Engineering", "Design").
-    var name: String
+    var name: String = ""
 
     /// Whether members in this discipline are expected to have GitHub activity.
     ///

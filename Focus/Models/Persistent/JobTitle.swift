@@ -14,7 +14,7 @@ final class JobTitle {
     // MARK: - Properties
 
     /// The display name of the job title.
-    var name: String
+    var name: String = ""
 
     // MARK: - Init
 
