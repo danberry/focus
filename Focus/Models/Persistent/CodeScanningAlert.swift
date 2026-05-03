@@ -47,7 +47,7 @@ final class CodeScanningAlert {
     var messageText: String?
 
     /// The current state of this alert: `"open"`, `"dismissed"`, or `"fixed"`.
-    var state: String
+    var state: String = "open"
 
     /// The date and time when this alert was resolved by a code change, or `nil` if not yet fixed.
     var fixedAt: Date?
