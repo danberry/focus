@@ -121,7 +121,7 @@ struct TeamDetailView: View {
 
     /// Members sorted alphabetically by name.
     private var sortedMembers: [Member] {
-        team.members.sorted { $0.name < $1.name }
+        (team.members ?? []).sorted { $0.name < $1.name }
     }
 
     /// Deletes the member at the specified offset from the team.

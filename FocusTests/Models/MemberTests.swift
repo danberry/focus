@@ -80,8 +80,8 @@ struct MemberTests {
 
         let descriptor = FetchDescriptor<Team>()
         let teams = try context.fetch(descriptor)
-        #expect(teams[0].members.count == 1)
-        #expect(teams[0].members[0].name == "Alice")
+        #expect(teams[0].members?.count == 1)
+        #expect(teams[0].members?[0].name == "Alice")
     }
 
     /// Verifies that deleting a team also deletes all of its members from the context.
@@ -115,7 +115,7 @@ struct MemberTests {
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
         let jobTitle = JobTitle(name: "Senior Engineer")
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
 
         let member = Member(name: "Alice")
         member.jobTitle = jobTitle
@@ -137,7 +137,7 @@ struct MemberTests {
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
         let jobTitle = JobTitle(name: "Senior Engineer")
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
 
         let member = Member(name: "Alice")
         member.jobTitle = jobTitle

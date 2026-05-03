@@ -63,8 +63,8 @@ struct PullRequestServiceTests {
 
         await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
 
-        #expect(repo.openPullRequests.count == 2)
-        let numbers = Set(repo.openPullRequests.map(\.number))
+        #expect((repo.openPullRequests ?? []).count == 2)
+        let numbers = Set((repo.openPullRequests ?? []).map(\.number))
         #expect(numbers == [1, 2])
     }
 
@@ -81,7 +81,7 @@ struct PullRequestServiceTests {
 
         await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
 
-        let pr = try #require(repo.openPullRequests.first)
+        let pr = try #require(repo.openPullRequests?.first)
         #expect(pr.number == 42)
         #expect(pr.title == "Refactor networking")
         #expect(pr.authorLogin == "carol")
@@ -109,7 +109,7 @@ struct PullRequestServiceTests {
 
         // First sync
         await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
-        #expect(repo.openPullRequests.count == 1)
+        #expect((repo.openPullRequests ?? []).count == 1)
 
         // Second sync with different data — should replace, not accumulate
         mockHTTP.setSuccess(json: makeResponse(prs: [
@@ -118,8 +118,8 @@ struct PullRequestServiceTests {
         ]))
         await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
 
-        #expect(repo.openPullRequests.count == 2)
-        let numbers = Set(repo.openPullRequests.map(\.number))
+        #expect((repo.openPullRequests ?? []).count == 2)
+        let numbers = Set((repo.openPullRequests ?? []).map(\.number))
         #expect(numbers == [2, 3])
     }
 
@@ -134,7 +134,7 @@ struct PullRequestServiceTests {
 
         await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
 
-        #expect(repo.openPullRequests.isEmpty)
+        #expect((repo.openPullRequests ?? []).isEmpty)
     }
 
     /// Verifies that a network error leaves previously synced pull requests untouched.
@@ -149,14 +149,14 @@ struct PullRequestServiceTests {
         context.insert(repo)
 
         await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
-        #expect(repo.openPullRequests.count == 1)
+        #expect((repo.openPullRequests ?? []).count == 1)
 
         // Simulate a network error on the second sync
         mockHTTP.setFailure(URLError(.notConnectedToInternet))
         await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
 
         // Existing record untouched
-        #expect(repo.openPullRequests.count == 1)
-        #expect(repo.openPullRequests.first?.number == 1)
+        #expect((repo.openPullRequests ?? []).count == 1)
+        #expect(repo.openPullRequests?.first?.number == 1)
     }
 }

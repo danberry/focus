@@ -91,7 +91,7 @@ struct VelocityService: Sendable {
         ]
 
         let existingByPeriod = Dictionary(
-            uniqueKeysWithValues: repository.velocityMetrics.map { ($0.periodType, $0) }
+            uniqueKeysWithValues: (repository.velocityMetrics ?? []).map { ($0.periodType, $0) }
         )
         let incomingPeriods = Set(entries.map { $0.0.rawValue })
 

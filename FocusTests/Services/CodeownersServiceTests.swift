@@ -47,7 +47,7 @@ struct CodeownersServiceTests {
 
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        let handles = repo.codeowners.map(\.handle).sorted()
+        let handles = (repo.codeowners ?? []).map(\.handle).sorted()
         #expect(handles.count == 3)
         #expect(handles.contains("@alice"))
         #expect(handles.contains("@bob"))
@@ -65,7 +65,7 @@ struct CodeownersServiceTests {
 
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        let codeowner = try #require(repo.codeowners.first)
+        let codeowner = try #require(repo.codeowners?.first)
         #expect(codeowner.handle == "@alice")
         #expect(codeowner.pathPattern == "*.swift")
     }
@@ -86,8 +86,8 @@ struct CodeownersServiceTests {
 
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        #expect(repo.codeowners.count == 1)
-        #expect(repo.codeowners[0].handle == "@alice")
+        #expect((repo.codeowners ?? []).count == 1)
+        #expect((repo.codeowners ?? [])[0].handle == "@alice")
     }
 
     /// Verifies that a second sync replaces previously persisted codeowners rather than appending.
@@ -102,14 +102,14 @@ struct CodeownersServiceTests {
         stale.repository = repo
         context.insert(stale)
         try context.save()
-        #expect(repo.codeowners.count == 1)
+        #expect((repo.codeowners ?? []).count == 1)
 
         // Now sync with new content
         mockHTTP.setSuccess(json: contentsResponse(for: "* @new-owner\n"))
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        #expect(repo.codeowners.count == 1)
-        #expect(repo.codeowners[0].handle == "@new-owner")
+        #expect((repo.codeowners ?? []).count == 1)
+        #expect((repo.codeowners ?? [])[0].handle == "@new-owner")
     }
 
     /// Verifies that a non-2xx API response leaves the repository's codeowners list empty.
@@ -123,7 +123,7 @@ struct CodeownersServiceTests {
 
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        #expect(repo.codeowners.isEmpty)
+        #expect((repo.codeowners ?? []).isEmpty)
     }
 
     /// Verifies that the request targets the GitHub Contents API path for the repository.
@@ -152,7 +152,7 @@ struct CodeownersServiceTests {
 
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        let codeowner = try #require(repo.codeowners.first)
+        let codeowner = try #require(repo.codeowners?.first)
         #expect(codeowner.handle == "@acme/engineers")
         #expect(codeowner.isTeam == true)
     }
@@ -168,7 +168,7 @@ struct CodeownersServiceTests {
 
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        let codeowner = try #require(repo.codeowners.first)
+        let codeowner = try #require(repo.codeowners?.first)
         #expect(codeowner.repository === repo)
     }
 
@@ -185,7 +185,7 @@ struct CodeownersServiceTests {
 
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
-        let codeowner = try #require(repo.codeowners.first)
+        let codeowner = try #require(repo.codeowners?.first)
         #expect(codeowner.handle == "@acme/mobile-team")
         #expect(codeowner.pathPattern == "*")
         #expect(codeowner.isTeam == true)
@@ -208,7 +208,7 @@ struct CodeownersServiceTests {
         await makeService().syncCodeowners(owner: "acme", repo: "app", repository: repo, in: context)
 
         // Only the "* @alice" line produces a record
-        #expect(repo.codeowners.count == 1)
-        #expect(repo.codeowners[0].handle == "@alice")
+        #expect((repo.codeowners ?? []).count == 1)
+        #expect((repo.codeowners ?? [])[0].handle == "@alice")
     }
 }

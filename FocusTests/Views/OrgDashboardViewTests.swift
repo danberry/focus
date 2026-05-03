@@ -35,7 +35,7 @@ struct OrgDashboardViewTests {
         context.insert(t1)
         context.insert(t2)
 
-        #expect(dept.teams.count == 2)
+        #expect(dept.teams?.count == 2)
     }
 
     /// Verifies that a department aggregates repository counts across its teams.
@@ -52,7 +52,7 @@ struct OrgDashboardViewTests {
         repo.team = team
         context.insert(repo)
 
-        let repoCount = dept.teams.flatMap(\.repositories).count
+        let repoCount = (dept.teams ?? []).flatMap { $0.repositories ?? [] }.count
         #expect(repoCount == 1)
     }
 
@@ -80,7 +80,7 @@ struct OrgDashboardViewTests {
         csAlert.repository = repo
         context.insert(csAlert)
 
-        let alertCount = dept.teams.flatMap(\.repositories).reduce(0) { $0 + $1.totalSecurityAlerts }
+        let alertCount = (dept.teams ?? []).flatMap { $0.repositories ?? [] }.reduce(0) { $0 + $1.totalSecurityAlerts }
         #expect(alertCount == 4)
     }
 
@@ -98,7 +98,7 @@ struct OrgDashboardViewTests {
         member.team = team
         context.insert(member)
 
-        let memberCount = dept.teams.flatMap(\.members).count
+        let memberCount = (dept.teams ?? []).flatMap { $0.members ?? [] }.count
         #expect(memberCount == 1)
     }
 
@@ -112,6 +112,6 @@ struct OrgDashboardViewTests {
         let org = SavedOrganization(githubId: "1", login: "acme")
         context.insert(org)
 
-        #expect(org.departments.isEmpty)
+        #expect((org.departments ?? []).isEmpty)
     }
 }

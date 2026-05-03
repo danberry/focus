@@ -71,9 +71,7 @@ struct BriefingServiceTests {
         context.insert(critical1)
         context.insert(critical2)
         context.insert(high)
-        repo.dependabotAlertDetails.append(critical1)
-        repo.dependabotAlertDetails.append(critical2)
-        repo.dependabotAlertDetails.append(high)
+        repo.dependabotAlertDetails = (repo.dependabotAlertDetails ?? []) + [critical1, critical2, high]
 
         let briefing = await makeService().generate(scope: .all, in: context)
 
@@ -103,7 +101,7 @@ struct BriefingServiceTests {
         context.insert(discipline)
         let jobTitle = JobTitle(name: "Product Designer")
         context.insert(jobTitle)
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
 
         let member = Member(name: "Cleo Park", githubId: 99, githubLogin: "cleopark")
         member.jobTitle = jobTitle

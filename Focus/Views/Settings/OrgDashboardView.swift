@@ -51,7 +51,7 @@ struct OrgDashboardView: View {
 
     /// The organization's departments sorted alphabetically by name.
     private var sortedDepartments: [Department] {
-        organization.departments.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        (organization.departments ?? []).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 }
 
@@ -90,8 +90,8 @@ private struct OrgSummaryStrip: View {
     /// The view's content.
     var body: some View {
         HStack(spacing: 12) {
-            StatTile(value: organization.departments.count, label: "Departments")
-            StatTile(value: organization.teams.count, label: "Teams")
+            StatTile(value: organization.departments?.count ?? 0, label: "Departments")
+            StatTile(value: organization.teams?.count ?? 0, label: "Teams")
             StatTile(value: repos.count, label: "Repos")
             StatTile(value: totalAlerts, label: "Alerts", isAlert: totalAlerts > 0)
         }
@@ -157,18 +157,18 @@ private struct DepartmentHealthCard: View {
     // MARK: - Helpers
 
     /// The number of teams in the department.
-    private var teamCount: Int { department.teams.count }
+    private var teamCount: Int { department.teams?.count ?? 0 }
 
     /// The total number of members across all teams in the department.
-    private var memberCount: Int { department.teams.flatMap(\.members).count }
+    private var memberCount: Int { (department.teams ?? []).flatMap { $0.members ?? [] }.count }
 
     /// The total number of repositories across all teams in the department.
-    private var repoCount: Int { department.teams.flatMap(\.repositories).count }
+    private var repoCount: Int { (department.teams ?? []).flatMap { $0.repositories ?? [] }.count }
 
     /// The total number of open security alerts across all repositories owned by
     /// teams in the department.
     private var alertCount: Int {
-        department.teams.flatMap(\.repositories).reduce(0) { $0 + $1.totalSecurityAlerts }
+        (department.teams ?? []).flatMap { $0.repositories ?? [] }.reduce(0) { $0 + $1.totalSecurityAlerts }
     }
 }
 

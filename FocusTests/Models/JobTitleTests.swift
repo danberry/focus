@@ -31,7 +31,7 @@ struct JobTitleTests {
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
         let jobTitle = JobTitle(name: "Senior Engineer")
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
         try context.save()
 
         let descriptor = FetchDescriptor<JobTitle>()
@@ -49,7 +49,7 @@ struct JobTitleTests {
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
         let jobTitle = JobTitle(name: "Senior Engineer")
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
         try context.save()
 
         context.delete(jobTitle)
@@ -69,7 +69,7 @@ struct JobTitleTests {
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
         let jobTitle = JobTitle(name: "Engineer I")
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
         try context.save()
 
         jobTitle.name = "Senior Engineer"
@@ -91,7 +91,7 @@ struct JobTitleTests {
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
         let jobTitle = JobTitle(name: "Senior Engineer")
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
         try context.save()
 
         #expect(jobTitle.discipline?.name == "Engineering")

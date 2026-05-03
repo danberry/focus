@@ -87,14 +87,14 @@ struct BriefingService: Sendable {
 
         // Snapshot open PR creation dates as value types before the first await — applyOpenPRs()
         // can delete OpenPullRequest objects at any suspension point, invalidating live references.
-        let openPRCreatedDates: [Date] = scopedRepos.flatMap { $0.openPullRequests.map(\.createdAt) }
+        let openPRCreatedDates: [Date] = scopedRepos.flatMap { ($0.openPullRequests ?? []).map(\.createdAt) }
 
         // Snapshot daily contributions as value types before the first await —
         // ContributionService.syncDailyContributions() deletes DailyContribution objects at any
         // suspension point, invalidating live SwiftData references.
         let memberDailyContributions: [ObjectIdentifier: [(date: Date, count: Int)]] =
             Dictionary(uniqueKeysWithValues: scopedMembers.map { m in
-                (ObjectIdentifier(m), m.dailyContributions.map { ($0.date, $0.count) })
+                (ObjectIdentifier(m), (m.dailyContributions ?? []).map { ($0.date, $0.count) })
             })
 
         var cal = Calendar.current
@@ -982,7 +982,7 @@ struct BriefingService: Sendable {
         let reviewLoad: BriefingKPIReviewLoad? = {
             let pairs: [(login: String, count: Int)] = members.compactMap { member in
                 guard let login = member.githubLogin else { return nil }
-                let total = member.contributions.reduce(0) { $0 + $1.reviews }
+                let total = (member.contributions ?? []).reduce(0) { $0 + $1.reviews }
                 return total > 0 ? (login: login, count: total) : nil
             }
             guard !pairs.isEmpty else { return nil }

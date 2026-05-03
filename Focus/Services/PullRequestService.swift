@@ -68,7 +68,7 @@ struct PullRequestService: Sendable {
         let incomingByNumber = Dictionary(uniqueKeysWithValues: prs.map { ($0.number, $0) })
 
         // Snapshot before mutating the relationship
-        let snapshot = repository.openPullRequests
+        let snapshot = repository.openPullRequests ?? []
         let existingNumbers = Set(snapshot.map(\.number))
 
         // Update existing or delete stale

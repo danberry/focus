@@ -44,5 +44,5 @@ final class Department {
     ///
     /// Nullified when the department is removed. Inverse of ``Team/department``.
     @Relationship(deleteRule: .nullify, inverse: \Team.department)
-    var teams: [Team] = []
+    var teams: [Team]?
 }

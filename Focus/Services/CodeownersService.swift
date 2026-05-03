@@ -60,10 +60,10 @@ struct CodeownersService: Sendable {
     @MainActor
     func applyCodeowners(_ entries: [(pattern: String, handle: String)], to repository: SavedRepository, in context: ModelContext) {
         let incomingPairs = Set(entries.map { "\($0.handle)|\($0.pattern)" })
-        let existingPairs = Set(repository.codeowners.map { "\($0.handle)|\($0.pathPattern ?? "")" })
+        let existingPairs = Set((repository.codeowners ?? []).map { "\($0.handle)|\($0.pathPattern ?? "")" })
 
         // Delete entries no longer present
-        for codeowner in repository.codeowners where !incomingPairs.contains("\(codeowner.handle)|\(codeowner.pathPattern ?? "")") {
+        for codeowner in (repository.codeowners ?? []) where !incomingPairs.contains("\(codeowner.handle)|\(codeowner.pathPattern ?? "")") {
             codeowner.repository = nil
             context.delete(codeowner)
         }

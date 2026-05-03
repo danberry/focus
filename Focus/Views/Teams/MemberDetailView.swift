@@ -17,7 +17,7 @@ struct MemberDetailView: View {
     /// The contributions for the selected time range, sorted chronologically.
     private var filteredDays: [DailyContribution] {
         let cutoff = selectedRange.cutoffDate
-        return member.dailyContributions
+        return (member.dailyContributions ?? [])
             .filter { $0.date >= cutoff }
             .sorted { $0.date < $1.date }
     }

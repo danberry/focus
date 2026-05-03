@@ -141,7 +141,7 @@ struct AddMemberView: View {
 
     /// Existing team members sorted alphabetically, used to populate the manager picker.
     private var sortedTeamMembers: [Member] {
-        team.members.sorted { $0.name < $1.name }
+        (team.members ?? []).sorted { $0.name < $1.name }
     }
 
     /// Whether the form is in a valid state to be submitted.

@@ -36,7 +36,7 @@ struct TeamsView: View {
                     List {
                         ForEach(departmentsWithTeams) { dept in
                             Section(dept.name) {
-                                ForEach(dept.teams.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) { team in
+                                ForEach((dept.teams ?? []).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }) { team in
                                     teamRow(for: team)
                                 }
                             }
@@ -80,7 +80,7 @@ struct TeamsView: View {
 
     /// Departments that have at least one assigned team.
     private var departmentsWithTeams: [Department] {
-        departments.filter { !$0.teams.isEmpty }
+        departments.filter { !($0.teams ?? []).isEmpty }
     }
 
     /// Teams not assigned to any department.
@@ -101,7 +101,7 @@ struct TeamsView: View {
     private func teamRow(for team: Team) -> some View {
         NavigationLink(destination: TeamDetailView(team: team)) {
             LabeledContent {
-                Text("\(team.members.count)")
+                Text("\(team.members?.count ?? 0)")
             } label: {
                 Text(team.name)
                 Text(team.teamDescription)

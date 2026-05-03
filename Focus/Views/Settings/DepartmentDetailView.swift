@@ -85,7 +85,7 @@ struct DepartmentDetailView: View {
 
     /// The department's teams sorted alphabetically by name.
     private var sortedTeams: [Team] {
-        department.teams.sorted { $0.name < $1.name }
+        (department.teams ?? []).sorted { $0.name < $1.name }
     }
 
     /// Removes the teams at the specified offsets from this department by nullifying their back-reference.
