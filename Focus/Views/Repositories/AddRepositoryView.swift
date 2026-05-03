@@ -146,17 +146,12 @@ struct AddRepositoryView: View {
                 owner: trimmedOwner,
                 name: repo.name,
                 displayName: trimmedDisplayName,
-                primaryLanguage: repo.primaryLanguage?.name,
-                dependabotAlerts: metrics.dependabotAlerts ?? 0,
-                codeScanningAlerts: metrics.codeScanningAlerts ?? 0,
-                secretScanningAlerts: metrics.secretScanningAlerts ?? 0
+                primaryLanguage: repo.primaryLanguage?.name
             )
             modelContext.insert(saved)
 
             await securityService.syncDependabotAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await securityService.syncAllCodeScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
-            // Badge reflects open count only; history may include dismissed and fixed alerts.
-            saved.codeScanningAlerts = saved.codeScanningAlertDetails.filter { $0.state == "open" }.count
             await securityService.syncSecretScanningAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await codeownersService.syncCodeowners(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await velocityService.syncVelocity(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)

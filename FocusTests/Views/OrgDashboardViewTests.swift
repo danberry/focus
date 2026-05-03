@@ -68,10 +68,17 @@ struct OrgDashboardViewTests {
         team.department = dept
         context.insert(team)
         let repo = SavedRepository(githubId: "2", owner: "acme", name: "auth", displayName: "Auth")
-        repo.dependabotAlerts = 3
-        repo.codeScanningAlerts = 1
         repo.team = team
         context.insert(repo)
+
+        for i in 1...3 {
+            let alert = DependabotAlert(alertNumber: i, packageName: "pkg", severity: "high", fixVersion: nil, createdAt: .now)
+            alert.repository = repo
+            context.insert(alert)
+        }
+        let csAlert = CodeScanningAlert(alertNumber: 1, ruleName: "rule", securitySeverityLevel: "high", createdAt: .now, htmlUrl: "")
+        csAlert.repository = repo
+        context.insert(csAlert)
 
         let alertCount = dept.teams.flatMap(\.repositories).reduce(0) { $0 + $1.totalSecurityAlerts }
         #expect(alertCount == 4)
