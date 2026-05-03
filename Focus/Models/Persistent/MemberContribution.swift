@@ -13,25 +13,25 @@ final class MemberContribution {
     // MARK: - Properties
 
     /// The number of commits authored during the period.
-    var commits: Int
+    var commits: Int = 0
 
     /// The number of pull requests opened during the period.
-    var pullRequests: Int
+    var pullRequests: Int = 0
 
     /// The number of pull request reviews submitted during the period.
-    var reviews: Int
+    var reviews: Int = 0
 
     /// The number of issues opened during the period.
-    var issues: Int
+    var issues: Int = 0
 
     /// The start of the contribution period (inclusive).
-    var periodStart: Date
+    var periodStart: Date = Date()
 
     /// The end of the contribution period (inclusive).
-    var periodEnd: Date
+    var periodEnd: Date = Date()
 
     /// The date and time this record was last fetched from the GitHub API.
-    var fetchedAt: Date
+    var fetchedAt: Date = Date()
 
     // MARK: - Init
 

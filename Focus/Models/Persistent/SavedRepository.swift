@@ -14,16 +14,16 @@ final class SavedRepository {
     // MARK: - Properties
 
     /// The stable GitHub node ID for the repository.
-    var githubId: String
+    var githubId: String = ""
 
     /// The repository owner's login (user or organization).
-    var owner: String
+    var owner: String = ""
 
     /// The repository name.
-    var name: String
+    var name: String = ""
 
     /// The user-facing label shown in lists and navigation titles.
-    var displayName: String
+    var displayName: String = ""
 
     /// The repository's primary programming language, or `nil` if GitHub reports none.
     var primaryLanguage: String?

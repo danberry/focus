@@ -14,23 +14,23 @@ final class PRWeeklySnapshot {
     // MARK: - Stored Properties
 
     /// The first day of the briefing week (midnight, user's locale).
-    var weekStart: Date
+    var weekStart: Date = Date()
 
     /// Sorted `"owner/name"` pairs joined by `","` — identifies the exact set
     /// of repos this snapshot covers so scope changes cause a natural cache miss.
-    var repoFingerprint: String
+    var repoFingerprint: String = ""
 
     var medianHours: Int?
-    var dailyCounts: [Int]
+    var dailyCounts: [Int] = []
     var medianPRSize: Int?
-    var dailyPRSizeMedians: [Int]
-    var dailyCycleTimeMedians: [Int]
+    var dailyPRSizeMedians: [Int] = []
+    var dailyCycleTimeMedians: [Int] = []
     var medianFirstReviewHours: Int?
-    var dailyFirstReviewMedians: [Int]
-    var hotfixCount: Int
-    var totalMerged: Int
-    var unreviewedCount: Int
-    var totalPRCount: Int
+    var dailyFirstReviewMedians: [Int] = []
+    var hotfixCount: Int = 0
+    var totalMerged: Int = 0
+    var unreviewedCount: Int = 0
+    var totalPRCount: Int = 0
     var ciPassPct: Int?
 
     /// JSON-encoded `[String: Int]` — SwiftData does not persist dictionaries directly.

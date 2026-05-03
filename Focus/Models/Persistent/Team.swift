@@ -13,10 +13,10 @@ final class Team {
     // MARK: - Properties
 
     /// The team's display name as returned by the GitHub API.
-    var name: String
+    var name: String = ""
 
     /// A human-readable description of the team's purpose.
-    var teamDescription: String
+    var teamDescription: String = ""
 
     // MARK: - Init
 

@@ -17,34 +17,34 @@ final class DependabotAlert {
     // MARK: - Properties
 
     /// The GitHub-assigned number identifying this alert within the repository.
-    var alertNumber: Int
+    var alertNumber: Int = 0
 
     /// The name of the vulnerable package.
-    var packageName: String
+    var packageName: String = ""
 
     /// The severity level of the alert (e.g., `"critical"`, `"high"`, `"medium"`, `"low"`).
-    var severity: String
+    var severity: String = ""
 
     /// The version in which the vulnerability is fixed, or `nil` if no fix is available.
     var fixVersion: String?
 
     /// The date and time the alert was opened.
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// A brief description of the vulnerability.
-    var summary: String
+    var summary: String = ""
 
     /// The full advisory text describing the vulnerability.
-    var advisoryDescription: String
+    var advisoryDescription: String = ""
 
     /// The package ecosystem (e.g., `"npm"`, `"pip"`, `"rubygems"`).
-    var ecosystem: String
+    var ecosystem: String = ""
 
     /// The range of package versions affected by this vulnerability.
-    var vulnerableVersionRange: String
+    var vulnerableVersionRange: String = ""
 
     /// The GitHub Security Advisory identifier.
-    var ghsaId: String
+    var ghsaId: String = ""
 
     /// The CVE identifier, or `nil` if no CVE has been assigned.
     var cveId: String?
@@ -53,7 +53,7 @@ final class DependabotAlert {
     var cvssScore: Double?
 
     /// The URL of the alert on GitHub.com.
-    var htmlUrl: String
+    var htmlUrl: String = ""
 
     /// The path to the dependency manifest file, or `nil` if not reported.
     var manifestPath: String?

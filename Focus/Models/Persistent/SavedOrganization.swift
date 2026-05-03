@@ -14,10 +14,10 @@ final class SavedOrganization {
     // MARK: - Properties
 
     /// The stable GitHub node ID for the organization.
-    var githubId: String
+    var githubId: String = ""
 
     /// The organization's login handle (e.g. `"apple"`).
-    var login: String
+    var login: String = ""
 
     /// The organization's display name, or `nil` if GitHub reports none.
     var name: String?
@@ -29,7 +29,7 @@ final class SavedOrganization {
     var organizationDescription: String?
 
     /// The date the user added this organization to their watch list.
-    var addedAt: Date
+    var addedAt: Date = Date()
 
     // MARK: - Init
 

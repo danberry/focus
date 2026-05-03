@@ -70,22 +70,22 @@ final class RepositoryVelocity {
     // MARK: - Properties
 
     /// The raw value of the ``VelocityPeriod`` this record represents.
-    var periodType: String
+    var periodType: String = ""
 
     /// The number of merged PRs in the current period window.
-    var currentCount: Int
+    var currentCount: Int = 0
 
     /// The number of merged PRs in the equivalent prior period window.
-    var priorCount: Int
+    var priorCount: Int = 0
 
     /// The start of the current period window.
-    var periodStart: Date
+    var periodStart: Date = Date()
 
     /// The end of the current period window, captured at sync time.
-    var periodEnd: Date
+    var periodEnd: Date = Date()
 
     /// The timestamp when this record was last fetched from GitHub.
-    var fetchedAt: Date
+    var fetchedAt: Date = Date()
 
     // MARK: - Init
 

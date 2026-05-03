@@ -14,12 +14,12 @@ final class Codeowner {
     // MARK: - Properties
 
     /// The GitHub login or team slug for this owner (e.g., `"octocat"` or `"org/team-name"`).
-    var handle: String
+    var handle: String = ""
 
     /// Whether this owner refers to a GitHub team rather than an individual user.
     ///
     /// Derived from `handle` at init time: `true` when the handle contains a `/`.
-    var isTeam: Bool
+    var isTeam: Bool = false
 
     /// The CODEOWNERS path pattern this rule applies to, or `nil` if it applies to the whole repository.
     var pathPattern: String?

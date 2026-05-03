@@ -14,10 +14,10 @@ final class DailyContribution {
     // MARK: - Properties
 
     /// The calendar date this contribution count represents.
-    var date: Date
+    var date: Date = Date()
 
     /// The number of contributions recorded for this date.
-    var count: Int
+    var count: Int = 0
 
     // MARK: - Init
 

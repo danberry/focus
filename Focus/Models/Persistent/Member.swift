@@ -14,7 +14,7 @@ final class Member {
     // MARK: - Properties
 
     /// The display name of the team member.
-    var name: String
+    var name: String = ""
 
     /// The member's GitHub user ID, or `nil` if the member has not been linked to a GitHub account.
     var githubId: Int?

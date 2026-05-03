@@ -13,19 +13,19 @@ final class OpenPullRequest {
     // MARK: - Properties
 
     /// The pull request number within the repository.
-    var number: Int
+    var number: Int = 0
 
     /// The pull request title.
-    var title: String
+    var title: String = ""
 
     /// The date and time the pull request was opened.
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// The GitHub login of the pull request author.
-    var authorLogin: String
+    var authorLogin: String = ""
 
     /// The URL of the pull request on GitHub.
-    var url: String
+    var url: String = ""
 
     // MARK: - Init
 
