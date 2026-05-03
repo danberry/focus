@@ -107,7 +107,7 @@ struct AssignCodeOwnerView: View {
     private func loadCandidates() async {
         let resolvedHandles = CodeownerResolver.resolve(
             filePath: alert.manifestPath ?? "",
-            codeowners: repository.codeowners
+            codeowners: repository.codeowners ?? []
         )
         let rest = RESTClient(tokenProvider: authService.tokenProvider)
         let service = CodeownerEmailService(rest: rest)

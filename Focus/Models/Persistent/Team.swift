@@ -36,7 +36,7 @@ final class Team {
     ///
     /// Cascade-deleted when the team is removed. Inverse of ``Member/team``.
     @Relationship(deleteRule: .cascade, inverse: \Member.team)
-    var members: [Member] = []
+    var members: [Member]?
 
     /// The department this team belongs to, or `nil` if the team has not been assigned to a department.
     ///
@@ -52,5 +52,5 @@ final class Team {
     ///
     /// Nullified when the team is removed. Inverse of ``SavedRepository/team``.
     @Relationship(deleteRule: .nullify, inverse: \SavedRepository.team)
-    var repositories: [SavedRepository] = []
+    var repositories: [SavedRepository]?
 }

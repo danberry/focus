@@ -40,5 +40,5 @@ final class Discipline {
     /// Job titles that belong to this discipline.
     ///
     /// Cascade-deleted when the discipline is removed.
-    @Relationship(deleteRule: .cascade) var jobTitles: [JobTitle] = []
+    @Relationship(deleteRule: .cascade, inverse: \JobTitle.discipline) var jobTitles: [JobTitle]?
 }

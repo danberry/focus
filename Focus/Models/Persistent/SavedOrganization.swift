@@ -56,11 +56,11 @@ final class SavedOrganization {
     ///
     /// Cascade-deleted when the organization is removed. Inverse of ``Department/organization``.
     @Relationship(deleteRule: .cascade, inverse: \Department.organization)
-    var departments: [Department] = []
+    var departments: [Department]?
 
     /// The teams directly belonging to this organization, without a department grouping.
     ///
     /// Nullified when the organization is removed. Inverse of ``Team/organization``.
     @Relationship(deleteRule: .nullify, inverse: \Team.organization)
-    var teams: [Team] = []
+    var teams: [Team]?
 }

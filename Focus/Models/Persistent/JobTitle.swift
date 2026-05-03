@@ -32,4 +32,11 @@ final class JobTitle {
     /// Inverse of ``Discipline/jobTitles``. Set to `nil` until the job title is
     /// placed under a discipline.
     var discipline: Discipline?
+
+    /// The members assigned to this job title.
+    ///
+    /// Nullified when this job title is deleted so members retain their record
+    /// but lose the title assignment. Inverse of ``Member/jobTitle``.
+    @Relationship(deleteRule: .nullify, inverse: \Member.jobTitle)
+    var members: [Member]?
 }

@@ -20,7 +20,7 @@ struct DepartmentTests {
         let department = Department(name: "Platform")
         #expect(department.name == "Platform")
         #expect(department.departmentDescription == nil)
-        #expect(department.teams.isEmpty)
+        #expect((department.teams ?? []).isEmpty)
     }
 
     /// Verifies that a new `Department` initializes with both a name and a description.
@@ -91,11 +91,13 @@ struct DepartmentTests {
 
         let department = Department(name: "Platform")
         context.insert(department)
-        department.teams.append(Team(name: "iOS Platform", teamDescription: "Owns the iOS app"))
-        department.teams.append(Team(name: "Web Platform", teamDescription: "Owns the web app"))
+        department.teams = (department.teams ?? []) + [
+            Team(name: "iOS Platform", teamDescription: "Owns the iOS app"),
+            Team(name: "Web Platform", teamDescription: "Owns the web app")
+        ]
         try context.save()
 
-        #expect(department.teams.count == 2)
+        #expect(department.teams?.count == 2)
     }
 
     /// Verifies that deleting a department nullifies its teams rather than cascade-deleting them.
@@ -105,8 +107,10 @@ struct DepartmentTests {
 
         let department = Department(name: "Platform")
         context.insert(department)
-        department.teams.append(Team(name: "iOS Platform", teamDescription: "Owns the iOS app"))
-        department.teams.append(Team(name: "Web Platform", teamDescription: "Owns the web app"))
+        department.teams = (department.teams ?? []) + [
+            Team(name: "iOS Platform", teamDescription: "Owns the iOS app"),
+            Team(name: "Web Platform", teamDescription: "Owns the web app")
+        ]
         try context.save()
 
         context.delete(department)
@@ -128,10 +132,10 @@ struct DepartmentTests {
         let department = Department(name: "Platform")
         context.insert(organization)
         context.insert(department)
-        organization.departments.append(department)
+        organization.departments = (organization.departments ?? []) + [department]
         try context.save()
 
-        #expect(organization.departments.count == 1)
+        #expect(organization.departments?.count == 1)
         #expect(department.organization === organization)
     }
 }

@@ -59,19 +59,19 @@ final class Member {
     /// Nullified when this member is removed so direct reports are not deleted with their manager.
     /// Inverse of ``Member/manager``.
     @Relationship(deleteRule: .nullify, inverse: \Member.manager)
-    var directReports: [Member] = []
+    var directReports: [Member]?
 
     /// Per-repository contribution records for this member.
     ///
     /// Cascade-deleted when the member is removed. Inverse of ``MemberContribution/member``.
     @Relationship(deleteRule: .cascade, inverse: \MemberContribution.member)
-    var contributions: [MemberContribution] = []
+    var contributions: [MemberContribution]?
 
     /// Daily contribution snapshots for this member.
     ///
     /// Cascade-deleted when the member is removed. Inverse of ``DailyContribution/member``.
     @Relationship(deleteRule: .cascade, inverse: \DailyContribution.member)
-    var dailyContributions: [DailyContribution] = []
+    var dailyContributions: [DailyContribution]?
 
     // MARK: - Computed
 

@@ -57,7 +57,7 @@ struct ContributionServiceTests {
 
         await makeService().syncContributions(login: "alice", member: member, in: context)
 
-        let contributions = member.contributions
+        let contributions = (member.contributions ?? [])
         #expect(contributions.count == 1)
 
         let record = try #require(contributions.first)
@@ -97,13 +97,13 @@ struct ContributionServiceTests {
         stale.member = member
         context.insert(stale)
         try context.save()
-        #expect(member.contributions.count == 1)
+        #expect((member.contributions ?? []).count == 1)
 
         mockHTTP.setSuccess(json: makeResponse(commits: 5, prs: 1, reviews: 0, issues: 2))
         await makeService().syncContributions(login: "bob", member: member, in: context)
 
-        #expect(member.contributions.count == 1)
-        let record = try #require(member.contributions.first)
+        #expect((member.contributions ?? []).count == 1)
+        let record = try #require(member.contributions?.first)
         #expect(record.commits == 5)
         #expect(record.pullRequests == 1)
         #expect(record.reviews == 0)
@@ -130,7 +130,7 @@ struct ContributionServiceTests {
         await makeService().syncContributions(login: "carol", member: member, in: context)
 
         // Existing record and count are preserved
-        #expect(member.contributions.count == 1)
+        #expect((member.contributions ?? []).count == 1)
         #expect(member.contributionCount == 10)
     }
 
@@ -161,7 +161,7 @@ struct ContributionServiceTests {
         """)
         await makeService().syncContributions(login: "dave", member: member, in: context)
 
-        #expect(member.contributions.count == 1)
+        #expect((member.contributions ?? []).count == 1)
         #expect(member.contributionCount == 4)
     }
 
@@ -182,7 +182,7 @@ struct ContributionServiceTests {
         await makeService().syncContributions(login: "ghost", member: member, in: context)
 
         // No crash, no record created, contributionCount unchanged
-        #expect(member.contributions.isEmpty)
+        #expect((member.contributions ?? []).isEmpty)
         #expect(member.contributionCount == 0)
     }
 
@@ -199,7 +199,7 @@ struct ContributionServiceTests {
         await makeService().syncContributions(login: "eve", member: member, in: context)
         let after = Date()
 
-        let record = try #require(member.contributions.first)
+        let record = try #require(member.contributions?.first)
 
         // periodEnd should be approximately now
         #expect(record.periodEnd >= before)
@@ -226,7 +226,7 @@ struct ContributionServiceTests {
 
         await makeService().syncContributions(login: "frank", member: member, in: context)
 
-        let record = try #require(member.contributions.first)
+        let record = try #require(member.contributions?.first)
         #expect(record.member === member)
     }
 
@@ -263,8 +263,8 @@ struct ContributionServiceTests {
             await service.syncContributions(login: login, member: member, in: context)
         }
 
-        #expect(linked.contributions.count == 1)
-        #expect(unlinked.contributions.isEmpty)
+        #expect((linked.contributions ?? []).count == 1)
+        #expect((unlinked.contributions ?? []).isEmpty)
         #expect(unlinked.contributionCount == 0)
     }
 
@@ -287,10 +287,10 @@ struct ContributionServiceTests {
         mockHTTP.setSuccess(json: makeResponse(commits: 3, prs: 0, reviews: 0, issues: 1))
         await service.syncContributions(login: "bob", member: bob, in: context)
 
-        #expect(alice.contributions.count == 1)
-        #expect(alice.contributions.first?.commits == 10)
-        #expect(bob.contributions.count == 1)
-        #expect(bob.contributions.first?.commits == 3)
+        #expect((alice.contributions ?? []).count == 1)
+        #expect(alice.contributions?.first?.commits == 10)
+        #expect((bob.contributions ?? []).count == 1)
+        #expect(bob.contributions?.first?.commits == 3)
     }
 
     /// Verifies that a response with all-zero counts creates a record with zero values and a zero contribution count.
@@ -304,9 +304,9 @@ struct ContributionServiceTests {
 
         await makeService().syncContributions(login: "hank", member: member, in: context)
 
-        #expect(member.contributions.count == 1)
+        #expect((member.contributions ?? []).count == 1)
         #expect(member.contributionCount == 0)
-        let record = try #require(member.contributions.first)
+        let record = try #require(member.contributions?.first)
         #expect(record.commits == 0)
         #expect(record.pullRequests == 0)
         #expect(record.reviews == 0)
@@ -326,7 +326,7 @@ struct ContributionServiceTests {
             login: "ivy", member: member, organizationIDs: ["ORG_NODE_ID_1"], in: context
         )
 
-        let record = try #require(member.contributions.first)
+        let record = try #require(member.contributions?.first)
         #expect(record.commits == 4)
         #expect(record.pullRequests == 1)
         #expect(record.reviews == 0)
@@ -349,8 +349,8 @@ struct ContributionServiceTests {
             login: "jack", member: member, organizationIDs: ["ORG_1", "ORG_2"], in: context
         )
 
-        #expect(member.contributions.count == 1)
-        let record = try #require(member.contributions.first)
+        #expect((member.contributions ?? []).count == 1)
+        let record = try #require(member.contributions?.first)
         #expect(record.commits == 8)
         #expect(record.pullRequests == 2)
         #expect(record.reviews == 0)
@@ -412,8 +412,8 @@ struct ContributionServiceTests {
         )
 
         // The single day "2025-04-05" should have a merged count of 3 + 2 = 5.
-        #expect(member.dailyContributions.count == 1)
-        let day = try #require(member.dailyContributions.first)
+        #expect((member.dailyContributions ?? []).count == 1)
+        let day = try #require(member.dailyContributions?.first)
         #expect(day.count == 5)
     }
 
@@ -435,7 +435,7 @@ struct ContributionServiceTests {
             login: "lee", member: member, organizationIDs: ["ORG_NULL", "ORG_REAL"], in: context
         )
 
-        let record = try #require(member.contributions.first)
+        let record = try #require(member.contributions?.first)
         #expect(record.commits == 7)
         #expect(record.pullRequests == 1)
         #expect(member.contributionCount == 8)
@@ -464,7 +464,7 @@ struct ContributionServiceTests {
         )
 
         // All orgs returned null — existing data must be preserved.
-        #expect(member.contributions.count == 1)
+        #expect((member.contributions ?? []).count == 1)
         #expect(member.contributionCount == 6)
     }
 }

@@ -33,7 +33,7 @@ struct DepartmentsView: View {
                     ForEach(departments) { department in
                         NavigationLink(destination: DepartmentDetailView(department: department)) {
                             Text(department.name)
-                                .badge(department.teams.count)
+                                .badge(department.teams?.count ?? 0)
                         }
                     }
                     .onDelete(perform: delete)

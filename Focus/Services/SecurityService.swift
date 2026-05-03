@@ -187,7 +187,7 @@ struct SecurityService: Sendable {
         guard let alerts else { return }
 
         let existingByNumber = Dictionary(
-            uniqueKeysWithValues: repository.dependabotAlertDetails.map { ($0.alertNumber, $0) }
+            uniqueKeysWithValues: (repository.dependabotAlertDetails ?? []).map { ($0.alertNumber, $0) }
         )
 
         for alert in alerts {
@@ -260,7 +260,7 @@ struct SecurityService: Sendable {
         guard let openAlerts else { return }
 
         let incomingOpenNumbers = Set(openAlerts.map(\.number))
-        let newlyResolvedRecords = repository.dependabotAlertDetails.filter {
+        let newlyResolvedRecords = (repository.dependabotAlertDetails ?? []).filter {
             $0.state == "open" && !incomingOpenNumbers.contains($0.alertNumber)
         }
 
@@ -293,7 +293,7 @@ struct SecurityService: Sendable {
         guard let alerts else { return }
 
         let existingByNumber = Dictionary(
-            uniqueKeysWithValues: repository.codeScanningAlertDetails.map { ($0.alertNumber, $0) }
+            uniqueKeysWithValues: (repository.codeScanningAlertDetails ?? []).map { ($0.alertNumber, $0) }
         )
 
         for response in alerts {
@@ -359,7 +359,7 @@ struct SecurityService: Sendable {
 
         // Find alerts that were open in the DB but absent from the incoming open list.
         let incomingOpenNumbers = Set(openAlerts.map(\.number))
-        let newlyResolvedRecords = repository.codeScanningAlertDetails.filter {
+        let newlyResolvedRecords = (repository.codeScanningAlertDetails ?? []).filter {
             $0.state == "open" && !incomingOpenNumbers.contains($0.alertNumber)
         }
 
@@ -394,7 +394,7 @@ struct SecurityService: Sendable {
         guard let alerts else { return }
 
         let existingByNumber = Dictionary(
-            uniqueKeysWithValues: repository.secretScanningAlertDetails.map { ($0.alertNumber, $0) }
+            uniqueKeysWithValues: (repository.secretScanningAlertDetails ?? []).map { ($0.alertNumber, $0) }
         )
 
         for response in alerts {
@@ -448,7 +448,7 @@ struct SecurityService: Sendable {
         guard let openAlerts else { return }
 
         let incomingOpenNumbers = Set(openAlerts.map(\.number))
-        let newlyResolvedRecords = repository.secretScanningAlertDetails.filter {
+        let newlyResolvedRecords = (repository.secretScanningAlertDetails ?? []).filter {
             $0.state == "open" && !incomingOpenNumbers.contains($0.alertNumber)
         }
 

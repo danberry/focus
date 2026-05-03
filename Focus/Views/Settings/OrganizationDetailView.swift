@@ -36,7 +36,7 @@ struct OrganizationDetailView: View {
                     ForEach(sortedDepartments) { dept in
                         NavigationLink(destination: DepartmentDetailView(department: dept)) {
                             Text(dept.name)
-                                .badge(dept.teams.count)
+                                .badge(dept.teams?.count ?? 0)
                         }
                     }
                 }
@@ -48,7 +48,7 @@ struct OrganizationDetailView: View {
                     ForEach(directTeams) { team in
                         NavigationLink(destination: TeamDetailView(team: team)) {
                             LabeledContent {
-                                Text("\(team.members.count)")
+                                Text("\(team.members?.count ?? 0)")
                             } label: {
                                 Text(team.name)
                                 Text(team.teamDescription)
@@ -70,12 +70,12 @@ struct OrganizationDetailView: View {
 
     /// The organization's departments sorted alphabetically by name.
     private var sortedDepartments: [Department] {
-        organization.departments.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        (organization.departments ?? []).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     /// The teams directly assigned to this organization (without a department), sorted alphabetically by name.
     private var directTeams: [Team] {
-        organization.teams.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        (organization.teams ?? []).sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 }
 

@@ -118,7 +118,7 @@ struct DependabotAlertDetailView: View {
 
         let handles = CodeownerResolver.resolve(
             filePath: alert.manifestPath ?? "",
-            codeowners: repository.codeowners
+            codeowners: repository.codeowners ?? []
         )
 
         let service = CodeownerEmailService(

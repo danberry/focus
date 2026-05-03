@@ -28,7 +28,7 @@ struct DisciplineDetailView: View {
                 Text("When off, members in this discipline are excluded from inactivity alerts in the Briefing.")
             }
 
-            if discipline.jobTitles.isEmpty {
+            if (discipline.jobTitles ?? []).isEmpty {
                 ContentUnavailableView(
                     "No Job Titles",
                     systemImage: "person.text.rectangle",
@@ -65,7 +65,7 @@ struct DisciplineDetailView: View {
 
     /// The discipline's job titles sorted alphabetically by name.
     private var sortedJobTitles: [JobTitle] {
-        discipline.jobTitles.sorted { $0.name < $1.name }
+        (discipline.jobTitles ?? []).sorted { $0.name < $1.name }
     }
 
     /// Deletes job titles at the specified offsets from the sorted list.

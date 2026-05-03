@@ -19,7 +19,7 @@ struct DisciplineTests {
     @Test func initializesWithName() {
         let discipline = Discipline(name: "Engineering")
         #expect(discipline.name == "Engineering")
-        #expect(discipline.jobTitles.isEmpty)
+        #expect((discipline.jobTitles ?? []).isEmpty)
     }
 
     // MARK: - Persistence
@@ -83,11 +83,13 @@ struct DisciplineTests {
 
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
-        discipline.jobTitles.append(JobTitle(name: "Engineer I"))
-        discipline.jobTitles.append(JobTitle(name: "Senior Engineer"))
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [
+            JobTitle(name: "Engineer I"),
+            JobTitle(name: "Senior Engineer")
+        ]
         try context.save()
 
-        #expect(discipline.jobTitles.count == 2)
+        #expect(discipline.jobTitles?.count == 2)
     }
 
     /// Verifies that deleting a discipline cascade-deletes its associated job titles.
@@ -97,8 +99,10 @@ struct DisciplineTests {
 
         let discipline = Discipline(name: "Engineering")
         context.insert(discipline)
-        discipline.jobTitles.append(JobTitle(name: "Engineer I"))
-        discipline.jobTitles.append(JobTitle(name: "Senior Engineer"))
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [
+            JobTitle(name: "Engineer I"),
+            JobTitle(name: "Senior Engineer")
+        ]
         try context.save()
 
         context.delete(discipline)

@@ -20,7 +20,7 @@ struct IssueVelocityReportView: View {
     /// Per-repository velocity rows for the selected period, sorted by current count descending.
     private var repoRows: [VelocityRow] {
         repositories.compactMap { repo in
-            guard let record = repo.velocityMetrics.first(where: { $0.periodType == selectedPeriod.rawValue }) else {
+            guard let record = (repo.velocityMetrics ?? []).first(where: { $0.periodType == selectedPeriod.rawValue }) else {
                 return nil
             }
             return VelocityRow(

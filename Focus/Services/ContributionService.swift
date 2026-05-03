@@ -104,7 +104,7 @@ struct ContributionService: Sendable {
                 guard receivedAnyData else { return }
             }
 
-            if let existing = member.contributions.first {
+            if let existing = member.contributions?.first {
                 existing.commits = totalCommits
                 existing.pullRequests = totalPRs
                 existing.reviews = totalReviews
@@ -112,7 +112,7 @@ struct ContributionService: Sendable {
                 existing.periodStart = oneYearAgo
                 existing.periodEnd = now
                 existing.fetchedAt = now
-                for extra in member.contributions.dropFirst() {
+                for extra in (member.contributions ?? []).dropFirst() {
                     extra.member = nil
                     context.delete(extra)
                 }
@@ -205,7 +205,7 @@ struct ContributionService: Sendable {
             }
 
             // Upsert: update the existing MemberContribution in-place, or insert if none exists.
-            if let existing = member.contributions.first {
+            if let existing = member.contributions?.first {
                 existing.commits = totalCommits
                 existing.pullRequests = totalPRs
                 existing.reviews = totalReviews
@@ -214,7 +214,7 @@ struct ContributionService: Sendable {
                 existing.periodEnd = now
                 existing.fetchedAt = now
                 // Delete any extras beyond the first (shouldn't exist, but guard against it)
-                for extra in member.contributions.dropFirst() {
+                for extra in (member.contributions ?? []).dropFirst() {
                     extra.member = nil
                     context.delete(extra)
                 }
@@ -270,7 +270,7 @@ struct ContributionService: Sendable {
         dateFormatter.timeZone = .current
 
         // Snapshot before mutating the relationship
-        let snapshot = member.dailyContributions
+        let snapshot = member.dailyContributions ?? []
         var existingByDate: [String: DailyContribution] = [:]
         for record in snapshot {
             let key = dateFormatter.string(from: record.date)

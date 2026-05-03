@@ -61,7 +61,7 @@ struct AddJobTitleView: View {
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let jobTitle = JobTitle(name: trimmedName)
-        discipline.jobTitles.append(jobTitle)
+        discipline.jobTitles = (discipline.jobTitles ?? []) + [jobTitle]
         dismiss()
     }
 }

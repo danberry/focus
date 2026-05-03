@@ -25,7 +25,7 @@ struct RepositoryDetailView: View {
             // MARK: Velocity
 
             Section {
-                let record = repository.velocityMetrics.first { $0.periodType == selectedPeriod.rawValue }
+                let record = (repository.velocityMetrics ?? []).first { $0.periodType == selectedPeriod.rawValue }
 
                 if let record {
                     VelocityHeroRow(comparison: record.comparison)
@@ -68,7 +68,7 @@ struct RepositoryDetailView: View {
 
             // MARK: Open Pull Requests
 
-            let sortedPRs = repository.openPullRequests.sorted { $0.createdAt < $1.createdAt }
+            let sortedPRs = (repository.openPullRequests ?? []).sorted { $0.createdAt < $1.createdAt }
             Section("Open Pull Requests") {
                 if sortedPRs.isEmpty {
                     Text("No open pull requests")
@@ -96,7 +96,7 @@ struct RepositoryDetailView: View {
             // MARK: Codeowners
 
             Section("Code Owners") {
-                let uniqueHandles = Array(Set(repository.codeowners.map(\.handle))).sorted()
+                let uniqueHandles = Array(Set((repository.codeowners ?? []).map(\.handle))).sorted()
                 if uniqueHandles.isEmpty {
                     Text("None")
                         .foregroundStyle(.secondary)
@@ -126,7 +126,7 @@ struct RepositoryDetailView: View {
             // MARK: Security Alerts
 
             Section("Dependabot Alerts") {
-                let sortedDependabot = repository.dependabotAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                let sortedDependabot = (repository.dependabotAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
                 if sortedDependabot.isEmpty {
                     EmptyContentView("No Dependabot Alerts", systemImage: "shield.slash")
                 } else {
@@ -145,7 +145,7 @@ struct RepositoryDetailView: View {
             }
 
             Section("Code Scanning Alerts") {
-                let sortedCodeScanning = repository.codeScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                let sortedCodeScanning = (repository.codeScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
                 if sortedCodeScanning.isEmpty {
                     EmptyContentView("No Code Scanning Alerts", systemImage: "shield.slash")
                 } else {
@@ -171,7 +171,7 @@ struct RepositoryDetailView: View {
             }
 
             Section("Secret Scanning Alerts") {
-                let sortedSecretScanning = repository.secretScanningAlertDetails.sorted { $0.createdAt < $1.createdAt }
+                let sortedSecretScanning = (repository.secretScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
                 if sortedSecretScanning.isEmpty {
                     EmptyContentView("No Secret Scanning Alerts", systemImage: "key.slash")
                 } else {

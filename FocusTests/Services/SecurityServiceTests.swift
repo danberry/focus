@@ -127,7 +127,7 @@ struct SecurityServiceTests {
 
         await makeService().syncAllDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.dependabotAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
 
         let dismissed = alerts[0]
@@ -182,7 +182,7 @@ struct SecurityServiceTests {
         ]
         """)
         await makeService().syncAllDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
-        #expect(repo.dependabotAlertDetails.count == 1)
+        #expect((repo.dependabotAlertDetails ?? []).count == 1)
 
         // Second sync: alert 1 is now fixed, alert 2 is new
         mockHTTP.setSuccess(json: """
@@ -224,7 +224,7 @@ struct SecurityServiceTests {
         """)
         await makeService().syncAllDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.dependabotAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
 
         let fixed = alerts[0]
@@ -295,7 +295,7 @@ struct SecurityServiceTests {
 
         await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.dependabotAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
 
         let first = try #require(alerts.first)
@@ -335,7 +335,7 @@ struct SecurityServiceTests {
         existing.repository = repo
         context.insert(existing)
         try context.save()
-        #expect(repo.dependabotAlertDetails.count == 1)
+        #expect((repo.dependabotAlertDetails ?? []).count == 1)
 
         let json = """
         [
@@ -367,7 +367,7 @@ struct SecurityServiceTests {
         await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         // Existing alert (1) persists; new alert (7) was inserted. Delta resolution happens via SyncService.
-        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.dependabotAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
         #expect(alerts[0].alertNumber == 1)
         #expect(alerts[1].alertNumber == 7)
@@ -441,7 +441,7 @@ struct SecurityServiceTests {
 
         await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.dependabotAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.dependabotAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
         #expect(alerts[0].alertNumber == 1)
         #expect(alerts[0].packageName == "pkg-a")
@@ -464,7 +464,7 @@ struct SecurityServiceTests {
 
         await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        #expect(repo.dependabotAlertDetails.count == 1)
+        #expect((repo.dependabotAlertDetails ?? []).count == 1)
     }
 
     // MARK: - syncAllCodeScanningAlerts
@@ -507,7 +507,7 @@ struct SecurityServiceTests {
 
         await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.codeScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.codeScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
 
         let open = alerts[1]
@@ -554,7 +554,7 @@ struct SecurityServiceTests {
         ]
         """)
         await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
-        #expect(repo.codeScanningAlertDetails.count == 2)
+        #expect((repo.codeScanningAlertDetails ?? []).count == 2)
 
         // Second sync: alert 1 is now fixed, alert 2 is still open, alert 99 is new
         mockHTTP.setSuccess(json: """
@@ -585,7 +585,7 @@ struct SecurityServiceTests {
         """)
         await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.codeScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.codeScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 3)
 
         let fixed = alerts[0]
@@ -608,7 +608,7 @@ struct SecurityServiceTests {
         mockHTTP.setSuccess(json: "[]")
         await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        #expect(repo.codeScanningAlertDetails.isEmpty)
+        #expect((repo.codeScanningAlertDetails ?? []).isEmpty)
     }
 
     /// Verifies that a 403 response does not crash and leaves alerts unchanged.
@@ -621,7 +621,7 @@ struct SecurityServiceTests {
         mockHTTP.setSuccess(json: "{}", statusCode: 403)
         await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        #expect(repo.codeScanningAlertDetails.isEmpty)
+        #expect((repo.codeScanningAlertDetails ?? []).isEmpty)
     }
 
     /// Verifies that each created alert has its repository relationship set to the source repository.
@@ -644,7 +644,7 @@ struct SecurityServiceTests {
         """)
         await makeService().syncAllCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alert = try #require(repo.codeScanningAlertDetails.first)
+        let alert = try #require(repo.codeScanningAlertDetails?.first)
         #expect(alert.repository === repo)
     }
 
@@ -683,7 +683,7 @@ struct SecurityServiceTests {
         await makeService().syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         // Dismissed alert is preserved; new open alert was inserted.
-        let alerts = repo.codeScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.codeScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
         #expect(alerts[0].alertNumber == 1)
         #expect(alerts[0].state == "dismissed")
@@ -729,7 +729,7 @@ struct SecurityServiceTests {
 
         await makeService().syncAllSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.secretScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         try #require(alerts.count == 2)
 
         let open = alerts[0]
@@ -770,7 +770,7 @@ struct SecurityServiceTests {
         ]
         """)
         await makeService().syncAllSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
-        #expect(repo.secretScanningAlertDetails.count == 1)
+        #expect((repo.secretScanningAlertDetails ?? []).count == 1)
 
         // Second sync: alert 1 is resolved, alert 2 is new and open
         mockHTTP.setSuccess(json: """
@@ -799,7 +799,7 @@ struct SecurityServiceTests {
         """)
         await makeService().syncAllSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.secretScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         #expect(alerts.count == 2)
 
         let resolved = alerts[0]
@@ -848,7 +848,7 @@ struct SecurityServiceTests {
 
         await makeService().syncSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.secretScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         try #require(alerts.count == 2)
 
         #expect(alerts[0].alertNumber == 1)
@@ -899,7 +899,7 @@ struct SecurityServiceTests {
         await makeService().syncSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
         // Existing alert (99) persists; new alert (1) was inserted. Delta resolution happens via SyncService.
-        let alerts = repo.secretScanningAlertDetails.sorted { $0.alertNumber < $1.alertNumber }
+        let alerts = (repo.secretScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
         try #require(alerts.count == 2)
         #expect(alerts[0].alertNumber == 1)
         #expect(alerts[1].alertNumber == 99)
@@ -917,7 +917,7 @@ struct SecurityServiceTests {
 
         await makeService().syncSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
 
-        #expect(repo.secretScanningAlertDetails.isEmpty)
+        #expect((repo.secretScanningAlertDetails ?? []).isEmpty)
     }
 
     /// Verifies that the request targets the secret-scanning endpoint for the given owner and repo.

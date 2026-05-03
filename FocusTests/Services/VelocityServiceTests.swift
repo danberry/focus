@@ -56,8 +56,8 @@ struct VelocityServiceTests {
 
         await makeService().syncVelocity(owner: "acme", repo: "widget", repository: repo, in: context)
 
-        #expect(repo.velocityMetrics.count == 4)
-        let periods = Set(repo.velocityMetrics.map(\.periodType))
+        #expect((repo.velocityMetrics ?? []).count == 4)
+        let periods = Set((repo.velocityMetrics ?? []).map(\.periodType))
         #expect(periods == ["7D", "30D", "90D", "YTD"])
     }
 
@@ -72,11 +72,11 @@ struct VelocityServiceTests {
 
         await makeService().syncVelocity(owner: "acme", repo: "widget", repository: repo, in: context)
 
-        let record30 = try #require(repo.velocityMetrics.first { $0.periodType == "30D" })
+        let record30 = try #require((repo.velocityMetrics ?? []).first { $0.periodType == "30D" })
         #expect(record30.currentCount == 20)
         #expect(record30.priorCount == 15)
 
-        let recordYtd = try #require(repo.velocityMetrics.first { $0.periodType == "YTD" })
+        let recordYtd = try #require((repo.velocityMetrics ?? []).first { $0.periodType == "YTD" })
         #expect(recordYtd.currentCount == 80)
         #expect(recordYtd.priorCount == 70)
     }
@@ -92,14 +92,14 @@ struct VelocityServiceTests {
 
         // First sync
         await makeService().syncVelocity(owner: "acme", repo: "widget", repository: repo, in: context)
-        #expect(repo.velocityMetrics.count == 4)
+        #expect((repo.velocityMetrics ?? []).count == 4)
 
         // Second sync — should replace, not accumulate
         mockHTTP.setSuccess(json: makeResponse(d30c: 42, d30p: 31))
         await makeService().syncVelocity(owner: "acme", repo: "widget", repository: repo, in: context)
 
-        #expect(repo.velocityMetrics.count == 4)
-        let record = try #require(repo.velocityMetrics.first { $0.periodType == "30D" })
+        #expect((repo.velocityMetrics ?? []).count == 4)
+        let record = try #require((repo.velocityMetrics ?? []).first { $0.periodType == "30D" })
         #expect(record.currentCount == 42)
         #expect(record.priorCount == 31)
     }
@@ -114,15 +114,15 @@ struct VelocityServiceTests {
         context.insert(repo)
 
         await makeService().syncVelocity(owner: "acme", repo: "widget", repository: repo, in: context)
-        #expect(repo.velocityMetrics.count == 4)
+        #expect((repo.velocityMetrics ?? []).count == 4)
 
         // Simulate a network error on the second sync
         mockHTTP.setFailure(URLError(.notConnectedToInternet))
         await makeService().syncVelocity(owner: "acme", repo: "widget", repository: repo, in: context)
 
         // Existing records untouched
-        #expect(repo.velocityMetrics.count == 4)
-        let record = try #require(repo.velocityMetrics.first { $0.periodType == "30D" })
+        #expect((repo.velocityMetrics ?? []).count == 4)
+        let record = try #require((repo.velocityMetrics ?? []).first { $0.periodType == "30D" })
         #expect(record.currentCount == 10)
     }
 
