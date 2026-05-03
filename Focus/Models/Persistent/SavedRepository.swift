@@ -28,15 +28,6 @@ final class SavedRepository {
     /// The repository's primary programming language, or `nil` if GitHub reports none.
     var primaryLanguage: String?
 
-    /// The current count of open Dependabot alerts.
-    var dependabotAlerts: Int
-
-    /// The current count of open code scanning alerts.
-    var codeScanningAlerts: Int
-
-    /// The current count of open secret scanning alerts.
-    var secretScanningAlerts: Int
-
     /// The login of the GitHub organization that owns this repository, or `nil` if the owner is a user account.
     ///
     /// Stored as a string rather than a relationship to ``SavedOrganization`` because the
@@ -57,27 +48,18 @@ final class SavedRepository {
     ///   - name: The repository name.
     ///   - displayName: The user-facing label shown in lists and navigation titles.
     ///   - primaryLanguage: The repository's primary programming language; defaults to `nil`.
-    ///   - dependabotAlerts: Initial open Dependabot alert count; defaults to `0` until synced.
-    ///   - codeScanningAlerts: Initial open code scanning alert count; defaults to `0` until synced.
-    ///   - secretScanningAlerts: Initial open secret scanning alert count; defaults to `0` until synced.
     init(
         githubId: String,
         owner: String,
         name: String,
         displayName: String,
-        primaryLanguage: String? = nil,
-        dependabotAlerts: Int = 0,
-        codeScanningAlerts: Int = 0,
-        secretScanningAlerts: Int = 0
+        primaryLanguage: String? = nil
     ) {
         self.githubId = githubId
         self.owner = owner
         self.name = name
         self.displayName = displayName
         self.primaryLanguage = primaryLanguage
-        self.dependabotAlerts = dependabotAlerts
-        self.codeScanningAlerts = codeScanningAlerts
-        self.secretScanningAlerts = secretScanningAlerts
     }
 
     // MARK: - Relationships
@@ -124,6 +106,17 @@ final class SavedRepository {
     var team: Team?
 
     // MARK: - Computed
+
+    /// The number of open Dependabot alerts, derived from ``dependabotAlertDetails``.
+    var dependabotAlerts: Int { dependabotAlertDetails.count }
+
+    /// The number of open code scanning alerts, derived from ``codeScanningAlertDetails``.
+    ///
+    /// The relationship may include dismissed and fixed alerts; only `"open"` ones count.
+    var codeScanningAlerts: Int { codeScanningAlertDetails.filter { $0.state == "open" }.count }
+
+    /// The number of open secret scanning alerts, derived from ``secretScanningAlertDetails``.
+    var secretScanningAlerts: Int { secretScanningAlertDetails.count }
 
     /// The sum of all three security alert type counts.
     ///

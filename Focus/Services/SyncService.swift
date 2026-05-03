@@ -155,11 +155,6 @@ struct SyncService: Sendable {
         velocityService.applyVelocityData(fetch.velocityData, to: repository, in: context)
         pullRequestService.applyOpenPRs(fetch.openPRs, to: repository, in: context)
 
-        // Derive badge counts from the freshly synced relationship arrays.
-        // Code scanning counts only open alerts; dismissed and fixed records are retained for history.
-        repository.dependabotAlerts = repository.dependabotAlertDetails.count
-        repository.codeScanningAlerts = repository.codeScanningAlertDetails.filter { $0.state == "open" }.count
-        repository.secretScanningAlerts = repository.secretScanningAlertDetails.count
     }
 }
 
