@@ -125,66 +125,27 @@ struct RepositoryDetailView: View {
 
             // MARK: Security Alerts
 
-            Section("Dependabot Alerts") {
-                let sortedDependabot = (repository.dependabotAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
-                if sortedDependabot.isEmpty {
-                    EmptyContentView("No Dependabot Alerts", systemImage: "shield.slash")
-                } else {
-                    ForEach(sortedDependabot.prefix(6)) { alert in
-                        NavigationLink(destination: DependabotAlertDetailView(alert: alert, repository: repository)) {
-                            LabeledContent(alert.packageName, value: alert.severity)
-                        }
-                    }
-                    if sortedDependabot.count > 6 {
-                        NavigationLink("Show all \(sortedDependabot.count) dependabot alerts") {
-                            AllDependabotAlertsView(alerts: sortedDependabot, repository: repository)
-                        }
-                        .foregroundStyle(.tint)
+            let dependabotAlerts = (repository.dependabotAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
+            let codeScanningAlerts = (repository.codeScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
+            let secretScanningAlerts = (repository.secretScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
+
+            Section("Security Alerts") {
+                NavigationLink(destination: AllDependabotAlertsView(alerts: dependabotAlerts, repository: repository)) {
+                    LabeledContent("Dependabot") {
+                        Text("\(dependabotAlerts.count)")
+                            .foregroundStyle(.secondary)
                     }
                 }
-            }
-
-            Section("Code Scanning Alerts") {
-                let sortedCodeScanning = (repository.codeScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
-                if sortedCodeScanning.isEmpty {
-                    EmptyContentView("No Code Scanning Alerts", systemImage: "shield.slash")
-                } else {
-                    ForEach(sortedCodeScanning.prefix(6)) { alert in
-                        NavigationLink(destination: CodeScanningAlertDetailView(alert: alert)) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(alert.ruleName)
-                                if let severity = alert.securitySeverityLevel {
-                                    Text(severity)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                    if sortedCodeScanning.count > 6 {
-                        NavigationLink("Show all \(sortedCodeScanning.count) code scanning alerts") {
-                            AllCodeScanningAlertsView(alerts: sortedCodeScanning)
-                        }
-                        .foregroundStyle(.tint)
+                NavigationLink(destination: AllCodeScanningAlertsView(alerts: codeScanningAlerts)) {
+                    LabeledContent("Code Scanning") {
+                        Text("\(codeScanningAlerts.count)")
+                            .foregroundStyle(.secondary)
                     }
                 }
-            }
-
-            Section("Secret Scanning Alerts") {
-                let sortedSecretScanning = (repository.secretScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
-                if sortedSecretScanning.isEmpty {
-                    EmptyContentView("No Secret Scanning Alerts", systemImage: "key.slash")
-                } else {
-                    ForEach(sortedSecretScanning.prefix(6)) { alert in
-                        NavigationLink(destination: SecretScanningAlertDetailView(alert: alert)) {
-                            LabeledContent(alert.secretTypeDisplayName, value: alert.validity)
-                        }
-                    }
-                    if sortedSecretScanning.count > 6 {
-                        NavigationLink("Show all \(sortedSecretScanning.count) secret scanning alerts") {
-                            AllSecretScanningAlertsView(alerts: sortedSecretScanning)
-                        }
-                        .foregroundStyle(.tint)
+                NavigationLink(destination: AllSecretScanningAlertsView(alerts: secretScanningAlerts)) {
+                    LabeledContent("Secret Scanning") {
+                        Text("\(secretScanningAlerts.count)")
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
