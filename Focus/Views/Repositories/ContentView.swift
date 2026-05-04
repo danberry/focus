@@ -64,6 +64,9 @@ struct ContentView: View {
                 .onDelete(perform: delete)
             }
             .listStyle(.plain)
+            .refreshable {
+                await syncManager.syncNow(context: modelContext)
+            }
             .searchable(text: $searchText, prompt: "Search by name or language")
             .navigationTitle("Repositories")
             .navigationSubtitle(syncSubtitle)
