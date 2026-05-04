@@ -153,5 +153,5 @@ final class DependabotAlert {
     ///
     /// Set by SwiftData when the alert is appended to `SavedRepository.dependabotAlertDetails`.
     /// Inverse of ``SavedRepository/dependabotAlertDetails``.
-    var repository: SavedRepository?
+    @Relationship var repository: SavedRepository?
 }

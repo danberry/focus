@@ -23,7 +23,7 @@ final class Member {
     var githubLogin: String?
 
     /// The member's assigned job title, or `nil` if no title has been assigned.
-    var jobTitle: JobTitle?
+    @Relationship var jobTitle: JobTitle?
 
     /// The total number of GitHub contributions recorded for this member during the current sync window.
     ///
@@ -31,12 +31,12 @@ final class Member {
     var contributionCount: Int = 0
 
     /// The team this member belongs to, or `nil` if the member has not been assigned to a team.
-    var team: Team?
+    @Relationship var team: Team?
 
     /// The member's direct manager, or `nil` if no manager has been assigned.
     ///
     /// Nullified when the manager is removed so direct reports survive their manager's deletion.
-    var manager: Member?
+    @Relationship var manager: Member?
 
     // MARK: - Init
 

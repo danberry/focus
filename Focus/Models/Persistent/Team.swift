@@ -41,12 +41,12 @@ final class Team {
     /// The department this team belongs to, or `nil` if the team has not been assigned to a department.
     ///
     /// Nullified when the department is removed. Inverse of ``Department/teams``.
-    var department: Department?
+    @Relationship var department: Department?
 
     /// The organization this team belongs to, or `nil` if the team has not been assigned to an organization.
     ///
     /// Nullified when the organization is removed. Inverse of ``SavedOrganization/teams``.
-    var organization: SavedOrganization?
+    @Relationship var organization: SavedOrganization?
 
     /// The repositories owned by this team.
     ///

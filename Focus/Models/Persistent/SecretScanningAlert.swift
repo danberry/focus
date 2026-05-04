@@ -96,5 +96,5 @@ final class SecretScanningAlert {
     ///
     /// Set when the alert is inserted into the SwiftData graph. Cascade-deleted
     /// when the parent ``SavedRepository`` is removed. Inverse of ``SavedRepository/secretScanningAlertDetails``.
-    var repository: SavedRepository?
+    @Relationship var repository: SavedRepository?
 }

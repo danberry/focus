@@ -38,7 +38,7 @@ final class Department {
     /// The organization this department belongs to, or `nil` if the department has not been assigned to an organization.
     ///
     /// Nullified when the organization is removed. Inverse of ``SavedOrganization/departments``.
-    var organization: SavedOrganization?
+    @Relationship var organization: SavedOrganization?
 
     /// The teams belonging to this department.
     ///

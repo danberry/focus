@@ -37,5 +37,5 @@ final class DailyContribution {
     ///
     /// Inverse of ``Member/dailyContributions``. Set to `nil` only when the
     /// contribution has not yet been associated with a member.
-    var member: Member?
+    @Relationship var member: Member?
 }

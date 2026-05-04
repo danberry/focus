@@ -56,5 +56,5 @@ final class OpenPullRequest {
     /// The repository this pull request belongs to.
     ///
     /// Cascade-deleted when the parent repository is removed. Inverse of ``SavedRepository/openPullRequests``.
-    var repository: SavedRepository?
+    @Relationship var repository: SavedRepository?
 }
