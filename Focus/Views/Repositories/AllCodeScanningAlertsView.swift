@@ -14,21 +14,27 @@ struct AllCodeScanningAlertsView: View {
 
     /// The view's content.
     var body: some View {
-        List {
-            ForEach(alerts) { alert in
-                NavigationLink(destination: CodeScanningAlertDetailView(alert: alert)) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(alert.ruleName)
-                        if let severity = alert.securitySeverityLevel {
-                            Text(severity)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+        Group {
+            if alerts.isEmpty {
+                EmptyContentView("No Code Scanning Alerts", systemImage: "checkmark.shield")
+            } else {
+                List {
+                    ForEach(alerts) { alert in
+                        NavigationLink(destination: CodeScanningAlertDetailView(alert: alert)) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(alert.ruleName)
+                                if let severity = alert.securitySeverityLevel {
+                                    Text(severity)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
                     }
                 }
+                .listStyle(.plain)
             }
         }
-        .listStyle(.plain)
         .navigationTitle("Code Scanning Alerts")
         .navigationBarTitleDisplayMode(.inline)
     }

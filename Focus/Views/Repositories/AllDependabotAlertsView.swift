@@ -17,14 +17,20 @@ struct AllDependabotAlertsView: View {
 
     /// The view's content.
     var body: some View {
-        List {
-            ForEach(alerts) { alert in
-                NavigationLink(destination: DependabotAlertDetailView(alert: alert, repository: repository)) {
-                    LabeledContent(alert.packageName, value: alert.severity)
+        Group {
+            if alerts.isEmpty {
+                EmptyContentView("No Dependabot Alerts", systemImage: "checkmark.shield")
+            } else {
+                List {
+                    ForEach(alerts) { alert in
+                        NavigationLink(destination: DependabotAlertDetailView(alert: alert, repository: repository)) {
+                            LabeledContent(alert.packageName, value: alert.severity)
+                        }
+                    }
                 }
+                .listStyle(.plain)
             }
         }
-        .listStyle(.plain)
         .navigationTitle("Dependabot Alerts")
         .navigationBarTitleDisplayMode(.inline)
     }

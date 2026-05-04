@@ -14,14 +14,20 @@ struct AllSecretScanningAlertsView: View {
 
     /// The view's content.
     var body: some View {
-        List {
-            ForEach(alerts) { alert in
-                NavigationLink(destination: SecretScanningAlertDetailView(alert: alert)) {
-                    LabeledContent(alert.secretTypeDisplayName, value: alert.validity)
+        Group {
+            if alerts.isEmpty {
+                EmptyContentView("No Secret Scanning Alerts", systemImage: "checkmark.shield")
+            } else {
+                List {
+                    ForEach(alerts) { alert in
+                        NavigationLink(destination: SecretScanningAlertDetailView(alert: alert)) {
+                            LabeledContent(alert.secretTypeDisplayName, value: alert.validity)
+                        }
+                    }
                 }
+                .listStyle(.plain)
             }
         }
-        .listStyle(.plain)
         .navigationTitle("Secret Scanning Alerts")
         .navigationBarTitleDisplayMode(.inline)
     }
