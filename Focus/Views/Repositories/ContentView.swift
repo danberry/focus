@@ -43,9 +43,6 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     /// All saved repositories, sorted alphabetically by display name.
     @Query(sort: [SortDescriptor(\SavedRepository.displayName, comparator: .localizedStandard)]) private var repositories: [SavedRepository]
-    /// All teams fetched from the local store, sorted alphabetically by name.
-    @Query(sort: [SortDescriptor(\Team.name, comparator: .localizedStandard)]) private var teams: [Team]
-
     /// Controls whether the add-repository sheet is presented.
     @State private var isAddingRepository = false
     /// The current search query entered by the user.
@@ -59,33 +56,12 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                if isGrouped {
-                    ForEach(teamsWithFilteredRepos) { team in
-                        Section(team.name) {
-                            ForEach(filteredRepos(for: team)) { repo in
-                                NavigationLink(destination: RepositoryDetailView(repository: repo)) {
-                                    SavedRepositoryRow(repository: repo)
-                                }
-                            }
-                        }
+                ForEach(filteredRepositories) { repo in
+                    NavigationLink(destination: RepositoryDetailView(repository: repo)) {
+                        SavedRepositoryRow(repository: repo)
                     }
-                    if !unassignedFilteredRepos.isEmpty {
-                        Section("Unassigned") {
-                            ForEach(unassignedFilteredRepos) { repo in
-                                NavigationLink(destination: RepositoryDetailView(repository: repo)) {
-                                    SavedRepositoryRow(repository: repo)
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    ForEach(filteredRepositories) { repo in
-                        NavigationLink(destination: RepositoryDetailView(repository: repo)) {
-                            SavedRepositoryRow(repository: repo)
-                        }
-                    }
-                    .onDelete(perform: delete)
                 }
+                .onDelete(perform: delete)
             }
             .listStyle(.plain)
             .searchable(text: $searchText, prompt: "Search by name or language")
@@ -203,31 +179,6 @@ struct ContentView: View {
         return result
     }
 
-    /// Teams that own at least one repository from the filtered set.
-    private var teamsWithFilteredRepos: [Team] {
-        teams.filter { team in
-            filteredRepositories.contains { $0.team?.persistentModelID == team.persistentModelID }
-        }
-    }
-
-    /// Filtered repositories with no team assigned.
-    private var unassignedFilteredRepos: [SavedRepository] {
-        filteredRepositories.filter { $0.team == nil }
-    }
-
-    /// Whether at least one filtered repo has a team, triggering the grouped layout.
-    private var isGrouped: Bool {
-        filteredRepositories.contains { $0.team != nil }
-    }
-
-    /// Returns the filtered repositories that belong to the given team.
-    ///
-    /// - Parameter team: The team whose repositories should be returned.
-    /// - Returns: The filtered repositories whose `team` relationship matches `team`.
-    private func filteredRepos(for team: Team) -> [SavedRepository] {
-        filteredRepositories.filter { $0.team?.persistentModelID == team.persistentModelID }
-    }
-
     /// Returns a subtitle reflecting the current sync state for the navigation bar.
     private var syncSubtitle: String {
         if syncManager.isSyncing {
@@ -283,5 +234,5 @@ struct SavedRepositoryRow: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [SavedRepository.self, Team.self], inMemory: true)
+        .modelContainer(for: [SavedRepository.self], inMemory: true)
 }
