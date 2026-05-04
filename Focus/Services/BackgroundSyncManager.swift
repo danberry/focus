@@ -113,6 +113,12 @@ final class BackgroundSyncManager {
         await sync(context: context)
     }
 
+    /// Performs an immediate full sync regardless of the staleness interval.
+    func syncNow(context: ModelContext) async {
+        guard isSetup, !isSyncing else { return }
+        await sync(context: context)
+    }
+
     // MARK: - Private
 
     /// Performs a full sync of security, codeowners, velocity, and pull request data, then syncs
