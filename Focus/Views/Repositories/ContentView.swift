@@ -49,6 +49,8 @@ struct ContentView: View {
     @State private var searchText = ""
     /// The active security alert filter applied to the repository list.
     @State private var activeFilter: SecurityAlertFilter = .all
+    /// The repository whose dossier sheet is currently being presented, or `nil` when no dossier is shown.
+    @State private var dossierRepository: SavedRepository?
 
     // MARK: - Body
 
@@ -59,6 +61,11 @@ struct ContentView: View {
                 ForEach(filteredRepositories) { repo in
                     NavigationLink(destination: RepositoryDetailView(repository: repo)) {
                         SavedRepositoryRow(repository: repo)
+                    }
+                    .contextMenu {
+                        Button("View Dossier", systemImage: "doc.text.magnifyingglass") {
+                            dossierRepository = repo
+                        }
                     }
                 }
                 .onDelete(perform: delete)
@@ -119,6 +126,16 @@ struct ContentView: View {
                     } else {
                         ContentUnavailableView.search(text: searchText)
                     }
+                }
+            }
+            .sheet(item: $dossierRepository) { _ in
+                NavigationStack {
+                    RepositoryDossierView(dossier: .preview)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button("Done") { dossierRepository = nil }
+                            }
+                        }
                 }
             }
             .sheet(isPresented: $isAddingRepository) {
