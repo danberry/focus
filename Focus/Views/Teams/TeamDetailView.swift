@@ -28,6 +28,11 @@ struct TeamDetailView: View {
 
     // MARK: - Body
 
+    /// The contribution service used to refresh member data on pull-to-refresh.
+    private var contributionService: ContributionService {
+        ContributionService(graphQL: GraphQLClient(tokenProvider: authService.tokenProvider))
+    }
+
     /// The view's content.
     var body: some View {
         List {
@@ -88,6 +93,9 @@ struct TeamDetailView: View {
             }
         }
         .listStyle(.plain)
+        .refreshable {
+            await refreshMembers()
+        }
         .navigationTitle(team.name)
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: team.organization) { _, newOrg in
@@ -118,6 +126,19 @@ struct TeamDetailView: View {
     }
 
     // MARK: - Helpers
+
+    /// Syncs contribution data for all team members that have a GitHub login.
+    @MainActor
+    private func refreshMembers() async {
+        let membersWithLogin = sortedMembers.filter { $0.githubLogin != nil }
+        for member in membersWithLogin {
+            guard let login = member.githubLogin else { continue }
+            await contributionService.syncContributions(login: login, member: member, in: modelContext)
+        }
+        if !membersWithLogin.isEmpty {
+            team.membersLastUpdated = Date()
+        }
+    }
 
     /// Members sorted alphabetically by name.
     private var sortedMembers: [Member] {
