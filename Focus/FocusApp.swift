@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import OSLog
+import CloudKit
 
 // MARK: - FocusApp
 
@@ -47,6 +48,17 @@ struct FocusApp: App {
                 }
             }
             .task {
+                // Diagnose CloudKit account status on launch.
+                let status = try? await CKContainer.default().accountStatus()
+                switch status {
+                case .available:       print("[Focus] ☁️ iCloud account: available")
+                case .noAccount:       print("[Focus] ☁️ iCloud account: NO ACCOUNT signed in")
+                case .restricted:      print("[Focus] ☁️ iCloud account: restricted")
+                case .couldNotDetermine: print("[Focus] ☁️ iCloud account: could not determine")
+                case .temporarilyUnavailable: print("[Focus] ☁️ iCloud account: temporarily unavailable")
+                default:               print("[Focus] ☁️ iCloud account: unknown status \(String(describing: status))")
+                }
+
                 // Register the BGProcessingTask handler before the app finishes launching.
                 syncManager.setup(
                     modelContainer: modelContainer,
@@ -113,9 +125,11 @@ private func makeFocusModelContainer() -> ModelContainer {
     do {
         let container = try ModelContainer(for: Schema(allTypes), configurations: cloudConfig)
         containerLogger.info("CloudKit-backed store opened at \(storeURL.path)")
+        print("[Focus] ✅ CloudKit store opened successfully")
         return container
     } catch {
         containerLogger.error("CloudKit store failed (\(error)). Falling back to local-only store.")
+        print("[Focus] ❌ CloudKit store FAILED — using local-only. Error: \(error)")
     }
 
     // Fallback: local-only store at the same URL — preserves existing data even

@@ -90,6 +90,12 @@ struct SettingsView: View {
                     }
                 }
 
+                Section {
+                    NavigationLink("Data Management") {
+                        DataManagementView()
+                    }
+                }
+
                 // MARK: Sign Out
 
                 Section {
