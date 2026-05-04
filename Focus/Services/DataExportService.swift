@@ -342,4 +342,28 @@ final class DataExportService {
 
         try context.save()
     }
+
+    // MARK: - Purge
+
+    /// Deletes every record from the store — both user-configured and synced data.
+    func purgeAllData(from context: ModelContext) throws {
+        try context.delete(model: Member.self)
+        try context.delete(model: SavedRepository.self)
+        try context.delete(model: Team.self)
+        try context.delete(model: JobTitle.self)
+        try context.delete(model: Discipline.self)
+        try context.delete(model: Department.self)
+        try context.delete(model: SavedOrganization.self)
+        try context.delete(model: DependabotAlert.self)
+        try context.delete(model: CodeScanningAlert.self)
+        try context.delete(model: SecretScanningAlert.self)
+        try context.delete(model: MemberContribution.self)
+        try context.delete(model: DailyContribution.self)
+        try context.delete(model: RepositoryVelocity.self)
+        try context.delete(model: OpenPullRequest.self)
+        try context.delete(model: PRWeeklySnapshot.self)
+        try context.delete(model: SecurityWeeklySnapshot.self)
+        try context.delete(model: Codeowner.self)
+        try context.save()
+    }
 }

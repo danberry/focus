@@ -19,6 +19,8 @@ struct DataManagementView: View {
     @State private var showImporter = false
     @State private var isExporting = false
     @State private var isImporting = false
+    @State private var isPurging = false
+    @State private var showPurgeConfirmation = false
     @State private var alertMessage: String?
     @State private var showAlert = false
 
@@ -63,8 +65,39 @@ struct DataManagementView: View {
             } footer: {
                 Text("Restores data from a previously exported JSON file. Existing records are kept; duplicates are skipped.")
             }
+
+            Section {
+                Button(role: .destructive) {
+                    showPurgeConfirmation = true
+                } label: {
+                    if isPurging {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Label("Purge All Data", systemImage: "trash")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .disabled(isExporting || isImporting || isPurging)
+            } header: {
+                Text("Danger Zone")
+            } footer: {
+                Text("Permanently removes all data from this device, including your organizations, teams, members, and all synced GitHub data. This cannot be undone.")
+            }
         }
         .navigationTitle("Data Management")
+        .confirmationDialog(
+            "Purge All Data?",
+            isPresented: $showPurgeConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Purge All Data", role: .destructive) {
+                purgeData()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete everything from this device. This cannot be undone.")
+        }
         .sheet(item: $exportURL) { identifiable in
             ActivityView(activityItems: [identifiable.url])
                 .ignoresSafeArea()
@@ -123,6 +156,22 @@ struct DataManagementView: View {
                 showAlert = true
             } catch {
                 alertMessage = "Import failed: \(error.localizedDescription)"
+                showAlert = true
+            }
+        }
+    }
+
+    private func purgeData() {
+        isPurging = true
+        Task { @MainActor in
+            defer { isPurging = false }
+            do {
+                let service = DataExportService()
+                try service.purgeAllData(from: context)
+                alertMessage = "All data has been purged."
+                showAlert = true
+            } catch {
+                alertMessage = "Purge failed: \(error.localizedDescription)"
                 showAlert = true
             }
         }
