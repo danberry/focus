@@ -42,5 +42,5 @@ final class Codeowner {
     /// The repository this code owner belongs to.
     ///
     /// Inverse of ``SavedRepository/codeOwners``.
-    var repository: SavedRepository?
+    @Relationship var repository: SavedRepository?
 }

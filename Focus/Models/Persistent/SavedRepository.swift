@@ -103,7 +103,7 @@ final class SavedRepository {
     /// The team that owns this repository, or `nil` if no team has been assigned.
     ///
     /// Nullified when the team is removed. Inverse of ``Team/repositories``.
-    var team: Team?
+    @Relationship var team: Team?
 
     // MARK: - Computed
 

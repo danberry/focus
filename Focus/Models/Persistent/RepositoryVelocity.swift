@@ -119,7 +119,7 @@ final class RepositoryVelocity {
     /// The repository this velocity record belongs to.
     ///
     /// `nil` until the record is associated with a ``SavedRepository`` instance.
-    var repository: SavedRepository?
+    @Relationship var repository: SavedRepository?
 
     // MARK: - Computed
 

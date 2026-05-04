@@ -68,5 +68,5 @@ final class MemberContribution {
     /// The member this contribution record belongs to, or `nil` if not yet assigned.
     ///
     /// Inverse of ``Member/contributions``. Cascade-deleted when the owning member is removed.
-    var member: Member?
+    @Relationship var member: Member?
 }

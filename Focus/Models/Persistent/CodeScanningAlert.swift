@@ -129,5 +129,5 @@ final class CodeScanningAlert {
     ///
     /// `nil` until the alert is associated with a ``SavedRepository``.
     /// Inverse of ``SavedRepository/codeScanningAlertDetails``.
-    var repository: SavedRepository?
+    @Relationship var repository: SavedRepository?
 }

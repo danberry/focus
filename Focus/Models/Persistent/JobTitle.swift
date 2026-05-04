@@ -31,7 +31,7 @@ final class JobTitle {
     ///
     /// Inverse of ``Discipline/jobTitles``. Set to `nil` until the job title is
     /// placed under a discipline.
-    var discipline: Discipline?
+    @Relationship var discipline: Discipline?
 
     /// The members assigned to this job title.
     ///
