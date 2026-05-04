@@ -18,6 +18,9 @@ final class Team {
     /// A human-readable description of the team's purpose.
     var teamDescription: String = ""
 
+    /// The date the team's member list was last modified, or `nil` if members have never been added or removed.
+    var membersLastUpdated: Date?
+
     // MARK: - Init
 
     /// Creates a new team.

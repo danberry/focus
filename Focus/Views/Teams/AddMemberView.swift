@@ -192,6 +192,7 @@ struct AddMemberView: View {
             member.jobTitle = selectedJobTitle
             member.manager = selectedManager
             modelContext.insert(member)
+            team.membersLastUpdated = Date()
 
             if !trimmedLogin.isEmpty {
                 await contributionService.syncContributions(

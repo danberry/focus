@@ -129,5 +129,6 @@ struct TeamDetailView: View {
         for index in offsets {
             modelContext.delete(sortedMembers[index])
         }
+        team.membersLastUpdated = Date()
     }
 }

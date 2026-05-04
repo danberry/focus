@@ -105,6 +105,11 @@ struct TeamsView: View {
             } label: {
                 Text(team.name)
                 Text(team.teamDescription)
+                if let updated = team.membersLastUpdated {
+                    Text("Members updated \(updated.formatted(.relative(presentation: .named)))")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
     }
