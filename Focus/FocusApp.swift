@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import OSLog
 
 // MARK: - FocusApp
 
@@ -75,6 +76,8 @@ struct FocusApp: App {
 
 // MARK: - ModelContainer
 
+private let containerLogger = Logger(subsystem: "com.danberry.Focus", category: "ModelContainer")
+
 /// Builds the app's SwiftData model container, preferring a CloudKit-backed store.
 ///
 /// Attempts to open the existing store at the default SwiftData URL with
@@ -87,13 +90,18 @@ private func makeFocusModelContainer() -> ModelContainer {
 
     let allTypes: [any PersistentModel.Type] = [
         SavedRepository.self,
+        DependabotAlert.self,
+        CodeScanningAlert.self,
+        SecretScanningAlert.self,
+        Codeowner.self,
+        OpenPullRequest.self,
+        RepositoryVelocity.self,
         Team.self,
         Member.self,
         MemberContribution.self,
         DailyContribution.self,
         Discipline.self,
         JobTitle.self,
-        RepositoryVelocity.self,
         SavedOrganization.self,
         Department.self,
         SecurityWeeklySnapshot.self,
@@ -102,8 +110,12 @@ private func makeFocusModelContainer() -> ModelContainer {
 
     // Prefer CloudKit-backed store so data roams across the user's devices.
     let cloudConfig = ModelConfiguration(url: storeURL, cloudKitDatabase: .automatic)
-    if let container = try? ModelContainer(for: Schema(allTypes), configurations: cloudConfig) {
+    do {
+        let container = try ModelContainer(for: Schema(allTypes), configurations: cloudConfig)
+        containerLogger.info("CloudKit-backed store opened at \(storeURL.path)")
         return container
+    } catch {
+        containerLogger.error("CloudKit store failed (\(error)). Falling back to local-only store.")
     }
 
     // Fallback: local-only store at the same URL — preserves existing data even
