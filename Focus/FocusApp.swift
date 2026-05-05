@@ -118,6 +118,7 @@ private func makeFocusModelContainer() -> ModelContainer {
         Department.self,
         SecurityWeeklySnapshot.self,
         PRWeeklySnapshot.self,
+        RepositoryCommitDay.self,
     ]
 
     // Prefer CloudKit-backed store so data roams across the user's devices.

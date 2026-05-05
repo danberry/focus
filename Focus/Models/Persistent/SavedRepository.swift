@@ -100,6 +100,13 @@ final class SavedRepository {
     @Relationship(deleteRule: .cascade, inverse: \OpenPullRequest.repository)
     var openPullRequests: [OpenPullRequest]?
 
+    /// Daily commit counts for this repository, sourced from the GitHub Stats API.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``RepositoryCommitDay/repository``.
+    /// Days with zero commits are not stored — a missing record implies a count of zero.
+    @Relationship(deleteRule: .cascade, inverse: \RepositoryCommitDay.repository)
+    var commitActivity: [RepositoryCommitDay]?
+
     /// The team that owns this repository, or `nil` if no team has been assigned.
     ///
     /// Nullified when the team is removed. Inverse of ``Team/repositories``.

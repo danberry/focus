@@ -32,14 +32,24 @@ struct SyncService: Sendable {
     /// The service used to sync open pull requests.
     private let pullRequestService: PullRequestService
 
+    /// The service used to sync per-day commit activity for the heatmap.
+    private let commitActivityService: CommitActivityService
+
     // MARK: - Init
 
-    /// Creates a `SyncService` with the four domain services it coordinates.
-    init(securityService: SecurityService, codeownersService: CodeownersService, velocityService: VelocityService, pullRequestService: PullRequestService) {
+    /// Creates a `SyncService` with the five domain services it coordinates.
+    init(
+        securityService: SecurityService,
+        codeownersService: CodeownersService,
+        velocityService: VelocityService,
+        pullRequestService: PullRequestService,
+        commitActivityService: CommitActivityService
+    ) {
         self.securityService = securityService
         self.codeownersService = codeownersService
         self.velocityService = velocityService
         self.pullRequestService = pullRequestService
+        self.commitActivityService = commitActivityService
     }
 
     // MARK: - Sync
@@ -123,16 +133,17 @@ struct SyncService: Sendable {
         async let codeownersEntries = codeownersService.fetchEntries(owner: owner, repo: name)
         async let velocityData = velocityService.fetchVelocityData(owner: owner, repo: name)
         async let openPRs = pullRequestService.fetchOpenPRs(owner: owner, repo: name)
+        async let commitActivity = commitActivityService.fetchCommitActivity(owner: owner, repo: name)
 
-        let (dep, cs, ss, co, vel, prs) = await (
+        let (dep, cs, ss, co, vel, prs, ca) = await (
             dependabotAlerts, codeScanningAlerts, secretScanningAlerts,
-            codeownersEntries, velocityData, openPRs
+            codeownersEntries, velocityData, openPRs, commitActivity
         )
 
         return RepoSyncFetch(
             owner: owner, name: name,
             dependabotAlerts: dep, codeScanningAlerts: cs, secretScanningAlerts: ss,
-            codeownersEntries: co, velocityData: vel, openPRs: prs
+            codeownersEntries: co, velocityData: vel, openPRs: prs, commitActivity: ca
         )
     }
 
@@ -166,7 +177,7 @@ struct SyncService: Sendable {
         codeownersService.applyCodeowners(fetch.codeownersEntries, to: repository, in: context)
         velocityService.applyVelocityData(fetch.velocityData, to: repository, in: context)
         pullRequestService.applyOpenPRs(fetch.openPRs, to: repository, in: context)
-
+        commitActivityService.applyCommitActivity(fetch.commitActivity, to: repository, in: context)
     }
 }
 
@@ -185,4 +196,5 @@ private struct RepoSyncFetch: Sendable {
     let codeownersEntries: [(pattern: String, handle: String)]
     let velocityData: VelocityFetchResult?
     let openPRs: [OpenPRData]?
+    let commitActivity: [CommitActivityWeek]?
 }
