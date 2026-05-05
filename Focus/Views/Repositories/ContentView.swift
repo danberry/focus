@@ -128,7 +128,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .sheet(item: $dossierRepository) { repo in
+            .fullScreenCover(item: $dossierRepository) { repo in
                 NavigationStack {
                     RepositoryDossierView(dossier: RepositoryDossier(repository: repo))
                         .toolbar {
