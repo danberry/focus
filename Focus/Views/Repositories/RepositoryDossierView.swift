@@ -5,8 +5,9 @@ import SwiftUI
 /// A scrollable "dossier" screen that summarizes a single repository across activity,
 /// pull requests, people, security, and branches/releases.
 ///
-/// This view is read-only and accepts a fully assembled ``RepositoryDossier``. It is a
-/// distinct entry point from `RepositoryDetailView` and currently renders stubbed data.
+/// Shares the `BriefingTheme` visual language — `BriefingColor`, `BriefingFont`, and
+/// `.briefingCard()` — so it reads as part of the same editorial surface as the main
+/// briefing. It accepts a fully assembled ``RepositoryDossier`` and is read-only.
 struct RepositoryDossierView: View {
 
     // MARK: - Properties
@@ -26,19 +27,18 @@ struct RepositoryDossierView: View {
                     .padding(.vertical, 12)
 
                 Divider()
+                    .foregroundStyle(BriefingColor.rule)
 
                 section(title: "01 · Activity") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Commit Heatmap")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Commit Heatmap")
                             DossierHeatmapView(cells: dossier.activityHeatmap.cells)
                         }
                     }
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Velocity (16w)")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Velocity (16w)")
                             if dossier.velocitySpark.weeklyMerged.isEmpty {
                                 emptyText
                             } else {
@@ -49,12 +49,12 @@ struct RepositoryDossierView: View {
                 }
 
                 Divider()
+                    .foregroundStyle(BriefingColor.rule)
 
                 section(title: "02 · Pull Requests") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Open PRs")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Open PRs")
                             if dossier.openPRs.isEmpty {
                                 emptyText
                             } else {
@@ -66,8 +66,7 @@ struct RepositoryDossierView: View {
                     }
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Merged by Day")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Merged by Day")
                             if dossier.mergedByDay.isEmpty {
                                 emptyText
                             } else {
@@ -78,8 +77,7 @@ struct RepositoryDossierView: View {
                     }
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("CI Runs by Day")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("CI Runs by Day")
                             if dossier.ciRunsByDay.isEmpty {
                                 emptyText
                             } else {
@@ -91,12 +89,12 @@ struct RepositoryDossierView: View {
                 }
 
                 Divider()
+                    .foregroundStyle(BriefingColor.rule)
 
                 section(title: "03 · People") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Contributors (30d)")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Contributors (30d)")
                             if dossier.contributors.isEmpty {
                                 emptyText
                             } else {
@@ -108,8 +106,7 @@ struct RepositoryDossierView: View {
                     }
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Hot Files (30d)")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Hot Files (30d)")
                             if dossier.hotFiles.isEmpty {
                                 emptyText
                             } else {
@@ -122,31 +119,37 @@ struct RepositoryDossierView: View {
                 }
 
                 Divider()
+                    .foregroundStyle(BriefingColor.rule)
 
                 section(title: "04 · Health & Security") {
-                    DossierCardView {
+                    DossierCardView(tone: .red) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Security")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Security", tone: .red)
                             HStack(alignment: .firstTextBaseline) {
                                 Text("\(dossier.security.total)")
-                                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                                    .monospacedDigit()
+                                    .font(BriefingFont.kpiSupporting)
+                                    .foregroundStyle(BriefingColor.red)
                                 Text("open alerts")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                                    .font(BriefingFont.meta)
+                                    .foregroundStyle(BriefingColor.ink3)
                             }
                             LabeledContent("Critical", value: "\(dossier.security.critical)")
-                                .foregroundStyle(dossier.security.critical > 0 ? Color.red : Color.primary)
+                                .font(BriefingFont.body)
+                                .foregroundStyle(dossier.security.critical > 0 ? BriefingColor.red : BriefingColor.ink)
                             LabeledContent("High", value: "\(dossier.security.high)")
+                                .font(BriefingFont.body)
+                                .foregroundStyle(BriefingColor.ink)
                             LabeledContent("Moderate", value: "\(dossier.security.moderate)")
+                                .font(BriefingFont.body)
+                                .foregroundStyle(BriefingColor.ink)
                             LabeledContent("Low", value: "\(dossier.security.low)")
+                                .font(BriefingFont.body)
+                                .foregroundStyle(BriefingColor.ink)
                         }
                     }
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Recent Alerts")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Recent Alerts")
                             if dossier.alertItems.isEmpty {
                                 emptyText
                             } else {
@@ -159,12 +162,12 @@ struct RepositoryDossierView: View {
                 }
 
                 Divider()
+                    .foregroundStyle(BriefingColor.rule)
 
                 section(title: "05 · Branches & Releases") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Branches")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Branches")
                             if dossier.branches.isEmpty {
                                 emptyText
                             } else {
@@ -176,8 +179,7 @@ struct RepositoryDossierView: View {
                     }
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Releases")
-                                .font(.subheadline.weight(.semibold))
+                            cardTitle("Releases")
                             if dossier.releases.isEmpty {
                                 emptyText
                             } else {
@@ -190,6 +192,7 @@ struct RepositoryDossierView: View {
                 }
             }
         }
+        .background(BriefingColor.paper)
         .navigationTitle(dossier.name)
         .navigationBarTitleDisplayMode(.large)
     }
@@ -222,8 +225,8 @@ struct RepositoryDossierView: View {
 
     // MARK: - KPI Strip
 
-    /// KPI strip: six tiles with `|` dividers filling the full width on regular-width displays;
-    /// a horizontally scrolling row of fixed-width tiles on compact displays.
+    /// KPI strip: six tiles filling the full width on regular-width displays on a dark charcoal
+    /// strip; a horizontally scrolling row of fixed-width tiles on compact displays.
     @ViewBuilder
     private var kpiStrip: some View {
         if sizeClass == .regular {
@@ -231,31 +234,36 @@ struct RepositoryDossierView: View {
                 kpiTiles(includeAll: true)
             }
             .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+            .background(.gray100)
         } else {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                HStack(spacing: 0) {
                     kpiTiles(includeAll: false)
                 }
                 .padding(.horizontal, 16)
+                .padding(.vertical, 4)
             }
+            .background(.gray100)
         }
     }
 
-    /// The KPI tiles, with thin `Divider()` separators injected between them on regular width.
+    /// The KPI tiles, with thin dividers injected between them on regular width.
     @ViewBuilder
     private func kpiTiles(includeAll: Bool) -> some View {
         let tiles: [(label: String, value: String, delta: Int?, footnote: String?, isAlert: Bool)] = [
-            ("Merged · Week",     "\(dossier.kpi.mergedThisWeek)",                        dossier.kpi.mergedThisWeekDelta, nil,                                                                       false),
-            ("Open PRs",         "\(dossier.kpi.openPRs)",                               nil,                            dossier.kpi.stalePRs > 0 ? "\(dossier.kpi.stalePRs) stale" : nil,         false),
-            ("Open Issues",      "\(dossier.kpi.openIssues)",                            nil,                            "\(dossier.kpi.closedIssues7d) closed 7d",                                  false),
-            ("Security",         "\(dossier.kpi.securityAlerts)",                        nil,                            dossier.kpi.criticalAlerts > 0 ? "\(dossier.kpi.criticalAlerts) critical" : nil, dossier.kpi.criticalAlerts > 0),
-            ("CI Pass",          "\(Int(dossier.kpi.ciPassPct.rounded()))%",             nil,                            "\(dossier.kpi.ciRuns7d) runs 7d",                                          false),
-            ("Contributors 30d", "\(dossier.kpi.contributors30d)",                       nil,                            nil,                                                                        false),
+            ("Merged · Week",     "\(dossier.kpi.mergedThisWeek)",     dossier.kpi.mergedThisWeekDelta, nil,                                                                       false),
+            ("Open PRs",         "\(dossier.kpi.openPRs)",             nil,                            dossier.kpi.stalePRs > 0 ? "\(dossier.kpi.stalePRs) stale" : nil,         false),
+            ("Open Issues",      "\(dossier.kpi.openIssues)",          nil,                            "\(dossier.kpi.closedIssues7d) closed 7d",                                  false),
+            ("Security",         "\(dossier.kpi.securityAlerts)",      nil,                            dossier.kpi.criticalAlerts > 0 ? "\(dossier.kpi.criticalAlerts) critical" : nil, dossier.kpi.criticalAlerts > 0),
+            ("CI Pass",          "\(Int(dossier.kpi.ciPassPct.rounded()))%", nil,                     "\(dossier.kpi.ciRuns7d) runs 7d",                                          false),
+            ("Contributors 30d", "\(dossier.kpi.contributors30d)",     nil,                            nil,                                                                        false),
         ]
         ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
-            if includeAll && index > 0 {
+            if index > 0 {
                 Divider()
-                    .frame(height: 44)
+                    .frame(maxWidth: 1, maxHeight: .infinity)
+                    .background(.gray400)
             }
             DossierKPITileView(
                 label: tile.label,
@@ -268,25 +276,36 @@ struct RepositoryDossierView: View {
         }
     }
 
+    // MARK: - Card Title
+
+    /// An eyebrow-styled card section label.
+    private func cardTitle(_ text: String, tone: BriefingTone = .neutral) -> some View {
+        Text(text)
+            .font(BriefingFont.eyebrow)
+            .textCase(.uppercase)
+            .foregroundStyle(tone == .red ? BriefingColor.red2 : BriefingColor.ink3)
+    }
+
     // MARK: - Row Builders
 
     /// Renders a row inside the open-PR card.
     private func openPRRow(_ pr: RepositoryDossier.OpenPR) -> some View {
         HStack(spacing: 8) {
             Text("#\(pr.id)")
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
             Text(pr.title)
-                .font(.subheadline)
+                .font(BriefingFont.body)
+                .foregroundStyle(BriefingColor.ink)
                 .lineLimit(1)
             Spacer(minLength: 4)
             Text("@\(pr.authorLogin)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
                 .lineLimit(1)
             Text(ageString(from: pr.createdAt))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
             ciChip(pr.ciStatus)
         }
     }
@@ -298,16 +317,16 @@ struct RepositoryDossierView: View {
         switch status {
         case .passing:
             symbol = "checkmark.circle.fill"
-            color = .green
+            color = BriefingColor.green
         case .failing:
             symbol = "xmark.octagon.fill"
-            color = .red
+            color = BriefingColor.red
         case .none:
             symbol = "circle.dashed"
-            color = .secondary
+            color = BriefingColor.ink3
         }
         return Image(systemName: symbol)
-            .font(.caption)
+            .font(BriefingFont.meta)
             .foregroundStyle(color)
     }
 
@@ -315,19 +334,21 @@ struct RepositoryDossierView: View {
     private func contributorRow(_ contributor: RepositoryDossier.Contributor) -> some View {
         HStack(spacing: 8) {
             Text("@\(contributor.login)")
-                .font(.subheadline)
+                .font(BriefingFont.body)
+                .foregroundStyle(BriefingColor.ink)
                 .lineLimit(1)
             if let role = contributor.role {
                 Text(role)
-                    .font(.caption2)
+                    .font(BriefingFont.meta)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.15), in: Capsule())
+                    .background(BriefingColor.paper3, in: Capsule())
+                    .foregroundStyle(BriefingColor.ink2)
             }
             Spacer(minLength: 4)
             Text("\(contributor.mergedPRs30d)")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
         }
     }
 
@@ -335,13 +356,14 @@ struct RepositoryDossierView: View {
     private func hotFileRow(_ file: RepositoryDossier.HotFile) -> some View {
         HStack(spacing: 8) {
             Text(fileName(from: file.path))
-                .font(.subheadline)
+                .font(BriefingFont.body)
+                .foregroundStyle(BriefingColor.ink)
                 .lineLimit(1)
                 .truncationMode(.head)
             Spacer(minLength: 4)
             Text("\(file.churns30d)")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
         }
     }
 
@@ -352,15 +374,16 @@ struct RepositoryDossierView: View {
                 .fill(severityColor(alert.severity))
                 .frame(width: 8, height: 8)
             Text(alert.id)
-                .font(.caption.monospaced())
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink)
             Text(alert.packageOrRule)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
                 .lineLimit(1)
             Spacer(minLength: 4)
             Text("\(alert.ageInDays)d")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
         }
     }
 
@@ -368,14 +391,15 @@ struct RepositoryDossierView: View {
     private func branchRow(_ branch: RepositoryDossier.Branch) -> some View {
         HStack(spacing: 8) {
             Text(branch.name)
-                .font(.subheadline.monospaced())
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink)
                 .lineLimit(1)
                 .truncationMode(.head)
             branchChip(branch.kind)
             Spacer(minLength: 4)
             Text("↑\(branch.aheadBy) ↓\(branch.behindBy)")
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
         }
     }
 
@@ -383,25 +407,30 @@ struct RepositoryDossierView: View {
     private func branchChip(_ kind: RepositoryDossier.Branch.Kind) -> some View {
         let label: String
         let color: Color
+        let bg: Color
         switch kind {
         case .default:
             label = "default"
-            color = .blue
+            color = BriefingColor.blue
+            bg = BriefingColor.blueBg
         case .staging:
             label = "staging"
-            color = .purple
+            color = BriefingColor.blue2
+            bg = BriefingColor.blueBg
         case .behind:
             label = "behind"
-            color = .orange
+            color = BriefingColor.red
+            bg = BriefingColor.redBg
         case .stale:
             label = "stale"
-            color = .red
+            color = BriefingColor.red
+            bg = BriefingColor.redBg
         }
         return Text(label)
-            .font(.caption2)
+            .font(BriefingFont.meta)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(color.opacity(0.15), in: Capsule())
+            .background(bg, in: Capsule())
             .foregroundStyle(color)
     }
 
@@ -409,15 +438,16 @@ struct RepositoryDossierView: View {
     private func releaseRow(_ release: RepositoryDossier.Release) -> some View {
         HStack(spacing: 8) {
             Text(release.tag)
-                .font(.subheadline.monospaced())
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink)
             Text(release.body)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
                 .lineLimit(1)
             Spacer(minLength: 4)
             Text("\(release.ageInDays)d")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.meta)
+                .foregroundStyle(BriefingColor.ink3)
         }
     }
 
@@ -426,8 +456,8 @@ struct RepositoryDossierView: View {
         HStack {
             ForEach(days) { day in
                 Text(day.label)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(BriefingColor.ink3)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -436,8 +466,8 @@ struct RepositoryDossierView: View {
     /// A reusable empty-state placeholder shown inside cards with no data.
     private var emptyText: some View {
         Text("No data")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .font(BriefingFont.body)
+            .foregroundStyle(BriefingColor.ink3)
     }
 
     // MARK: - Pure Helpers
@@ -451,10 +481,10 @@ struct RepositoryDossierView: View {
     /// Maps an alert severity to its display color.
     private func severityColor(_ severity: RepositoryDossier.AlertItem.Severity) -> Color {
         switch severity {
-        case .critical: .red
+        case .critical: BriefingColor.red
         case .high: .orange
         case .moderate: .yellow
-        case .low: .secondary
+        case .low: BriefingColor.ink3
         }
     }
 
@@ -474,7 +504,7 @@ struct RepositoryDossierView: View {
 
 // MARK: - DossierSectionHeader
 
-/// A bold eyebrow label used above each grouping of cards inside ``RepositoryDossierView``.
+/// A monospaced eyebrow label used above each grouping of cards inside ``RepositoryDossierView``.
 private struct DossierSectionHeader: View {
 
     /// The header text.
@@ -483,15 +513,19 @@ private struct DossierSectionHeader: View {
     /// The view's content.
     var body: some View {
         Text(title)
-            .font(.headline)
-            .foregroundStyle(.primary)
+            .font(BriefingFont.eyebrow)
+            .textCase(.uppercase)
+            .foregroundStyle(BriefingColor.ink3)
     }
 }
 
 // MARK: - DossierCardView
 
-/// A reusable card container with secondary background and rounded corners.
+/// A reusable card container using the `BriefingTheme` fill and border for the given tone.
 private struct DossierCardView<Content: View>: View {
+
+    /// The semantic tone that drives fill and border colors.
+    var tone: BriefingTone = .neutral
 
     /// The card's content.
     @ViewBuilder var content: Content
@@ -502,16 +536,13 @@ private struct DossierCardView<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-            )
+            .briefingCard(tone: tone, flat: true)
     }
 }
 
 // MARK: - DossierKPITileView
 
-/// A single compact KPI tile used in the horizontal KPI strip.
+/// A single compact KPI tile used in the dark horizontal KPI strip.
 private struct DossierKPITileView: View {
 
     // MARK: - Properties
@@ -528,7 +559,7 @@ private struct DossierKPITileView: View {
     /// An optional secondary footnote (e.g. `"3 critical"`).
     var footnote: String? = nil
 
-    /// When `true`, the tile renders the value in a warning color.
+    /// When `true`, the tile renders the value in the red alert color.
     var isAlert: Bool = false
 
     // MARK: - Body
@@ -537,42 +568,38 @@ private struct DossierKPITileView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(BriefingFont.eyebrow)
+                .textCase(.uppercase)
+                .foregroundStyle(.gray700)
                 .lineLimit(1)
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
-                    .font(.title3.weight(.semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(isAlert ? Color.red : Color.primary)
+                    .font(BriefingFont.kpiSupporting)
+                    .foregroundStyle(isAlert ? BriefingColor.red : .white)
                 if let delta {
                     deltaBadge(delta)
                 }
             }
             if let footnote {
                 Text(footnote)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(.gray700)
                     .lineLimit(1)
             }
         }
         .frame(minWidth: 110, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
     }
 
     // MARK: - Helpers
 
     /// A tiny badge showing the signed week-over-week delta.
     private func deltaBadge(_ value: Int) -> some View {
-        let symbol = value > 0 ? "▲" : (value < 0 ? "▼" : "•")
-        let color: Color = value > 0 ? .green : (value < 0 ? .red : .secondary)
-        return Text("\(symbol)\(abs(value))")
-            .font(.caption2.monospacedDigit())
+        let symbol = value > 0 ? "↑" : (value < 0 ? "↓" : "→")
+        let color: Color = value > 0 ? BriefingColor.green : (value < 0 ? BriefingColor.red : .gray700)
+        return Text(symbol)
+            .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(color)
     }
 }
@@ -603,7 +630,7 @@ private struct DossierHeatmapView: View {
                             let index = row * columns + column
                             let intensity = index < cells.count ? cells[index] : 0
                             RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                .fill(Color.accentColor.opacity(opacity(for: intensity)))
+                                .fill(BriefingColor.ink.opacity(opacity(for: intensity)))
                                 .frame(width: cellWidth, height: cellWidth)
                         }
                     }
@@ -620,7 +647,7 @@ private struct DossierHeatmapView: View {
         case 2: 0.35
         case 3: 0.6
         case 4: 1.0
-        default: 0.0
+        default: 0.05
         }
     }
 }
