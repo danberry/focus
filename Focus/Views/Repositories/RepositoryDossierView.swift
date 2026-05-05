@@ -14,6 +14,8 @@ struct RepositoryDossierView: View {
     /// The dossier payload rendered by the view.
     let dossier: RepositoryDossier
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
     // MARK: - Body
 
     /// The view's content.
@@ -194,12 +196,25 @@ struct RepositoryDossierView: View {
 
     // MARK: - Section Helpers
 
-    /// Builds a section composed of an eyebrow header and a vertical stack of cards.
+    /// Builds a section composed of an eyebrow header and a card grid.
+    /// On regular-width (iPad/desktop) displays cards in two columns; on compact in one.
     @ViewBuilder
     private func section<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             DossierSectionHeader(title: title)
-            content()
+            if sizeClass == .regular {
+                LazyVGrid(
+                    columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
+                    alignment: .leading,
+                    spacing: 16
+                ) {
+                    content()
+                }
+            } else {
+                VStack(spacing: 12) {
+                    content()
+                }
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
@@ -207,47 +222,49 @@ struct RepositoryDossierView: View {
 
     // MARK: - KPI Strip
 
-    /// Horizontally scrolling strip of six compact KPI tiles shown above the first section.
+    /// KPI strip: six tiles with `|` dividers filling the full width on regular-width displays;
+    /// a horizontally scrolling row of fixed-width tiles on compact displays.
+    @ViewBuilder
     private var kpiStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                DossierKPITileView(
-                    label: "Merged · Week",
-                    value: "\(dossier.kpi.mergedThisWeek)",
-                    delta: dossier.kpi.mergedThisWeekDelta
-                )
-                DossierKPITileView(
-                    label: "Open PRs",
-                    value: "\(dossier.kpi.openPRs)",
-                    delta: nil,
-                    footnote: dossier.kpi.stalePRs > 0 ? "\(dossier.kpi.stalePRs) stale" : nil
-                )
-                DossierKPITileView(
-                    label: "Open Issues",
-                    value: "\(dossier.kpi.openIssues)",
-                    delta: nil,
-                    footnote: "\(dossier.kpi.closedIssues7d) closed 7d"
-                )
-                DossierKPITileView(
-                    label: "Security",
-                    value: "\(dossier.kpi.securityAlerts)",
-                    delta: nil,
-                    footnote: dossier.kpi.criticalAlerts > 0 ? "\(dossier.kpi.criticalAlerts) critical" : nil,
-                    isAlert: dossier.kpi.criticalAlerts > 0
-                )
-                DossierKPITileView(
-                    label: "CI Pass",
-                    value: "\(Int(dossier.kpi.ciPassPct.rounded()))%",
-                    delta: nil,
-                    footnote: "\(dossier.kpi.ciRuns7d) runs 7d"
-                )
-                DossierKPITileView(
-                    label: "Contributors 30d",
-                    value: "\(dossier.kpi.contributors30d)",
-                    delta: nil
-                )
+        if sizeClass == .regular {
+            HStack(spacing: 0) {
+                kpiTiles(includeAll: true)
             }
             .padding(.horizontal, 16)
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    kpiTiles(includeAll: false)
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    /// The KPI tiles, with thin `Divider()` separators injected between them on regular width.
+    @ViewBuilder
+    private func kpiTiles(includeAll: Bool) -> some View {
+        let tiles: [(label: String, value: String, delta: Int?, footnote: String?, isAlert: Bool)] = [
+            ("Merged · Week",     "\(dossier.kpi.mergedThisWeek)",                        dossier.kpi.mergedThisWeekDelta, nil,                                                                       false),
+            ("Open PRs",         "\(dossier.kpi.openPRs)",                               nil,                            dossier.kpi.stalePRs > 0 ? "\(dossier.kpi.stalePRs) stale" : nil,         false),
+            ("Open Issues",      "\(dossier.kpi.openIssues)",                            nil,                            "\(dossier.kpi.closedIssues7d) closed 7d",                                  false),
+            ("Security",         "\(dossier.kpi.securityAlerts)",                        nil,                            dossier.kpi.criticalAlerts > 0 ? "\(dossier.kpi.criticalAlerts) critical" : nil, dossier.kpi.criticalAlerts > 0),
+            ("CI Pass",          "\(Int(dossier.kpi.ciPassPct.rounded()))%",             nil,                            "\(dossier.kpi.ciRuns7d) runs 7d",                                          false),
+            ("Contributors 30d", "\(dossier.kpi.contributors30d)",                       nil,                            nil,                                                                        false),
+        ]
+        ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
+            if includeAll && index > 0 {
+                Divider()
+                    .frame(height: 44)
+            }
+            DossierKPITileView(
+                label: tile.label,
+                value: tile.value,
+                delta: tile.delta,
+                footnote: tile.footnote,
+                isAlert: tile.isAlert
+            )
+            .frame(maxWidth: includeAll ? .infinity : nil)
         }
     }
 
