@@ -55,6 +55,15 @@ enum Endpoint {
     /// Returns the public profile for a GitHub organization.
     case organization(login: String)
 
+    /// Returns the weekly commit activity for a repository (last year, up to 52 weeks).
+    ///
+    /// The response is an array of weekly objects, each with `days` (Sun–Sat per-day counts),
+    /// `total` (weekly sum), and `week` (Unix timestamp of the week's Sunday).
+    ///
+    /// The API may return `202 Accepted` when stats are first computed; callers should
+    /// treat a decoding failure as "no data yet" and retry on the next sync cycle.
+    case commitActivity(owner: String, repo: String)
+
     // MARK: - Computed Properties
 
     /// The URL path component for this endpoint, relative to the GitHub REST API base URL.
@@ -84,6 +93,8 @@ enum Endpoint {
             "/users/\(login)"
         case .organization(let login):
             "/orgs/\(login)"
+        case .commitActivity(let owner, let repo):
+            "/repos/\(owner)/\(repo)/stats/commit_activity"
         }
     }
 }

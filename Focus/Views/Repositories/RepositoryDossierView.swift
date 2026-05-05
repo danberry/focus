@@ -33,7 +33,11 @@ struct RepositoryDossierView: View {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
                             cardTitle("Commit Heatmap")
-                            DossierHeatmapView(cells: dossier.activityHeatmap.cells)
+                            if dossier.activityHeatmap.cells.isEmpty {
+                                emptyText
+                            } else {
+                                DossierHeatmapView(cells: dossier.activityHeatmap.cells)
+                            }
                         }
                     }
                     DossierCardView {

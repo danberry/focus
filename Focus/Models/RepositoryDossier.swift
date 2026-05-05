@@ -579,8 +579,12 @@ extension RepositoryDossier {
             contributors30d: 0
         )
 
-        // Not yet persisted locally — render empty states
-        activityHeatmap = ActivityHeatmap(cells: [])
+        // Activity heatmap — assembled from stored per-day commit counts
+        let commitDays = (repository.commitActivity ?? []).sorted { $0.date < $1.date }
+        activityHeatmap = commitDays.isEmpty
+            ? ActivityHeatmap(cells: [])
+            : Self.buildHeatmap(from: commitDays)
+
         velocitySpark = VelocitySpark(weeklyMerged: [])
         mergedByDay = []
         ciRunsByDay = []
@@ -608,6 +612,62 @@ extension RepositoryDossier {
         case .moderate: 2
         case .low: 3
         }
+    }
+
+    /// Builds a 26-week × 7-day activity heatmap from stored ``RepositoryCommitDay`` records.
+    ///
+    /// The grid is row-major: `cells[row * 26 + column]` where `row` is the weekday
+    /// (0 = Sunday … 6 = Saturday) and `column` is the week index (0 = oldest, 25 = newest).
+    /// Cell values are bucketed into intensity levels 0–4 relative to the maximum daily count.
+    private static func buildHeatmap(from days: [RepositoryCommitDay]) -> ActivityHeatmap {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+
+        // Anchor the grid: the Sunday that began 26 weeks ago.
+        let today = Date()
+        guard let rawStart = calendar.date(byAdding: .day, value: -(26 * 7), to: today) else {
+            return ActivityHeatmap(cells: [])
+        }
+        // .weekday: 1 = Sunday … 7 = Saturday; subtract 1 to get days back to the prior Sunday.
+        let weekdayOfStart = calendar.component(.weekday, from: rawStart)
+        let daysBackToSunday = weekdayOfStart - 1
+        guard let startSunday = calendar.date(byAdding: .day, value: -daysBackToSunday, to: rawStart) else {
+            return ActivityHeatmap(cells: [])
+        }
+
+        // Build a date → count lookup (normalise to midnight UTC).
+        var countByDate: [Date: Int] = [:]
+        for day in days {
+            let midnight = calendar.startOfDay(for: day.date)
+            countByDate[midnight, default: 0] += day.commitCount
+        }
+
+        let maxCount = countByDate.values.max() ?? 0
+
+        var cells = [Int](repeating: 0, count: 7 * 26)
+        for (date, count) in countByDate {
+            let daysSinceStart = calendar.dateComponents([.day], from: startSunday, to: date).day ?? -1
+            guard daysSinceStart >= 0 else { continue }
+            let weekColumn = daysSinceStart / 7
+            guard weekColumn < 26 else { continue }
+            // .weekday: 1 = Sunday, so row 0 maps to Sunday, row 6 to Saturday.
+            let weekdayRow = calendar.component(.weekday, from: date) - 1
+            cells[weekdayRow * 26 + weekColumn] = intensityBucket(count, max: maxCount)
+        }
+
+        return ActivityHeatmap(cells: cells)
+    }
+
+    /// Maps a commit count to a display intensity bucket (0–4).
+    ///
+    /// - Returns: `0` for zero commits; `1`–`4` scaled to the dataset maximum.
+    private static func intensityBucket(_ count: Int, max maxCount: Int) -> Int {
+        guard count > 0, maxCount > 0 else { return 0 }
+        let ratio = Double(count) / Double(maxCount)
+        if ratio <= 0.25 { return 1 }
+        if ratio <= 0.50 { return 2 }
+        if ratio <= 0.75 { return 3 }
+        return 4
     }
 
     private static func bucketSeverities(
