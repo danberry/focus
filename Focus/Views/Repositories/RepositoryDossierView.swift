@@ -40,6 +40,7 @@ struct RepositoryDossierView: View {
                             }
                         }
                     }
+                    .gridCellColumns(2)
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
                             cardTitle("Velocity (16w)")
@@ -624,7 +625,7 @@ private struct DossierHeatmapView: View {
     var body: some View {
         GeometryReader { proxy in
             let spacing: CGFloat = 2
-            let cellWidth = max(2, (proxy.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns))
+            let cellWidth = min(12, max(2, (proxy.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)))
             VStack(spacing: spacing) {
                 ForEach(0..<rows, id: \.self) { row in
                     HStack(spacing: spacing) {
