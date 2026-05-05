@@ -128,9 +128,9 @@ struct ContentView: View {
                     }
                 }
             }
-            .sheet(item: $dossierRepository) { _ in
+            .sheet(item: $dossierRepository) { repo in
                 NavigationStack {
-                    RepositoryDossierView(dossier: .preview)
+                    RepositoryDossierView(dossier: RepositoryDossier(repository: repo))
                         .toolbar {
                             ToolbarItem(placement: .topBarTrailing) {
                                 Button("Done") { dossierRepository = nil }
