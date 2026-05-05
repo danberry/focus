@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 // MARK: - RepositoryDossier
 
@@ -470,5 +471,157 @@ extension RepositoryDossier {
 
         /// The stable identity used by `ForEach`.
         var id: String { tag }
+    }
+}
+
+// MARK: - RepositoryDossier + SavedRepository Assembly
+
+extension RepositoryDossier {
+
+    /// Assembles a dossier from a saved repository and its persisted SwiftData relationships.
+    ///
+    /// Fields not yet stored locally — activity heatmap, velocity spark, merged-by-day,
+    /// CI runs, contributors, hot files, branches, and releases — are left empty so the
+    /// view renders their "No data" empty states until those data sources are wired up.
+    init(repository: SavedRepository) {
+        owner = repository.owner
+        name = repository.name
+        description = ""
+        defaultBranch = "main"
+        primaryLanguage = repository.primaryLanguage
+
+        // Security alerts
+        let openDependabot = (repository.dependabotAlertDetails ?? []).filter { $0.state == "open" }
+        let openCodeScanning = (repository.codeScanningAlertDetails ?? []).filter { $0.state == "open" }
+        let openSecrets = (repository.secretScanningAlertDetails ?? []).filter { $0.state == "open" }
+
+        let depBuckets = Self.bucketSeverities(openDependabot.map { $0.severity })
+        let scanBuckets = Self.bucketSeverities(openCodeScanning.compactMap { $0.securitySeverityLevel })
+        let secretCritical = openSecrets.filter { $0.publiclyLeaked }.count
+        let secretHigh = openSecrets.count - secretCritical
+
+        let criticalCount = depBuckets.critical + scanBuckets.critical + secretCritical
+        let highCount = depBuckets.high + scanBuckets.high + secretHigh
+        let moderateCount = depBuckets.moderate + scanBuckets.moderate
+        let lowCount = depBuckets.low + scanBuckets.low
+
+        security = SecuritySummary(
+            critical: criticalCount,
+            high: highCount,
+            moderate: moderateCount,
+            low: lowCount
+        )
+
+        var items: [AlertItem] = []
+        for alert in openDependabot {
+            let id = alert.cveId ?? (alert.ghsaId.isEmpty ? "dep-\(alert.alertNumber)" : alert.ghsaId)
+            items.append(AlertItem(
+                id: id,
+                severity: Self.mapAlertSeverity(alert.severity),
+                packageOrRule: alert.packageName,
+                ageInDays: Int(Date().timeIntervalSince(alert.createdAt) / 86_400)
+            ))
+        }
+        for alert in openCodeScanning {
+            items.append(AlertItem(
+                id: "scan-\(alert.alertNumber)",
+                severity: Self.mapAlertSeverity(alert.securitySeverityLevel ?? "low"),
+                packageOrRule: alert.ruleName,
+                ageInDays: Int(Date().timeIntervalSince(alert.createdAt) / 86_400)
+            ))
+        }
+        for alert in openSecrets {
+            items.append(AlertItem(
+                id: "secret-\(alert.alertNumber)",
+                severity: alert.publiclyLeaked ? .critical : .high,
+                packageOrRule: alert.secretTypeDisplayName,
+                ageInDays: Int(Date().timeIntervalSince(alert.createdAt) / 86_400)
+            ))
+        }
+        // Sort critical-first, then by age descending within each bucket
+        items.sort { lhs, rhs in
+            let lo = Self.severityRank(lhs.severity)
+            let ro = Self.severityRank(rhs.severity)
+            return lo == ro ? lhs.ageInDays > rhs.ageInDays : lo < ro
+        }
+        alertItems = items
+
+        // Pull requests
+        let sortedPRs = (repository.openPullRequests ?? []).sorted { $0.createdAt < $1.createdAt }
+        openPRs = sortedPRs.map { pr in
+            OpenPR(
+                id: pr.number,
+                title: pr.title,
+                authorLogin: pr.authorLogin,
+                createdAt: pr.createdAt,
+                ciStatus: .none
+            )
+        }
+
+        // KPI strip
+        let sevenDaysAgo = Date(timeIntervalSinceNow: -7 * 86_400)
+        let stalePRCount = sortedPRs.filter { $0.createdAt < sevenDaysAgo }.count
+        let velocity7d = (repository.velocityMetrics ?? []).first {
+            $0.periodType == VelocityPeriod.sevenDays.rawValue
+        }
+
+        kpi = KPI(
+            mergedThisWeek: velocity7d?.currentCount ?? 0,
+            mergedThisWeekDelta: velocity7d.map { $0.currentCount - $0.priorCount },
+            openPRs: sortedPRs.count,
+            stalePRs: stalePRCount,
+            openIssues: 0,
+            closedIssues7d: 0,
+            securityAlerts: criticalCount + highCount + moderateCount + lowCount,
+            criticalAlerts: criticalCount,
+            ciPassPct: 0,
+            ciRuns7d: 0,
+            contributors30d: 0
+        )
+
+        // Not yet persisted locally — render empty states
+        activityHeatmap = ActivityHeatmap(cells: [])
+        velocitySpark = VelocitySpark(weeklyMerged: [])
+        mergedByDay = []
+        ciRunsByDay = []
+        contributors = []
+        hotFiles = []
+        branches = []
+        releases = []
+    }
+
+    // MARK: - Private Helpers
+
+    private static func mapAlertSeverity(_ raw: String) -> AlertItem.Severity {
+        switch raw.lowercased() {
+        case "critical": return .critical
+        case "high": return .high
+        case "medium", "moderate": return .moderate
+        default: return .low
+        }
+    }
+
+    private static func severityRank(_ severity: AlertItem.Severity) -> Int {
+        switch severity {
+        case .critical: 0
+        case .high: 1
+        case .moderate: 2
+        case .low: 3
+        }
+    }
+
+    private static func bucketSeverities(
+        _ severities: [String]
+    ) -> (critical: Int, high: Int, moderate: Int, low: Int) {
+        var c = 0, h = 0, m = 0, l = 0
+        for s in severities {
+            switch mapAlertSeverity(s) {
+            case .critical: c += 1
+            case .high: h += 1
+            case .moderate: m += 1
+            case .low: l += 1
+            }
+        }
+        return (c, h, m, l)
     }
 }
