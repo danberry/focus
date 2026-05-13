@@ -132,19 +132,19 @@ struct RepositoryDetailView: View {
             Section("Security Alerts") {
                 NavigationLink(destination: AllDependabotAlertsView(alerts: dependabotAlerts, repository: repository)) {
                     LabeledContent("Dependabot") {
-                        Text("\(dependabotAlerts.count)")
+                        Text("\(repository.dependabotAlerts)")
                             .foregroundStyle(.secondary)
                     }
                 }
                 NavigationLink(destination: AllCodeScanningAlertsView(alerts: codeScanningAlerts)) {
                     LabeledContent("Code Scanning") {
-                        Text("\(codeScanningAlerts.count)")
+                        Text("\(repository.codeScanningAlerts)")
                             .foregroundStyle(.secondary)
                     }
                 }
                 NavigationLink(destination: AllSecretScanningAlertsView(alerts: secretScanningAlerts)) {
                     LabeledContent("Secret Scanning") {
-                        Text("\(secretScanningAlerts.count)")
+                        Text("\(repository.secretScanningAlerts)")
                             .foregroundStyle(.secondary)
                     }
                 }
