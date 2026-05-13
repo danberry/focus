@@ -125,26 +125,26 @@ struct RepositoryDetailView: View {
 
             // MARK: Security Alerts
 
-            let dependabotAlerts = (repository.dependabotAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
-            let codeScanningAlerts = (repository.codeScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
-            let secretScanningAlerts = (repository.secretScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
+            let dependabotAlerts = (repository.dependabotAlertDetails ?? []).filter { $0.state == "open" }.sorted { $0.createdAt < $1.createdAt }
+            let codeScanningAlerts = (repository.codeScanningAlertDetails ?? []).filter { $0.state == "open" }.sorted { $0.createdAt < $1.createdAt }
+            let secretScanningAlerts = (repository.secretScanningAlertDetails ?? []).filter { $0.state == "open" }.sorted { $0.createdAt < $1.createdAt }
 
             Section("Security Alerts") {
                 NavigationLink(destination: AllDependabotAlertsView(alerts: dependabotAlerts, repository: repository)) {
                     LabeledContent("Dependabot") {
-                        Text("\(repository.dependabotAlerts)")
+                        Text("\(dependabotAlerts.count)")
                             .foregroundStyle(.secondary)
                     }
                 }
                 NavigationLink(destination: AllCodeScanningAlertsView(alerts: codeScanningAlerts)) {
                     LabeledContent("Code Scanning") {
-                        Text("\(repository.codeScanningAlerts)")
+                        Text("\(codeScanningAlerts.count)")
                             .foregroundStyle(.secondary)
                     }
                 }
                 NavigationLink(destination: AllSecretScanningAlertsView(alerts: secretScanningAlerts)) {
                     LabeledContent("Secret Scanning") {
-                        Text("\(repository.secretScanningAlerts)")
+                        Text("\(secretScanningAlerts.count)")
                             .foregroundStyle(.secondary)
                     }
                 }
