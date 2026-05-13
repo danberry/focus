@@ -125,9 +125,9 @@ struct RepositoryDetailView: View {
 
             // MARK: Security Alerts
 
-            let dependabotAlerts = (repository.dependabotAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
-            let codeScanningAlerts = (repository.codeScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
-            let secretScanningAlerts = (repository.secretScanningAlertDetails ?? []).sorted { $0.createdAt < $1.createdAt }
+            let dependabotAlerts = (repository.dependabotAlertDetails ?? []).filter { $0.state == "open" }.sorted { $0.createdAt < $1.createdAt }
+            let codeScanningAlerts = (repository.codeScanningAlertDetails ?? []).filter { $0.state == "open" }.sorted { $0.createdAt < $1.createdAt }
+            let secretScanningAlerts = (repository.secretScanningAlertDetails ?? []).filter { $0.state == "open" }.sorted { $0.createdAt < $1.createdAt }
 
             Section("Security Alerts") {
                 NavigationLink(destination: AllDependabotAlertsView(alerts: dependabotAlerts, repository: repository)) {
