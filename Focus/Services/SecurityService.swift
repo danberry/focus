@@ -186,9 +186,9 @@ struct SecurityService: Sendable {
     func applyDependabotAlerts(_ alerts: [DependabotAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let existingByNumber = Dictionary(
-            uniqueKeysWithValues: (repository.dependabotAlertDetails ?? []).map { ($0.alertNumber, $0) }
-        )
+        let existingByNumber = (repository.dependabotAlertDetails ?? []).reduce(into: [Int: DependabotAlert]()) {
+            $0[$1.alertNumber] = $1
+        }
 
         for alert in alerts {
             if let existing = existingByNumber[alert.number] {

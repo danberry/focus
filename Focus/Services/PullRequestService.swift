@@ -65,7 +65,7 @@ struct PullRequestService: Sendable {
         guard let prs else { return }
 
         let iso = ISO8601DateFormatter()
-        let incomingByNumber = Dictionary(uniqueKeysWithValues: prs.map { ($0.number, $0) })
+        let incomingByNumber = prs.reduce(into: [Int: OpenPRData]()) { $0[$1.number] = $1 }
 
         // Snapshot before mutating the relationship
         let snapshot = repository.openPullRequests ?? []
