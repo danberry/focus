@@ -54,9 +54,9 @@ struct MergedPRsReportView: View {
 
     /// Lookup from lowercased `owner/name` key to the repository's display name.
     private var displayNameByRepo: [String: String] {
-        Dictionary(uniqueKeysWithValues: savedRepositories.map {
-            ("\($0.owner)/\($0.name)".lowercased(), $0.displayName)
-        })
+        savedRepositories.reduce(into: [String: String]()) {
+            $0["\($1.owner)/\($1.name)".lowercased()] = $1.displayName
+        }
     }
 
     /// Repository sections sorted alphabetically, each section's PRs sorted by merge time.

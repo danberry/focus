@@ -228,7 +228,7 @@ final class DataExportService {
         let existingMembers = (try? context.fetch(FetchDescriptor<Member>())) ?? []
 
         // --- Disciplines ---
-        let disciplinesByName = Dictionary(uniqueKeysWithValues: existingDisciplines.map { ($0.name, $0) })
+        let disciplinesByName = existingDisciplines.reduce(into: [String: Discipline]()) { $0[$1.name] = $1 }
         for exported in payload.disciplines {
             if let existing = disciplinesByName[exported.name] {
                 disciplineMap[exported.id] = existing
@@ -240,7 +240,7 @@ final class DataExportService {
         }
 
         // --- Job Titles ---
-        let jobTitlesByName = Dictionary(uniqueKeysWithValues: existingJobTitles.map { ($0.name, $0) })
+        let jobTitlesByName = existingJobTitles.reduce(into: [String: JobTitle]()) { $0[$1.name] = $1 }
         for exported in payload.jobTitles {
             if let existing = jobTitlesByName[exported.name] {
                 jobTitleMap[exported.id] = existing
@@ -253,7 +253,7 @@ final class DataExportService {
         }
 
         // --- Organizations ---
-        let orgsByGithubId = Dictionary(uniqueKeysWithValues: existingOrgs.map { ($0.githubId, $0) })
+        let orgsByGithubId = existingOrgs.reduce(into: [String: SavedOrganization]()) { $0[$1.githubId] = $1 }
         for exported in payload.organizations {
             if let existing = orgsByGithubId[exported.githubId] {
                 orgMap[exported.id] = existing
@@ -271,7 +271,7 @@ final class DataExportService {
         }
 
         // --- Departments ---
-        let deptsByName = Dictionary(uniqueKeysWithValues: existingDepts.map { ($0.name, $0) })
+        let deptsByName = existingDepts.reduce(into: [String: Department]()) { $0[$1.name] = $1 }
         for exported in payload.departments {
             if let existing = deptsByName[exported.name] {
                 deptMap[exported.id] = existing
@@ -284,7 +284,7 @@ final class DataExportService {
         }
 
         // --- Teams ---
-        let teamsByName = Dictionary(uniqueKeysWithValues: existingTeams.map { ($0.name, $0) })
+        let teamsByName = existingTeams.reduce(into: [String: Team]()) { $0[$1.name] = $1 }
         for exported in payload.teams {
             if let existing = teamsByName[exported.name] {
                 teamMap[exported.id] = existing
@@ -298,7 +298,7 @@ final class DataExportService {
         }
 
         // --- Repositories ---
-        let reposByGithubId = Dictionary(uniqueKeysWithValues: existingRepos.map { ($0.githubId, $0) })
+        let reposByGithubId = existingRepos.reduce(into: [String: SavedRepository]()) { $0[$1.githubId] = $1 }
         for exported in payload.repositories {
             if let existing = reposByGithubId[exported.githubId] {
                 repoMap[exported.id] = existing
@@ -319,7 +319,7 @@ final class DataExportService {
         }
 
         // --- Members (first pass: insert without manager) ---
-        let membersByName = Dictionary(uniqueKeysWithValues: existingMembers.map { ($0.name, $0) })
+        let membersByName = existingMembers.reduce(into: [String: Member]()) { $0[$1.name] = $1 }
         for exported in payload.members {
             if let existing = membersByName[exported.name] {
                 memberMap[exported.id] = existing
