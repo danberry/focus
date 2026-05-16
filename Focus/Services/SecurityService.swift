@@ -292,9 +292,9 @@ struct SecurityService: Sendable {
     func applyCodeScanningAlerts(_ alerts: [CodeScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let existingByNumber = Dictionary(
-            uniqueKeysWithValues: (repository.codeScanningAlertDetails ?? []).map { ($0.alertNumber, $0) }
-        )
+        let existingByNumber = (repository.codeScanningAlertDetails ?? []).reduce(into: [Int: CodeScanningAlert]()) {
+            $0[$1.alertNumber] = $1
+        }
 
         for response in alerts {
             if let existing = existingByNumber[response.number] {
@@ -393,9 +393,9 @@ struct SecurityService: Sendable {
     func applySecretScanningAlerts(_ alerts: [SecretScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let existingByNumber = Dictionary(
-            uniqueKeysWithValues: (repository.secretScanningAlertDetails ?? []).map { ($0.alertNumber, $0) }
-        )
+        let existingByNumber = (repository.secretScanningAlertDetails ?? []).reduce(into: [Int: SecretScanningAlert]()) {
+            $0[$1.alertNumber] = $1
+        }
 
         for response in alerts {
             if let existing = existingByNumber[response.number] {
