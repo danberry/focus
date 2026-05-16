@@ -81,9 +81,9 @@ struct SyncService: Sendable {
         onProgress?(0, total)
 
         // Build a lookup so the draining loop can find the right model by owner/name.
-        let repoMap = Dictionary(
-            uniqueKeysWithValues: repositories.map { ("\($0.owner)/\($0.name)", $0) }
-        )
+        let repoMap = repositories.reduce(into: [String: SavedRepository]()) {
+            $0["\($1.owner)/\($1.name)"] = $1
+        }
 
         var completed = 0
 
