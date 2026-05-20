@@ -186,7 +186,7 @@ struct SecurityService: Sendable {
     func applyDependabotAlerts(_ alerts: [DependabotAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let existingByNumber = (repository.dependabotAlertDetails ?? []).reduce(into: [Int: DependabotAlert]()) {
+        var existingByNumber = (repository.dependabotAlertDetails ?? []).reduce(into: [Int: DependabotAlert]()) {
             $0[$1.alertNumber] = $1
         }
 
@@ -236,9 +236,9 @@ struct SecurityService: Sendable {
                 model.assignedLogins = alert.assignees.map(\.login)
                 model.repository = repository
                 context.insert(model)
+                existingByNumber[alert.number] = model
             }
         }
-        try? context.save()
     }
 
     /// Incrementally syncs Dependabot alerts during a periodic sync.
@@ -256,6 +256,7 @@ struct SecurityService: Sendable {
         in context: ModelContext
     ) async {
         applyDependabotAlerts(openAlerts, to: repository, in: context)
+        try? context.save()
 
         guard let openAlerts else { return }
 
@@ -292,7 +293,7 @@ struct SecurityService: Sendable {
     func applyCodeScanningAlerts(_ alerts: [CodeScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let existingByNumber = (repository.codeScanningAlertDetails ?? []).reduce(into: [Int: CodeScanningAlert]()) {
+        var existingByNumber = (repository.codeScanningAlertDetails ?? []).reduce(into: [Int: CodeScanningAlert]()) {
             $0[$1.alertNumber] = $1
         }
 
@@ -334,6 +335,7 @@ struct SecurityService: Sendable {
                 )
                 alert.repository = repository
                 context.insert(alert)
+                existingByNumber[response.number] = alert
             }
         }
     }
@@ -354,6 +356,7 @@ struct SecurityService: Sendable {
     ) async {
         // Upsert all incoming open alerts.
         applyCodeScanningAlerts(openAlerts, to: repository, in: context)
+        try? context.save()
 
         guard let openAlerts else { return }
 
@@ -393,7 +396,7 @@ struct SecurityService: Sendable {
     func applySecretScanningAlerts(_ alerts: [SecretScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        let existingByNumber = (repository.secretScanningAlertDetails ?? []).reduce(into: [Int: SecretScanningAlert]()) {
+        var existingByNumber = (repository.secretScanningAlertDetails ?? []).reduce(into: [Int: SecretScanningAlert]()) {
             $0[$1.alertNumber] = $1
         }
 
@@ -425,6 +428,7 @@ struct SecurityService: Sendable {
                 )
                 alert.repository = repository
                 context.insert(alert)
+                existingByNumber[response.number] = alert
             }
         }
     }
@@ -444,6 +448,7 @@ struct SecurityService: Sendable {
         in context: ModelContext
     ) async {
         applySecretScanningAlerts(openAlerts, to: repository, in: context)
+        try? context.save()
 
         guard let openAlerts else { return }
 

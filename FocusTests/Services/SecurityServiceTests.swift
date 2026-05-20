@@ -935,4 +935,292 @@ struct SecurityServiceTests {
         let url = mockHTTP.lastRequest?.url
         #expect(url?.path == "/repos/octocat/hello-world/secret-scanning/alerts")
     }
+
+    // MARK: - deltaApplyDependabotAlerts
+
+    /// Verifies that a previously-open alert absent from the current open list is resolved
+    /// by fetching its individual record and updating the stored state.
+    @Test func deltaApplyDependabotAlertsResolvesDroppedAlert() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        let alertStub = """
+        {
+          "number": %d,
+          "state": "%@",
+          "created_at": "2024-01-01T00:00:00Z",
+          "html_url": "https://github.com/apple/swift/security/dependabot/%d",
+          "security_advisory": {
+            "ghsa_id": "GHSA-0000-0000-000%d", "cve_id": null,
+            "summary": "Alert %d", "description": "Desc.", "severity": "high", "cvss": null
+          },
+          "security_vulnerability": {
+            "package": { "ecosystem": "npm", "name": "pkg-%d" },
+            "first_patched_version": null, "vulnerable_version_range": ">= 1.0, < 2.0"
+          },
+          "dependency": { "manifest_path": null },
+          "assignees": []
+        }
+        """
+
+        func makeAlertJSON(number: Int, state: String) -> String {
+            String(format: alertStub, number, state, number, number, number, number)
+        }
+
+        // Seed: two open alerts (#1 and #2).
+        mockHTTP.setSuccess(json: "[\(makeAlertJSON(number: 1, state: "open")), \(makeAlertJSON(number: 2, state: "open"))]")
+        let svc = makeService()
+        await svc.syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        #expect((repo.dependabotAlertDetails ?? []).count == 2)
+
+        // Delta: only alert #1 is still open; alert #2 was dismissed on GitHub.
+        let openList = await {
+            mockHTTP.setSuccess(json: "[\(makeAlertJSON(number: 1, state: "open"))]")
+            return await svc.fetchDependabotAlerts(owner: "apple", repo: "swift")
+        }()
+
+        // Individual fetch for alert #2 returns its dismissed state.
+        let dismissedAt = "2024-06-01T12:00:00Z"
+        mockHTTP.setSuccess(json: makeAlertJSON(number: 2, state: "dismissed")
+            .replacingOccurrences(of: "\"state\": \"dismissed\"", with: """
+            "state": "dismissed", "dismissed_at": "\(dismissedAt)", "dismissed_reason": "tolerable_risk"
+            """))
+
+        await svc.deltaApplyDependabotAlerts(
+            openAlerts: openList,
+            owner: "apple", repo: "swift",
+            to: repo, in: context
+        )
+
+        let alerts = (repo.dependabotAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+        #expect(alerts[0].alertNumber == 1)
+        #expect(alerts[0].state == "open")
+        #expect(alerts[1].alertNumber == 2)
+        #expect(alerts[1].state == "dismissed")
+        #expect(alerts[1].dismissedAt != nil)
+        #expect(alerts[1].dismissedReason == "tolerable_risk")
+    }
+
+    /// Verifies that no records are altered when all previously-open alerts remain open.
+    @Test func deltaApplyDependabotAlertsNoChangeWhenAllStillOpen() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        let openAlertJSON = """
+        [{
+          "number": 5, "state": "open",
+          "created_at": "2024-01-01T00:00:00Z",
+          "html_url": "https://github.com/apple/swift/security/dependabot/5",
+          "security_advisory": {
+            "ghsa_id": "GHSA-0000-0000-0005", "cve_id": null,
+            "summary": "Alert", "description": "Desc.", "severity": "low", "cvss": null
+          },
+          "security_vulnerability": {
+            "package": { "ecosystem": "npm", "name": "pkg" },
+            "first_patched_version": null, "vulnerable_version_range": ">= 1.0, < 2.0"
+          },
+          "dependency": { "manifest_path": null },
+          "assignees": []
+        }]
+        """
+        let svc = makeService()
+        mockHTTP.setSuccess(json: openAlertJSON)
+        await svc.syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        // Delta with the same single open alert — no individual fetches should happen.
+        let openAlerts = await {
+            mockHTTP.setSuccess(json: openAlertJSON)
+            return await svc.fetchDependabotAlerts(owner: "apple", repo: "swift")
+        }()
+
+        await svc.deltaApplyDependabotAlerts(
+            openAlerts: openAlerts,
+            owner: "apple", repo: "swift",
+            to: repo, in: context
+        )
+
+        let alerts = repo.dependabotAlertDetails ?? []
+        #expect(alerts.count == 1)
+        #expect(alerts[0].state == "open")
+    }
+
+    /// Verifies that duplicate alert numbers in the API response do not create duplicate records.
+    @Test func applyDependabotAlertsDeduplicatesDuplicateNumbers() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        // Alert #7 appears twice in the response (pagination edge case).
+        let json = """
+        [
+          {
+            "number": 7, "state": "open",
+            "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/7",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0000-0000-0007", "cve_id": null,
+              "summary": "Alert 7", "description": "Desc.", "severity": "medium", "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "npm", "name": "pkg-a" },
+              "first_patched_version": null, "vulnerable_version_range": ">= 1.0, < 2.0"
+            },
+            "dependency": { "manifest_path": null },
+            "assignees": []
+          },
+          {
+            "number": 7, "state": "open",
+            "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/dependabot/7",
+            "security_advisory": {
+              "ghsa_id": "GHSA-0000-0000-0007", "cve_id": null,
+              "summary": "Alert 7", "description": "Desc.", "severity": "medium", "cvss": null
+            },
+            "security_vulnerability": {
+              "package": { "ecosystem": "npm", "name": "pkg-a" },
+              "first_patched_version": null, "vulnerable_version_range": ">= 1.0, < 2.0"
+            },
+            "dependency": { "manifest_path": null },
+            "assignees": []
+          }
+        ]
+        """
+        mockHTTP.setSuccess(json: json)
+        await makeService().syncDependabotAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+
+        #expect((repo.dependabotAlertDetails ?? []).count == 1)
+    }
+
+    // MARK: - deltaApplyCodeScanningAlerts
+
+    /// Verifies that a previously-open code scanning alert absent from the current open list
+    /// is resolved by fetching its individual record and updating the stored state.
+    @Test func deltaApplyCodeScanningAlertsResolvesDroppedAlert() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        // Seed: two open alerts.
+        let twoOpen = """
+        [
+          { "number": 10, "state": "open", "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/10",
+            "rule": { "name": "rule-a", "security_severity_level": "high" } },
+          { "number": 20, "state": "open", "created_at": "2024-01-02T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/code-scanning/20",
+            "rule": { "name": "rule-b", "security_severity_level": "medium" } }
+        ]
+        """
+        let svc = makeService()
+        mockHTTP.setSuccess(json: twoOpen)
+        await svc.syncCodeScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        #expect((repo.codeScanningAlertDetails ?? []).count == 2)
+
+        // Delta: only alert #10 is still open; alert #20 was fixed on GitHub.
+        let oneOpen = """
+        [{ "number": 10, "state": "open", "created_at": "2024-01-01T00:00:00Z",
+           "html_url": "https://github.com/apple/swift/security/code-scanning/10",
+           "rule": { "name": "rule-a", "security_severity_level": "high" } }]
+        """
+        let openAlerts = await {
+            mockHTTP.setSuccess(json: oneOpen)
+            return await svc.fetchCodeScanningAlerts(owner: "apple", repo: "swift")
+        }()
+
+        // Individual fetch for alert #20 returns fixed state.
+        mockHTTP.setSuccess(json: """
+        { "number": 20, "state": "fixed",
+          "fixed_at": "2024-06-01T12:00:00Z",
+          "created_at": "2024-01-02T00:00:00Z",
+          "html_url": "https://github.com/apple/swift/security/code-scanning/20",
+          "rule": { "name": "rule-b", "security_severity_level": "medium" } }
+        """)
+
+        await svc.deltaApplyCodeScanningAlerts(
+            openAlerts: openAlerts,
+            owner: "apple", repo: "swift",
+            to: repo, in: context
+        )
+
+        let alerts = (repo.codeScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+        #expect(alerts[0].alertNumber == 10)
+        #expect(alerts[0].state == "open")
+        #expect(alerts[1].alertNumber == 20)
+        #expect(alerts[1].state == "fixed")
+        #expect(alerts[1].fixedAt != nil)
+    }
+
+    // MARK: - deltaApplySecretScanningAlerts
+
+    /// Verifies that a previously-open secret scanning alert absent from the current open list
+    /// is resolved by fetching its individual record and updating the stored state.
+    @Test func deltaApplySecretScanningAlertsResolvesDroppedAlert() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "apple", name: "swift", displayName: "swift")
+        context.insert(repo)
+
+        // Seed: two open alerts.
+        let twoOpen = """
+        [
+          { "number": 3, "state": "open",
+            "secret_type_display_name": "GitHub PAT", "validity": "active",
+            "publicly_leaked": false, "created_at": "2024-01-01T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/secret-scanning/3" },
+          { "number": 4, "state": "open",
+            "secret_type_display_name": "AWS Key", "validity": "active",
+            "publicly_leaked": false, "created_at": "2024-01-02T00:00:00Z",
+            "html_url": "https://github.com/apple/swift/security/secret-scanning/4" }
+        ]
+        """
+        let svc = makeService()
+        mockHTTP.setSuccess(json: twoOpen)
+        await svc.syncSecretScanningAlerts(owner: "apple", repo: "swift", repository: repo, in: context)
+        #expect((repo.secretScanningAlertDetails ?? []).count == 2)
+
+        // Delta: only alert #3 is still open; alert #4 was revoked.
+        let oneOpen = """
+        [{ "number": 3, "state": "open",
+           "secret_type_display_name": "GitHub PAT", "validity": "active",
+           "publicly_leaked": false, "created_at": "2024-01-01T00:00:00Z",
+           "html_url": "https://github.com/apple/swift/security/secret-scanning/3" }]
+        """
+        let openAlerts = await {
+            mockHTTP.setSuccess(json: oneOpen)
+            return await svc.fetchSecretScanningAlerts(owner: "apple", repo: "swift")
+        }()
+
+        // Individual fetch for alert #4 returns resolved state.
+        mockHTTP.setSuccess(json: """
+        { "number": 4, "state": "resolved",
+          "resolved_at": "2024-06-01T12:00:00Z",
+          "resolution": "revoked",
+          "secret_type_display_name": "AWS Key", "validity": "revoked",
+          "publicly_leaked": false, "created_at": "2024-01-02T00:00:00Z",
+          "html_url": "https://github.com/apple/swift/security/secret-scanning/4" }
+        """)
+
+        await svc.deltaApplySecretScanningAlerts(
+            openAlerts: openAlerts,
+            owner: "apple", repo: "swift",
+            to: repo, in: context
+        )
+
+        let alerts = (repo.secretScanningAlertDetails ?? []).sorted { $0.alertNumber < $1.alertNumber }
+        #expect(alerts.count == 2)
+        #expect(alerts[0].alertNumber == 3)
+        #expect(alerts[0].state == "open")
+        #expect(alerts[1].alertNumber == 4)
+        #expect(alerts[1].state == "resolved")
+        #expect(alerts[1].resolvedAt != nil)
+        #expect(alerts[1].resolution == "revoked")
+    }
 }
