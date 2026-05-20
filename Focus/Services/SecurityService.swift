@@ -280,6 +280,7 @@ struct SecurityService: Sendable {
         }
 
         applyDependabotAlerts(resolvedResponses, to: repository, in: context)
+        try? context.save()
     }
 
     /// Persists fetched code scanning alerts to SwiftData using an upsert strategy.
@@ -383,6 +384,7 @@ struct SecurityService: Sendable {
 
         // Apply the resolution details (state, fixedAt, dismissedAt, etc.).
         applyCodeScanningAlerts(resolvedResponses, to: repository, in: context)
+        try? context.save()
     }
 
     /// Persists fetched secret scanning alerts to SwiftData using an upsert strategy.
@@ -472,6 +474,7 @@ struct SecurityService: Sendable {
         }
 
         applySecretScanningAlerts(resolvedResponses, to: repository, in: context)
+        try? context.save()
     }
 
     // MARK: - Sync (fetch + apply, used by tests and legacy call sites)
