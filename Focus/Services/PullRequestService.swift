@@ -58,6 +58,8 @@ struct PullRequestService: Sendable {
     /// Existing `OpenPullRequest` objects are updated in-place (preserving their
     /// `PersistentIdentifier`) so views holding live references are not invalidated.
     /// PRs absent from the new data are deleted; new PRs are inserted.
+    /// Any pre-existing duplicate records (same PR number) are deleted before the
+    /// upsert loop runs.
     ///
     /// Does nothing when `prs` is `nil` (preserving any existing data).
     @MainActor
@@ -67,13 +69,20 @@ struct PullRequestService: Sendable {
         let iso = ISO8601DateFormatter()
         let incomingByNumber = prs.reduce(into: [Int: OpenPRData]()) { $0[$1.number] = $1 }
 
-        // Snapshot before mutating the relationship
-        let snapshot = repository.openPullRequests ?? []
-        let existingNumbers = Set(snapshot.map(\.number))
+        // Build a lookup from existing records, deleting any duplicates already in the store.
+        var existingByNumber: [Int: OpenPullRequest] = [:]
+        for existing in repository.openPullRequests ?? [] {
+            if existingByNumber[existing.number] != nil {
+                existing.repository = nil
+                context.delete(existing)
+            } else {
+                existingByNumber[existing.number] = existing
+            }
+        }
 
-        // Update existing or delete stale
-        for existing in snapshot {
-            if let data = incomingByNumber[existing.number] {
+        // Update existing records or delete ones that are no longer open.
+        for (number, existing) in existingByNumber {
+            if let data = incomingByNumber[number] {
                 existing.title = data.title
                 existing.authorLogin = data.authorLogin ?? ""
                 existing.url = data.url
@@ -84,8 +93,9 @@ struct PullRequestService: Sendable {
             }
         }
 
-        // Insert new PRs not already tracked
-        for data in prs where !existingNumbers.contains(data.number) {
+        // Insert new PRs not already tracked; track each insert to guard against
+        // duplicate numbers in the incoming data.
+        for data in prs where existingByNumber[data.number] == nil {
             let pr = OpenPullRequest(
                 number: data.number,
                 title: data.title,
@@ -95,6 +105,7 @@ struct PullRequestService: Sendable {
             )
             pr.repository = repository
             context.insert(pr)
+            existingByNumber[data.number] = pr
         }
 
         try? context.save()

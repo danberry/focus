@@ -137,6 +137,52 @@ struct PullRequestServiceTests {
         #expect((repo.openPullRequests ?? []).isEmpty)
     }
 
+    /// Verifies that pre-existing duplicate records for the same PR number are removed during apply.
+    @Test func applyRemovesPreExistingDuplicates() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "acme", name: "widget", displayName: "Widget")
+        context.insert(repo)
+
+        // Manually insert two records with the same PR number (simulating a store that already has duplicates).
+        let dup1 = OpenPullRequest(number: 5, title: "Old title", createdAt: Date(), authorLogin: "alice", url: "https://github.com/acme/widget/pull/5")
+        let dup2 = OpenPullRequest(number: 5, title: "Old title", createdAt: Date(), authorLogin: "alice", url: "https://github.com/acme/widget/pull/5")
+        dup1.repository = repo
+        dup2.repository = repo
+        context.insert(dup1)
+        context.insert(dup2)
+        try? context.save()
+        #expect((repo.openPullRequests ?? []).count == 2)
+
+        // Sync returns the canonical single record for PR #5.
+        mockHTTP.setSuccess(json: makeResponse(prs: [
+            (5, "New title", "2026-04-01T00:00:00Z", "alice", "https://github.com/acme/widget/pull/5")
+        ]))
+        await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
+
+        // Duplicate removed; only one record remains with updated title.
+        #expect((repo.openPullRequests ?? []).count == 1)
+        #expect(repo.openPullRequests?.first?.title == "New title")
+    }
+
+    /// Verifies that duplicate PR numbers in the incoming API response only produce one record.
+    @Test func applyDeduplicatesIncomingData() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let repo = SavedRepository(githubId: "1", owner: "acme", name: "widget", displayName: "Widget")
+        context.insert(repo)
+
+        // Craft a response with the same PR number appearing twice (defensive against pagination edge cases).
+        mockHTTP.setSuccess(json: makeResponse(prs: [
+            (7, "PR seven", "2026-04-01T00:00:00Z", "bob", "https://github.com/acme/widget/pull/7"),
+            (7, "PR seven duplicate", "2026-04-01T00:00:00Z", "bob", "https://github.com/acme/widget/pull/7")
+        ]))
+        await makeService().syncOpenPullRequests(owner: "acme", repo: "widget", repository: repo, in: context)
+
+        #expect((repo.openPullRequests ?? []).count == 1)
+        #expect(repo.openPullRequests?.first?.number == 7)
+    }
+
     /// Verifies that a network error leaves previously synced pull requests untouched.
     @Test func syncSilentlyFailsOnError() async throws {
         mockHTTP.setSuccess(json: makeResponse(prs: [
