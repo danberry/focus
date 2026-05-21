@@ -65,10 +65,14 @@ struct FocusApp: App {
                     tokenProvider: authService.tokenProvider
                 )
                 syncManager.scheduleNextSync()
+
+                // Remove any duplicate SavedRepository records before syncing.
+                let context = ModelContext(modelContainer)
+                deduplicateSavedRepositories(in: context)
+
                 // Sync on fresh launch — onChange(of: scenePhase) only fires on transitions,
                 // so it misses the initial .active state when the app is cold-started.
                 guard authService.authState == .authenticated else { return }
-                let context = ModelContext(modelContainer)
                 await syncManager.syncIfNeeded(context: context)
             }
             .onChange(of: scenePhase) { _, newPhase in
@@ -84,6 +88,50 @@ struct FocusApp: App {
         .environment(briefingManager)
         .modelContainer(modelContainer)
     }
+}
+
+// MARK: - Deduplication
+
+/// Removes duplicate ``SavedRepository`` records that share the same `owner`/`name` pair.
+///
+/// For each group of duplicates the record with the most total related objects
+/// (alerts, PRs, codeowners, velocity metrics, commit activity) is kept; the rest
+/// are cascade-deleted from the context and flushed to the persistent store.
+@MainActor
+private func deduplicateSavedRepositories(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<SavedRepository>()) else { return }
+
+    var groups: [String: [SavedRepository]] = [:]
+    for repo in all {
+        groups["\(repo.owner)/\(repo.name)", default: []].append(repo)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { lhs, rhs in
+            repositoryRichness(lhs) > repositoryRichness(rhs)
+        }
+        for duplicate in ranked.dropFirst() {
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate repository record(s)")
+    }
+}
+
+/// Returns a richness score for a repository based on the count of its related records.
+private func repositoryRichness(_ repo: SavedRepository) -> Int {
+    (repo.dependabotAlertDetails?.count ?? 0) +
+    (repo.codeScanningAlertDetails?.count ?? 0) +
+    (repo.secretScanningAlertDetails?.count ?? 0) +
+    (repo.codeowners?.count ?? 0) +
+    (repo.openPullRequests?.count ?? 0) +
+    (repo.velocityMetrics?.count ?? 0) +
+    (repo.commitActivity?.count ?? 0)
 }
 
 // MARK: - ModelContainer
