@@ -47,6 +47,9 @@ enum GitHubError: Error, Sendable {
 
     /// The device has no passcode set, preventing secure token storage in the Keychain.
     case noPasscodeSet
+
+    /// A repository with the same owner and name is already saved to the watch list.
+    case repositoryAlreadySaved
 }
 
 // MARK: - LocalizedError
@@ -82,6 +85,8 @@ extension GitHubError: LocalizedError {
             "Authentication failed. Please unlock Focus to continue."
         case .noPasscodeSet:
             "A device passcode is required to save your token securely. Set a passcode in Settings and try again."
+        case .repositoryAlreadySaved:
+            "This repository is already saved."
         }
     }
 }

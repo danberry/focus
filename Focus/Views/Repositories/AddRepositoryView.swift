@@ -135,6 +135,14 @@ struct AddRepositoryView: View {
             return
         }
 
+        let duplicateDescriptor = FetchDescriptor<SavedRepository>(
+            predicate: #Predicate { $0.owner == trimmedOwner && $0.name == trimmedName }
+        )
+        if let existing = try? modelContext.fetch(duplicateDescriptor), !existing.isEmpty {
+            error = .repositoryAlreadySaved
+            return
+        }
+
         isLoading = true
         error = nil
 
