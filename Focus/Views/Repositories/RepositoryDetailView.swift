@@ -14,6 +14,12 @@ struct RepositoryDetailView: View {
     /// All teams, used to populate the ownership picker.
     @Query(sort: [SortDescriptor(\Team.name, comparator: .localizedStandard)]) private var teams: [Team]
 
+    /// The authentication service, used to build the REST client for refresh.
+    @Environment(AuthenticationService.self) private var authService
+
+    /// The SwiftData model context, used when persisting refreshed alerts.
+    @Environment(\.modelContext) private var modelContext
+
     /// The currently selected velocity period, controlling which metric is shown in the hero row.
     @State private var selectedPeriod: VelocityPeriod = .yearToDate
 
@@ -161,6 +167,17 @@ struct RepositoryDetailView: View {
         .listStyle(.plain)
         .headerProminence(.increased)
         .navigationTitle(repository.displayName)
+        .refreshable {
+            let service = SecurityService(rest: RESTClient(tokenProvider: authService.tokenProvider))
+            let openAlerts = await service.fetchDependabotAlerts(owner: repository.owner, repo: repository.name)
+            await service.deltaApplyDependabotAlerts(
+                openAlerts: openAlerts,
+                owner: repository.owner,
+                repo: repository.name,
+                to: repository,
+                in: modelContext
+            )
+        }
         .navigationBarTitleDisplayMode(.inline)
     }
 
