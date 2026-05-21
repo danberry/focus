@@ -168,8 +168,14 @@ struct RepositoryDetailView: View {
         .headerProminence(.increased)
         .navigationTitle(repository.displayName)
         .refreshable {
+            print("[Refresh] Pull-to-refresh triggered for \(repository.owner)/\(repository.name)")
             let service = SecurityService(rest: RESTClient(tokenProvider: authService.tokenProvider))
             let openAlerts = await service.fetchDependabotAlerts(owner: repository.owner, repo: repository.name)
+            if let openAlerts {
+                print("[Refresh] fetchDependabotAlerts returned \(openAlerts.count) open alert(s)")
+            } else {
+                print("[Refresh] fetchDependabotAlerts returned nil (network or auth failure)")
+            }
             await service.deltaApplyDependabotAlerts(
                 openAlerts: openAlerts,
                 owner: repository.owner,
@@ -177,6 +183,7 @@ struct RepositoryDetailView: View {
                 to: repository,
                 in: modelContext
             )
+            print("[Refresh] deltaApply complete")
         }
         .navigationBarTitleDisplayMode(.inline)
     }

@@ -186,8 +186,14 @@ struct SecurityService: Sendable {
     func applyDependabotAlerts(_ alerts: [DependabotAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        var existingByNumber = (repository.dependabotAlertDetails ?? []).reduce(into: [Int: DependabotAlert]()) {
-            $0[$1.alertNumber] = $1
+        var existingByNumber: [Int: DependabotAlert] = [:]
+        for alert in repository.dependabotAlertDetails ?? [] {
+            if existingByNumber[alert.alertNumber] != nil {
+                print("[applyDependabotAlerts] Removing duplicate alert #\(alert.alertNumber)")
+                context.delete(alert)
+            } else {
+                existingByNumber[alert.alertNumber] = alert
+            }
         }
 
         for alert in alerts {
@@ -255,18 +261,26 @@ struct SecurityService: Sendable {
         to repository: SavedRepository,
         in context: ModelContext
     ) async {
+        print("[DeltaApply] Pass 1 — applying \(openAlerts?.count ?? 0) open alert(s) for \(owner)/\(repo)")
         applyDependabotAlerts(openAlerts, to: repository, in: context)
         try? context.save()
 
-        guard let openAlerts else { return }
+        guard let openAlerts else {
+            print("[DeltaApply] openAlerts is nil, skipping second pass")
+            return
+        }
 
         let incomingOpenNumbers = Set(openAlerts.map(\.number))
         let newlyResolvedRecords = (repository.dependabotAlertDetails ?? []).filter {
             $0.state == "open" && !incomingOpenNumbers.contains($0.alertNumber)
         }
 
-        guard !newlyResolvedRecords.isEmpty else { return }
+        guard !newlyResolvedRecords.isEmpty else {
+            print("[DeltaApply] No newly-resolved alerts detected, done")
+            return
+        }
 
+        print("[DeltaApply] Pass 2 — fetching \(newlyResolvedRecords.count) newly-resolved alert(s)")
         let resolvedResponses: [DependabotAlertResponse] = await withTaskGroup(of: DependabotAlertResponse?.self) { group in
             for record in newlyResolvedRecords {
                 let number = record.alertNumber
@@ -279,7 +293,18 @@ struct SecurityService: Sendable {
             return results
         }
 
+        print("[DeltaApply] Pass 2 — applying \(resolvedResponses.count) resolved alert(s)")
         applyDependabotAlerts(resolvedResponses, to: repository, in: context)
+
+        // For any resolved alert whose individual fetch failed (e.g. withdrawn advisory),
+        // mark it auto_dismissed locally so it no longer appears as open.
+        let fetchedNumbers = Set(resolvedResponses.map(\.number))
+        for record in newlyResolvedRecords where !fetchedNumbers.contains(record.alertNumber) {
+            print("[DeltaApply] Alert #\(record.alertNumber) unfetchable — marking auto_dismissed")
+            record.state = "auto_dismissed"
+            if record.autoDismissedAt == nil { record.autoDismissedAt = Date() }
+        }
+
         try? context.save()
     }
 
