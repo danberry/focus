@@ -125,13 +125,15 @@ private func deduplicateSavedRepositories(in context: ModelContext) {
 
 /// Returns a richness score for a repository based on the count of its related records.
 private func repositoryRichness(_ repo: SavedRepository) -> Int {
-    (repo.dependabotAlertDetails?.count ?? 0) +
-    (repo.codeScanningAlertDetails?.count ?? 0) +
-    (repo.secretScanningAlertDetails?.count ?? 0) +
-    (repo.codeowners?.count ?? 0) +
-    (repo.openPullRequests?.count ?? 0) +
-    (repo.velocityMetrics?.count ?? 0) +
-    (repo.commitActivity?.count ?? 0)
+    let security = (repo.dependabotAlertDetails?.count ?? 0)
+                 + (repo.codeScanningAlertDetails?.count ?? 0)
+                 + (repo.secretScanningAlertDetails?.count ?? 0)
+    let activity = (repo.codeowners?.count ?? 0)
+                 + (repo.openPullRequests?.count ?? 0)
+                 + (repo.velocityMetrics?.count ?? 0)
+                 + (repo.commitActivity?.count ?? 0)
+                 + (repo.releases?.count ?? 0)
+    return security + activity
 }
 
 // MARK: - ModelContainer
