@@ -23,6 +23,9 @@ struct AddRepositoryView: View {
     /// The service used to sync open pull requests.
     let pullRequestService: PullRequestService
 
+    /// The service used to sync recent releases.
+    let releaseService: ReleaseService
+
     /// The authentication service, providing the current auth state.
     @Environment(AuthenticationService.self) private var authService
 
@@ -164,6 +167,7 @@ struct AddRepositoryView: View {
             await codeownersService.syncCodeowners(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await velocityService.syncVelocity(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
             await pullRequestService.syncOpenPullRequests(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
+            await releaseService.syncReleases(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
 
             dismiss()
         } catch let ghError as GitHubError {
