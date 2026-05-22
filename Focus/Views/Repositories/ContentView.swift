@@ -154,6 +154,9 @@ struct ContentView: View {
                     ),
                     pullRequestService: PullRequestService(
                         graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
+                    ),
+                    releaseService: ReleaseService(
+                        graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
                     )
                 )
             }

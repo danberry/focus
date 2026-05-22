@@ -116,6 +116,28 @@ enum RepositoryQueries {
         }
         """
 
+    // MARK: - Releases
+
+    /// Fetches the 10 most recently published releases for a repository.
+    ///
+    /// Draft releases (where `publishedAt` is `nil`) are excluded by the caller.
+    /// The response includes all fields needed to populate a ``SavedRelease`` record.
+    static let recentReleases = """
+        query RepositoryRecentReleases($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                releases(first: 10, orderBy: {field: CREATED_AT, direction: DESC}) {
+                    nodes {
+                        tagName
+                        name
+                        description
+                        publishedAt
+                        isPrerelease
+                    }
+                }
+            }
+        }
+        """
+
     // MARK: - Search
 
     /// Searches GitHub repositories using the GitHub search syntax.

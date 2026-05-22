@@ -614,10 +614,30 @@ extension RepositoryDossier {
         contributors = []
         hotFiles = []
         branches = []
-        releases = []
+
+        // Releases — newest first, capped at 5 for the dossier card.
+        let now = Date()
+        releases = (repository.releases ?? [])
+            .sorted { $0.publishedAt > $1.publishedAt }
+            .prefix(5)
+            .map { saved in
+                Release(
+                    tag: saved.tag,
+                    body: saved.name.isEmpty ? saved.body : saved.name,
+                    ageInDays: Int(now.timeIntervalSince(saved.publishedAt) / 86_400),
+                    isMinor: Self.isMinorRelease(tag: saved.tag)
+                )
+            }
     }
 
     // MARK: - Private Helpers
+
+    /// Returns `true` when the tag's patch version component is zero (e.g. `"v2.14.0"`).
+    private static func isMinorRelease(tag: String) -> Bool {
+        let stripped = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
+        let parts = stripped.split(separator: ".").compactMap { Int($0) }
+        return parts.count >= 3 && parts[2] == 0
+    }
 
     private static func mapAlertSeverity(_ raw: String) -> AlertItem.Severity {
         switch raw.lowercased() {

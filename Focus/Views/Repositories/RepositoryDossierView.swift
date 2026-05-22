@@ -445,6 +445,7 @@ struct RepositoryDossierView: View {
             Text(release.tag)
                 .font(BriefingFont.meta)
                 .foregroundStyle(BriefingColor.ink)
+            releaseChip(release.isMinor)
             Text(release.body)
                 .font(BriefingFont.meta)
                 .foregroundStyle(BriefingColor.ink3)
@@ -454,6 +455,28 @@ struct RepositoryDossierView: View {
                 .font(BriefingFont.meta)
                 .foregroundStyle(BriefingColor.ink3)
         }
+    }
+
+    /// A small chip distinguishing minor releases from patch releases.
+    private func releaseChip(_ isMinor: Bool) -> some View {
+        let label: String
+        let color: Color
+        let bg: Color
+        if isMinor {
+            label = "minor"
+            color = BriefingColor.blue
+            bg = BriefingColor.blueBg
+        } else {
+            label = "patch"
+            color = BriefingColor.ink3
+            bg = BriefingColor.paper3
+        }
+        return Text(label)
+            .font(BriefingFont.meta)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(bg, in: Capsule())
+            .foregroundStyle(color)
     }
 
     /// Weekday axis labels rendered beneath a 7-day spark chart.
