@@ -480,9 +480,9 @@ extension RepositoryDossier {
 
     /// Assembles a dossier from a saved repository and its persisted SwiftData relationships.
     ///
-    /// Fields not yet stored locally — activity heatmap, velocity spark, merged-by-day,
-    /// CI runs, contributors, hot files, branches, and releases — are left empty so the
-    /// view renders their "No data" empty states until those data sources are wired up.
+    /// Fields not yet stored locally — merged-by-day, CI runs, contributors, hot files,
+    /// branches, and releases — are left empty so the view renders their "No data" empty
+    /// states until those data sources are wired up.
     init(repository: SavedRepository) {
         owner = repository.owner
         name = repository.name
@@ -585,7 +585,30 @@ extension RepositoryDossier {
             ? ActivityHeatmap(cells: [])
             : Self.buildHeatmap(from: commitDays)
 
-        velocitySpark = VelocitySpark(weeklyMerged: [])
+        // Velocity spark — derive weekly-rate bars from the three rolling-window counts.
+        // Each period's incremental (non-overlapping) window is divided by its approximate
+        // week span and repeated once per implied week, producing 12 bars ordered oldest → newest.
+        let vMetrics = Dictionary(
+            (repository.velocityMetrics ?? []).map { ($0.periodType, $0.currentCount) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let vW7  = vMetrics[VelocityPeriod.sevenDays.rawValue] ?? 0
+        let vD30 = vMetrics[VelocityPeriod.thirtyDays.rawValue] ?? 0
+        let vD90 = vMetrics[VelocityPeriod.ninetyDays.rawValue] ?? 0
+
+        if vW7 > 0 || vD30 > 0 || vD90 > 0 {
+            let incr90 = max(0, vD90 - vD30)  // days 31–90 ≈ 8 weeks
+            let incr30 = max(0, vD30 - vW7)   // days 8–30  ≈ 3 weeks
+            let rate90 = Int((Double(incr90) / 8.0).rounded())
+            let rate30 = Int((Double(incr30) / 3.0).rounded())
+            velocitySpark = VelocitySpark(
+                weeklyMerged: [Int](repeating: rate90, count: 8)
+                            + [Int](repeating: rate30, count: 3)
+                            + [vW7]
+            )
+        } else {
+            velocitySpark = VelocitySpark(weeklyMerged: [])
+        }
         mergedByDay = []
         ciRunsByDay = []
         contributors = []

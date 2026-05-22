@@ -43,11 +43,24 @@ struct RepositoryDossierView: View {
                     .gridCellColumns(2)
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Velocity (16w)")
+                            cardTitle("Velocity (12w)")
                             if dossier.velocitySpark.weeklyMerged.isEmpty {
                                 emptyText
                             } else {
                                 BriefingSparkBarView(values: normalized(dossier.velocitySpark.weeklyMerged.map(Double.init)))
+                                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                    Text("\(dossier.kpi.mergedThisWeek)")
+                                        .font(BriefingFont.kpiSupporting)
+                                        .foregroundStyle(BriefingColor.ink)
+                                    Text("this week")
+                                        .font(BriefingFont.meta)
+                                        .foregroundStyle(BriefingColor.ink3)
+                                    if let delta = dossier.kpi.mergedThisWeekDelta, delta != 0 {
+                                        Text(delta > 0 ? "+\(delta) vs yr ago" : "\(delta) vs yr ago")
+                                            .font(BriefingFont.meta)
+                                            .foregroundStyle(delta > 0 ? BriefingColor.green : BriefingColor.red)
+                                    }
+                                }
                             }
                         }
                     }
