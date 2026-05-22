@@ -80,17 +80,6 @@ struct RepositoryDossierView: View {
                             }
                         }
                     }
-                    DossierCardView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("CI Runs by Day")
-                            if dossier.ciRunsByDay.isEmpty {
-                                emptyText
-                            } else {
-                                BriefingSparkBarView(values: normalized(dossier.ciRunsByDay.map { Double($0.count) }))
-                                weekdayLabels(dossier.ciRunsByDay)
-                            }
-                        }
-                    }
                 }
 
                 Divider()
