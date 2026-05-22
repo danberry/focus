@@ -6,8 +6,9 @@ import SwiftData
 /// Orchestrates a full data sync for every saved repository.
 ///
 /// `SyncService` coordinates ``SecurityService``, ``CodeownersService``,
-/// ``VelocityService``, and ``PullRequestService``, then derives badge counts
-/// from the freshly written SwiftData relationships.
+/// ``VelocityService``, ``PullRequestService``, ``CommitActivityService``, and
+/// ``ReleaseService``, then derives badge counts from the freshly written
+/// SwiftData relationships.
 ///
 /// Repositories are synced in parallel (up to ``maxConcurrentRepos`` at once).
 /// Within each repository all six sub-service calls are issued concurrently via
@@ -35,21 +36,26 @@ struct SyncService: Sendable {
     /// The service used to sync per-day commit activity for the heatmap.
     private let commitActivityService: CommitActivityService
 
+    /// The service used to sync recent releases.
+    private let releaseService: ReleaseService
+
     // MARK: - Init
 
-    /// Creates a `SyncService` with the five domain services it coordinates.
+    /// Creates a `SyncService` with the six domain services it coordinates.
     init(
         securityService: SecurityService,
         codeownersService: CodeownersService,
         velocityService: VelocityService,
         pullRequestService: PullRequestService,
-        commitActivityService: CommitActivityService
+        commitActivityService: CommitActivityService,
+        releaseService: ReleaseService
     ) {
         self.securityService = securityService
         self.codeownersService = codeownersService
         self.velocityService = velocityService
         self.pullRequestService = pullRequestService
         self.commitActivityService = commitActivityService
+        self.releaseService = releaseService
     }
 
     // MARK: - Sync
@@ -134,16 +140,18 @@ struct SyncService: Sendable {
         async let velocityData = velocityService.fetchVelocityData(owner: owner, repo: name)
         async let openPRs = pullRequestService.fetchOpenPRs(owner: owner, repo: name)
         async let commitActivity = commitActivityService.fetchCommitActivity(owner: owner, repo: name)
+        async let releases = releaseService.fetchReleases(owner: owner, repo: name)
 
-        let (dep, cs, ss, co, vel, prs, ca) = await (
+        let (dep, cs, ss, co, vel, prs, ca, rel) = await (
             dependabotAlerts, codeScanningAlerts, secretScanningAlerts,
-            codeownersEntries, velocityData, openPRs, commitActivity
+            codeownersEntries, velocityData, openPRs, commitActivity, releases
         )
 
         return RepoSyncFetch(
             owner: owner, name: name,
             dependabotAlerts: dep, codeScanningAlerts: cs, secretScanningAlerts: ss,
-            codeownersEntries: co, velocityData: vel, openPRs: prs, commitActivity: ca
+            codeownersEntries: co, velocityData: vel, openPRs: prs, commitActivity: ca,
+            releases: rel
         )
     }
 
@@ -178,6 +186,7 @@ struct SyncService: Sendable {
         velocityService.applyVelocityData(fetch.velocityData, to: repository, in: context)
         pullRequestService.applyOpenPRs(fetch.openPRs, to: repository, in: context)
         commitActivityService.applyCommitActivity(fetch.commitActivity, to: repository, in: context)
+        releaseService.applyReleases(fetch.releases, to: repository, in: context)
     }
 }
 
@@ -197,4 +206,5 @@ private struct RepoSyncFetch: Sendable {
     let velocityData: VelocityFetchResult?
     let openPRs: [OpenPRData]?
     let commitActivity: [CommitActivityWeek]?
+    let releases: [ReleaseData]?
 }

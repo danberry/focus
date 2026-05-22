@@ -107,6 +107,12 @@ final class SavedRepository {
     @Relationship(deleteRule: .cascade, inverse: \RepositoryCommitDay.repository)
     var commitActivity: [RepositoryCommitDay]?
 
+    /// The most recent releases for this repository.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``SavedRelease/repository``.
+    @Relationship(deleteRule: .cascade, inverse: \SavedRelease.repository)
+    var releases: [SavedRelease]?
+
     /// The team that owns this repository, or `nil` if no team has been assigned.
     ///
     /// Nullified when the team is removed. Inverse of ``Team/repositories``.
