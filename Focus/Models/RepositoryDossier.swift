@@ -463,14 +463,14 @@ extension RepositoryDossier {
 
     /// Assembles a dossier from a saved repository and its persisted SwiftData relationships.
     ///
-    /// Fields not yet stored locally — merged-by-day, CI runs, contributors, hot files,
-    /// branches, and releases — are left empty so the view renders their "No data" empty
-    /// states until those data sources are wired up.
+    /// Fields not yet stored locally — merged-by-day, CI runs, contributors, and hot files —
+    /// are left empty so the view renders their "No data" empty states until those data
+    /// sources are wired up.
     init(repository: SavedRepository) {
         owner = repository.owner
         name = repository.name
         description = ""
-        defaultBranch = "main"
+        defaultBranch = (repository.branches ?? []).first(where: { $0.isDefault })?.name ?? "main"
         primaryLanguage = repository.primaryLanguage
 
         // Security alerts
@@ -615,7 +615,21 @@ extension RepositoryDossier {
             }
             .sorted { $0.mergedPRs30d > $1.mergedPRs30d }
         hotFiles = []
-        branches = []
+
+        // Branches — classify by name pattern and age; ordered by most recently pushed.
+        let branchNow = Date()
+        branches = (repository.branches ?? [])
+            .sorted { $0.pushedAt > $1.pushedAt }
+            .map { saved in
+                let ageInDays = Int(branchNow.timeIntervalSince(saved.pushedAt) / 86_400)
+                return Branch(
+                    name: saved.name,
+                    kind: Self.classifyBranch(name: saved.name, isDefault: saved.isDefault, ageInDays: ageInDays),
+                    aheadBy: 0,
+                    behindBy: 0,
+                    ageInDays: ageInDays
+                )
+            }
 
         // Releases — newest first, capped at 5 for the dossier card.
         let now = Date()
@@ -633,6 +647,24 @@ extension RepositoryDossier {
     }
 
     // MARK: - Private Helpers
+
+    /// Classifies a branch for display based on its name pattern and age.
+    ///
+    /// Classification rules, applied in order:
+    /// 1. `isDefault == true` → `.default`
+    /// 2. Name matches long-lived release/staging patterns → `.staging`
+    /// 3. `ageInDays >= 30` → `.stale`
+    /// 4. Otherwise → `.behind` (active feature branch, likely diverging from default)
+    // TODO: Replace age-based `.behind` / `.stale` classification with real ahead/behind counts once the GitHub API comparison endpoint is integrated — name-and-age heuristics will misclassify recently created branches that are deeply behind.
+    private static func classifyBranch(name: String, isDefault: Bool, ageInDays: Int) -> Branch.Kind {
+        if isDefault { return .default }
+        let lower = name.lowercased()
+        if lower.hasPrefix("release/") || lower.hasPrefix("hotfix/")
+            || lower == "staging" || lower == "develop" || lower == "preview" {
+            return .staging
+        }
+        return ageInDays >= 30 ? .stale : .behind
+    }
 
     /// Returns `true` when the tag's patch version component is zero (e.g. `"v2.14.0"`).
     private static func isMinorRelease(tag: String) -> Bool {

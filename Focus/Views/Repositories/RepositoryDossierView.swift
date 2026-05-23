@@ -334,9 +334,15 @@ struct RepositoryDossierView: View {
                 .truncationMode(.head)
             branchChip(branch.kind)
             Spacer(minLength: 4)
-            Text("↑\(branch.aheadBy) ↓\(branch.behindBy)")
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
+            if branch.aheadBy > 0 || branch.behindBy > 0 {
+                Text("↑\(branch.aheadBy) ↓\(branch.behindBy)")
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(BriefingColor.ink3)
+            } else {
+                Text("\(branch.ageInDays)d")
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(BriefingColor.ink3)
+            }
         }
     }
 

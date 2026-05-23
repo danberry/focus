@@ -6,13 +6,13 @@ import SwiftData
 /// Orchestrates a full data sync for every saved repository.
 ///
 /// `SyncService` coordinates ``SecurityService``, ``CodeownersService``,
-/// ``VelocityService``, ``PullRequestService``, ``CommitActivityService``, and
-/// ``ReleaseService``, then derives badge counts from the freshly written
-/// SwiftData relationships.
+/// ``VelocityService``, ``PullRequestService``, ``CommitActivityService``,
+/// ``ReleaseService``, and ``BranchService``, then derives badge counts from
+/// the freshly written SwiftData relationships.
 ///
 /// Repositories are synced in parallel (up to ``maxConcurrentRepos`` at once).
-/// Within each repository all six sub-service calls are issued concurrently via
-/// `async let`. Network I/O for up to `maxConcurrentRepos × 6` requests runs in
+/// Within each repository all seven sub-service calls are issued concurrently via
+/// `async let`. Network I/O for up to `maxConcurrentRepos × 7` requests runs in
 /// parallel; all SwiftData writes are serialized on the main actor.
 ///
 /// All operations run on the main actor.
@@ -39,16 +39,20 @@ struct SyncService: Sendable {
     /// The service used to sync recent releases.
     private let releaseService: ReleaseService
 
+    /// The service used to sync branch data.
+    private let branchService: BranchService
+
     // MARK: - Init
 
-    /// Creates a `SyncService` with the six domain services it coordinates.
+    /// Creates a `SyncService` with the seven domain services it coordinates.
     init(
         securityService: SecurityService,
         codeownersService: CodeownersService,
         velocityService: VelocityService,
         pullRequestService: PullRequestService,
         commitActivityService: CommitActivityService,
-        releaseService: ReleaseService
+        releaseService: ReleaseService,
+        branchService: BranchService
     ) {
         self.securityService = securityService
         self.codeownersService = codeownersService
@@ -56,6 +60,7 @@ struct SyncService: Sendable {
         self.pullRequestService = pullRequestService
         self.commitActivityService = commitActivityService
         self.releaseService = releaseService
+        self.branchService = branchService
     }
 
     // MARK: - Sync
@@ -127,7 +132,7 @@ struct SyncService: Sendable {
 
     // MARK: - Private
 
-    /// Fires all six sub-service network fetches for a single repository concurrently.
+    /// Fires all seven sub-service network fetches for a single repository concurrently.
     ///
     /// This method is `nonisolated` so it can be called directly from `withTaskGroup`
     /// task closures without requiring a main-actor hop. All parameters and return values
@@ -141,17 +146,18 @@ struct SyncService: Sendable {
         async let openPRs = pullRequestService.fetchOpenPRs(owner: owner, repo: name)
         async let commitActivity = commitActivityService.fetchCommitActivity(owner: owner, repo: name)
         async let releases = releaseService.fetchReleases(owner: owner, repo: name)
+        async let branches = branchService.fetchBranches(owner: owner, repo: name)
 
-        let (dep, cs, ss, co, vel, prs, ca, rel) = await (
+        let (dep, cs, ss, co, vel, prs, ca, rel, br) = await (
             dependabotAlerts, codeScanningAlerts, secretScanningAlerts,
-            codeownersEntries, velocityData, openPRs, commitActivity, releases
+            codeownersEntries, velocityData, openPRs, commitActivity, releases, branches
         )
 
         return RepoSyncFetch(
             owner: owner, name: name,
             dependabotAlerts: dep, codeScanningAlerts: cs, secretScanningAlerts: ss,
             codeownersEntries: co, velocityData: vel, openPRs: prs, commitActivity: ca,
-            releases: rel
+            releases: rel, branches: br
         )
     }
 
@@ -187,6 +193,7 @@ struct SyncService: Sendable {
         pullRequestService.applyOpenPRs(fetch.openPRs, to: repository, in: context)
         commitActivityService.applyCommitActivity(fetch.commitActivity, to: repository, in: context)
         releaseService.applyReleases(fetch.releases, to: repository, in: context)
+        branchService.applyBranches(fetch.branches, to: repository, in: context)
     }
 }
 
@@ -207,4 +214,5 @@ private struct RepoSyncFetch: Sendable {
     let openPRs: [OpenPRData]?
     let commitActivity: [CommitActivityWeek]?
     let releases: [ReleaseData]?
+    let branches: [BranchData]?
 }
