@@ -16,9 +16,13 @@ struct RepositoryDossierView: View {
     let dossier: RepositoryDossier
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(AuthenticationService.self) private var authService
 
     /// Controls inline navigation bar title visibility — true once the scroll-view title is off screen.
     @State private var showNavTitle = false
+
+    /// Merged PR counts per weekday for the current calendar week, loaded asynchronously.
+    @State private var mergedByDay: [RepositoryDossier.DailyCount] = []
 
     // MARK: - Body
 
@@ -186,6 +190,9 @@ struct RepositoryDossierView: View {
                     .font(.headline)
                     .opacity(showNavTitle ? 1 : 0)
             }
+        }
+        .task {
+            await loadMergedByDay()
         }
     }
 
@@ -355,7 +362,7 @@ struct RepositoryDossierView: View {
                 }
             }
             prMetaStrip
-            if !dossier.mergedByDay.isEmpty {
+            if !mergedByDay.isEmpty {
                 DossierCardView {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .firstTextBaseline) {
@@ -365,7 +372,7 @@ struct RepositoryDossierView: View {
                                 .font(BriefingFont.kpiSupporting)
                                 .foregroundStyle(BriefingColor.ink)
                         }
-                        prBarChart(days: dossier.mergedByDay)
+                        prBarChart(days: mergedByDay)
                     }
                 }
             }
@@ -463,6 +470,44 @@ struct RepositoryDossierView: View {
     private func loginInitials(_ login: String) -> String {
         let parts = login.split(separator: "-").map { String($0.prefix(1)).uppercased() }
         return parts.count >= 2 ? parts.prefix(2).joined() : String(login.prefix(2)).uppercased()
+    }
+
+    // MARK: - Data Loading
+
+    /// Fetches merged PRs for this repository during the current calendar week (Sun–Sat, UTC)
+    /// and populates `mergedByDay` with per-weekday counts.
+    private func loadMergedByDay() async {
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+        let today = Date()
+        guard let weekInterval = utcCalendar.dateInterval(of: .weekOfYear, for: today) else { return }
+        let weekStart = weekInterval.start
+        let weekEnd = min(today, weekInterval.end.addingTimeInterval(-1))
+
+        let service = MergedPRReportService(
+            graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
+        )
+
+        do {
+            let byRepo = try await service.fetchMergedPRs(
+                for: [(owner: dossier.owner, name: dossier.name)],
+                from: weekStart,
+                to: weekEnd
+            )
+            let allPRs = byRepo.values.flatMap { $0 }
+            let dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+            var counts = [Int](repeating: 0, count: 7)
+            for pr in allPRs {
+                // weekday: 1 = Sunday, 2 = Monday, …, 7 = Saturday
+                let weekday = utcCalendar.component(.weekday, from: pr.mergedAt) - 1
+                if weekday >= 0 && weekday < 7 { counts[weekday] += 1 }
+            }
+            mergedByDay = zip(dayLabels, counts).map { label, count in
+                RepositoryDossier.DailyCount(label: label, count: count)
+            }
+        } catch {
+            // Leave mergedByDay empty; chart stays hidden on error.
+        }
     }
 
     // MARK: - Card Title
