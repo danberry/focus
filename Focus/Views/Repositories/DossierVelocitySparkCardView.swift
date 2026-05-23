@@ -43,7 +43,7 @@ struct DossierVelocitySparkCardView: View {
     /// Header row: period label on the left, percentage-change badge on the right.
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("VELOCITY · 26W")
+            Text("VELOCITY")
                 .font(BriefingFont.eyebrow)
                 .textCase(.uppercase)
                 .foregroundStyle(BriefingColor.ink3)
