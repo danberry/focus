@@ -68,7 +68,11 @@ struct FocusApp: App {
 
                 // Remove any duplicate records created by CloudKit sync before syncing.
                 let context = ModelContext(modelContainer)
+                deduplicateSavedOrganizations(in: context)
                 deduplicateSavedRepositories(in: context)
+                deduplicateDisciplines(in: context)
+                deduplicateJobTitles(in: context)
+                deduplicateDepartments(in: context)
                 deduplicateTeams(in: context)
                 deduplicateMembers(in: context)
 
@@ -215,6 +219,129 @@ private func memberRichness(_ member: Member) -> Int {
     (member.contributions?.count ?? 0) + (member.dailyContributions?.count ?? 0)
 }
 
+/// Removes duplicate ``SavedOrganization`` records that share the same GitHub ID.
+///
+/// Departments and teams from duplicates are re-assigned to the canonical record before
+/// deletion to prevent cascade data loss.
+@MainActor
+private func deduplicateSavedOrganizations(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<SavedOrganization>()) else { return }
+
+    var groups: [String: [SavedOrganization]] = [:]
+    for org in all {
+        groups[org.githubId, default: []].append(org)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted {
+            ($0.departments?.count ?? 0) + ($0.teams?.count ?? 0) >
+            ($1.departments?.count ?? 0) + ($1.teams?.count ?? 0)
+        }
+        let canonical = ranked[0]
+        for duplicate in ranked.dropFirst() {
+            for dept in duplicate.departments ?? [] { dept.organization = canonical }
+            for team in duplicate.teams ?? [] { team.organization = canonical }
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate organization record(s)")
+    }
+}
+
+/// Removes duplicate ``Discipline`` records that share the same name.
+///
+/// Job titles from duplicates are re-assigned to the canonical record before deletion
+/// to prevent cascade data loss.
+@MainActor
+private func deduplicateDisciplines(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<Discipline>()) else { return }
+
+    var groups: [String: [Discipline]] = [:]
+    for discipline in all {
+        groups[discipline.name, default: []].append(discipline)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { ($0.jobTitles?.count ?? 0) > ($1.jobTitles?.count ?? 0) }
+        let canonical = ranked[0]
+        for duplicate in ranked.dropFirst() {
+            for title in duplicate.jobTitles ?? [] { title.discipline = canonical }
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate discipline record(s)")
+    }
+}
+
+/// Removes duplicate ``JobTitle`` records that share the same name.
+///
+/// Members from duplicates are re-assigned to the canonical record before deletion.
+@MainActor
+private func deduplicateJobTitles(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<JobTitle>()) else { return }
+
+    var groups: [String: [JobTitle]] = [:]
+    for title in all {
+        groups[title.name, default: []].append(title)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { ($0.members?.count ?? 0) > ($1.members?.count ?? 0) }
+        let canonical = ranked[0]
+        for duplicate in ranked.dropFirst() {
+            for member in duplicate.members ?? [] { member.jobTitle = canonical }
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate job title record(s)")
+    }
+}
+
+/// Removes duplicate ``Department`` records that share the same name.
+///
+/// Teams from duplicates are re-assigned to the canonical record before deletion.
+@MainActor
+private func deduplicateDepartments(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<Department>()) else { return }
+
+    var groups: [String: [Department]] = [:]
+    for dept in all {
+        groups[dept.name, default: []].append(dept)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { ($0.teams?.count ?? 0) > ($1.teams?.count ?? 0) }
+        let canonical = ranked[0]
+        for duplicate in ranked.dropFirst() {
+            if canonical.organization == nil { canonical.organization = duplicate.organization }
+            for team in duplicate.teams ?? [] { team.department = canonical }
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate department record(s)")
+    }
+}
+
 // MARK: - ModelContainer
 
 private let containerLogger = Logger(subsystem: "com.danberry.Focus", category: "ModelContainer")
@@ -249,6 +376,7 @@ private func makeFocusModelContainer() -> ModelContainer {
         PRWeeklySnapshot.self,
         RepositoryCommitDay.self,
         SavedRelease.self,
+        SavedBranch.self,
     ]
 
     // Prefer CloudKit-backed store so data roams across the user's devices.

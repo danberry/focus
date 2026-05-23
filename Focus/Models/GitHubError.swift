@@ -50,6 +50,9 @@ enum GitHubError: Error, Sendable {
 
     /// A repository with the same owner and name is already saved to the watch list.
     case repositoryAlreadySaved
+
+    /// An organization with the same login is already saved to the watch list.
+    case organizationAlreadySaved
 }
 
 // MARK: - LocalizedError
@@ -87,6 +90,8 @@ extension GitHubError: LocalizedError {
             "A device passcode is required to save your token securely. Set a passcode in Settings and try again."
         case .repositoryAlreadySaved:
             "This repository is already saved."
+        case .organizationAlreadySaved:
+            "This organization is already saved."
         }
     }
 }
