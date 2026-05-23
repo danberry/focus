@@ -790,6 +790,8 @@ extension RepositoryDossier {
         let firstWeek = weeklyTotals.first ?? 0
         let lastWeek = weeklyTotals.last ?? 0
         let percentageChange: Double? = firstWeek > 0 ? Double(lastWeek - firstWeek) / Double(firstWeek) : nil
+        print("[Velocity] weeklyTotals: \(weeklyTotals)")
+        print("[Velocity] firstWeek=\(firstWeek) lastWeek=\(lastWeek) percentageChange=\(percentageChange.map { String(format: "%.2f%%", $0 * 100) } ?? "nil (firstWeek is 0)")")
 
         let endDate = calendar.date(byAdding: .day, value: 26 * 7 - 1, to: startSunday) ?? today
 
