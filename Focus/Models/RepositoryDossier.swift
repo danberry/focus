@@ -758,11 +758,10 @@ extension RepositoryDossier {
             countByDate[midnight, default: 0] += day.commitCount
         }
 
-        let maxCount = countByDate.values.max() ?? 0
-        let totalCommits = countByDate.values.reduce(0, +)
-        let peakDate = countByDate.max(by: { $0.value < $1.value })?.key
-
-        var cells = [Int](repeating: 0, count: 7 * 26)
+        // First pass: collect only dates that fall within the 26-week grid.
+        // maxCount, totalCommits, and peakDate are scoped to the window so the
+        // meta strip and heatmap intensity always describe the same set of days.
+        var windowCountByDate: [Date: Int] = [:]
         var weeklyTotals = [Int](repeating: 0, count: 26)
 
         for (date, count) in countByDate {
@@ -770,15 +769,29 @@ extension RepositoryDossier {
             guard daysSinceStart >= 0 else { continue }
             let weekColumn = daysSinceStart / 7
             guard weekColumn < 26 else { continue }
-            // .weekday: 1 = Sunday, so row 0 maps to Sunday, row 6 to Saturday.
-            let weekdayRow = calendar.component(.weekday, from: date) - 1
-            cells[weekdayRow * 26 + weekColumn] = intensityBucket(count, max: maxCount)
+            windowCountByDate[date] = count
             weeklyTotals[weekColumn] += count
         }
 
-        let firstWeek = weeklyTotals.first ?? 0
-        let lastWeek = weeklyTotals.last ?? 0
-        let percentageChange: Double? = firstWeek > 0 ? Double(lastWeek - firstWeek) / Double(firstWeek) : nil
+        let maxCount = windowCountByDate.values.max() ?? 0
+        let totalCommits = windowCountByDate.values.reduce(0, +)
+        let peakDate = windowCountByDate.max(by: { $0.value < $1.value })?.key
+
+        // Second pass: fill cells now that the window-scoped max is known.
+        var cells = [Int](repeating: 0, count: 7 * 26)
+        for (date, count) in windowCountByDate {
+            let daysSinceStart = calendar.dateComponents([.day], from: startSunday, to: date).day!
+            let weekColumn = daysSinceStart / 7
+            // .weekday: 1 = Sunday, so row 0 maps to Sunday, row 6 to Saturday.
+            let weekdayRow = calendar.component(.weekday, from: date) - 1
+            cells[weekdayRow * 26 + weekColumn] = intensityBucket(count, max: maxCount)
+        }
+
+        // Compare 13-week aggregates for a stable trend signal; single-week
+        // comparison amplifies noise from sparse weeks at the window boundary.
+        let firstHalf = weeklyTotals.prefix(13).reduce(0, +)
+        let secondHalf = weeklyTotals.suffix(13).reduce(0, +)
+        let percentageChange: Double? = firstHalf > 0 ? Double(secondHalf - firstHalf) / Double(firstHalf) : nil
 
         let endDate = calendar.date(byAdding: .day, value: 26 * 7 - 1, to: startSunday) ?? today
 
