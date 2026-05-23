@@ -296,7 +296,7 @@ struct RepositoryDossierView: View {
     /// Renders a row inside the open-PR card.
     private func openPRRow(_ pr: RepositoryDossier.OpenPR) -> some View {
         HStack(spacing: 8) {
-            Text("#\(pr.id)")
+            Text("#\(pr.id, format: .number.grouping(.never))")
                 .font(BriefingFont.meta)
                 .foregroundStyle(BriefingColor.ink3)
             Text(pr.title)
