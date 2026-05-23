@@ -661,6 +661,7 @@ private struct DossierKPITileView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(isAlert ? BriefingColor.redBg : BriefingColor.paper, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(isAlert ? BriefingColor.red.opacity(0.25) : Color.primary.opacity(0.08), lineWidth: 1))
     }
 
     // MARK: - Helpers
