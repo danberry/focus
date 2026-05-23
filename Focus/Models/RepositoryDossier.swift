@@ -102,36 +102,31 @@ struct RepositoryDossier: Sendable {
                 id: 4821,
                 title: "Add idempotency keys to refund endpoint",
                 authorLogin: "jordan-m",
-                createdAt: Date(timeIntervalSinceNow: -3 * 86_400),
-                ciStatus: .passing
+                createdAt: Date(timeIntervalSinceNow: -3 * 86_400)
             ),
             OpenPR(
                 id: 4818,
                 title: "Switch webhook retries to exponential backoff",
                 authorLogin: "ana-s",
-                createdAt: Date(timeIntervalSinceNow: -5 * 86_400),
-                ciStatus: .failing
+                createdAt: Date(timeIntervalSinceNow: -5 * 86_400)
             ),
             OpenPR(
                 id: 4810,
                 title: "Drop legacy v1 charge serializer",
                 authorLogin: "rahul-k",
-                createdAt: Date(timeIntervalSinceNow: -8 * 86_400),
-                ciStatus: .passing
+                createdAt: Date(timeIntervalSinceNow: -8 * 86_400)
             ),
             OpenPR(
                 id: 4805,
                 title: "Bump postgres driver to 2.14",
                 authorLogin: "miguel-t",
-                createdAt: Date(timeIntervalSinceNow: -1 * 86_400),
-                ciStatus: .none
+                createdAt: Date(timeIntervalSinceNow: -1 * 86_400)
             ),
             OpenPR(
                 id: 4799,
                 title: "Document the dispute lifecycle in README",
                 authorLogin: "priya-s",
-                createdAt: Date(timeIntervalSinceNow: -12 * 86_400),
-                ciStatus: .passing
+                createdAt: Date(timeIntervalSinceNow: -12 * 86_400)
             )
         ],
         mergedByDay: [
@@ -279,18 +274,6 @@ extension RepositoryDossier {
         /// The time the pull request was created.
         let createdAt: Date
 
-        /// The current CI check status for the pull request.
-        let ciStatus: CIStatus
-
-        /// CI check status for an open pull request.
-        enum CIStatus: Sendable {
-            /// All required checks are passing.
-            case passing
-            /// At least one required check is failing.
-            case failing
-            /// No checks have reported (or none are configured).
-            case none
-        }
     }
 }
 
@@ -553,8 +536,7 @@ extension RepositoryDossier {
                 id: pr.number,
                 title: pr.title,
                 authorLogin: pr.authorLogin,
-                createdAt: pr.createdAt,
-                ciStatus: .none
+                createdAt: pr.createdAt
             )
         }
 
