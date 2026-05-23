@@ -41,29 +41,11 @@ struct RepositoryDossierView: View {
                         }
                     }
                     .gridCellColumns(2)
-                    DossierCardView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Velocity (12w)")
-                            if dossier.velocitySpark.weeklyMerged.isEmpty {
-                                emptyText
-                            } else {
-                                BriefingSparkBarView(values: normalized(dossier.velocitySpark.weeklyMerged.map(Double.init)))
-                                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                    Text("\(dossier.kpi.mergedThisWeek)")
-                                        .font(BriefingFont.kpiSupporting)
-                                        .foregroundStyle(BriefingColor.ink)
-                                    Text("this week")
-                                        .font(BriefingFont.meta)
-                                        .foregroundStyle(BriefingColor.ink3)
-                                    if let delta = dossier.kpi.mergedThisWeekDelta, delta != 0 {
-                                        Text(delta > 0 ? "+\(delta) vs yr ago" : "\(delta) vs yr ago")
-                                            .font(BriefingFont.meta)
-                                            .foregroundStyle(delta > 0 ? BriefingColor.green : BriefingColor.red)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    DossierVelocitySparkCardView(
+                        weeklyMerged: dossier.velocitySpark.weeklyMerged,
+                        mergedThisWeek: dossier.kpi.mergedThisWeek,
+                        mergedThisWeekDelta: dossier.kpi.mergedThisWeekDelta
+                    )
                 }
 
                 Divider()
@@ -550,7 +532,7 @@ private struct DossierSectionHeader: View {
 // MARK: - DossierCardView
 
 /// A reusable card container using the `BriefingTheme` fill and border for the given tone.
-private struct DossierCardView<Content: View>: View {
+struct DossierCardView<Content: View>: View {
 
     /// The semantic tone that drives fill and border colors.
     var tone: BriefingTone = .neutral
