@@ -196,7 +196,6 @@ struct RepositoryDossierView: View {
                 }
             }
         }
-        .background(BriefingColor.paper)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -320,7 +319,7 @@ struct RepositoryDossierView: View {
             let fmt = DateFormatter()
             fmt.dateFormat = "EEE MMM d"
             fmt.timeZone = TimeZone(identifier: "UTC")
-            parts.append("peak \(fmt.string(from: peak))")
+            parts.append("Peak \(fmt.string(from: peak))")
         }
         return Text(parts.joined(separator: " · "))
             .font(BriefingFont.meta)
@@ -332,7 +331,7 @@ struct RepositoryDossierView: View {
     private var activityCards: some View {
         DossierCardView {
             VStack(alignment: .leading, spacing: 8) {
-                cardTitle("Commit Heatmap")
+                cardTitle("Heatmap")
                 if dossier.activityHeatmap.cells.isEmpty {
                     emptyText
                 } else {
@@ -587,7 +586,7 @@ private struct DossierSectionHeader: View {
             Text("§ \(number)")
                 .font(BriefingFont.eyebrow)
                 .textCase(.uppercase)
-                .foregroundStyle(BriefingColor.red)
+                .foregroundStyle(.accent)
             Text(title)
                 .font(BriefingFont.sectionTitle)
                 .foregroundStyle(BriefingColor.ink)
@@ -721,7 +720,7 @@ private struct DossierHeatmapView: View {
                                 let intensity = index < cells.count ? cells[index] : 0
                                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                                     .fill(peakIndex == index
-                                        ? BriefingColor.green
+                                          ? .customBlue
                                         : BriefingColor.ink.opacity(opacity(for: intensity)))
                                     .frame(width: cellWidth, height: cellWidth)
                             }

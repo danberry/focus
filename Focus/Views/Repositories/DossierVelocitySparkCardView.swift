@@ -53,7 +53,9 @@ struct DossierVelocitySparkCardView: View {
                 let absPercent = Int((abs(pct) * 100).rounded())
                 Text("\(symbol) \(absPercent)%")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(pct >= 0 ? BriefingColor.green : BriefingColor.red)
+                    .foregroundStyle(
+                        pct >= 0 ? .customGreen : .customPurple
+                    )
             }
         }
     }
@@ -93,16 +95,11 @@ private struct VelocityAreaChartView: View {
                 )
             }
 
-            // Build a smooth line using cubic bezier with midpoint control points.
+            // Build a straight-segment line connecting each week's data point.
             var line = Path()
             line.move(to: point(at: 0))
             for i in 1..<n {
-                let p0 = point(at: i - 1)
-                let p1 = point(at: i)
-                let midX = (p0.x + p1.x) / 2
-                line.addCurve(to: p1,
-                              control1: CGPoint(x: midX, y: p0.y),
-                              control2: CGPoint(x: midX, y: p1.y))
+                line.addLine(to: point(at: i))
             }
 
             // Area fill below the line.
