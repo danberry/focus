@@ -286,7 +286,7 @@ struct RepositoryDossierView: View {
         let tiles: [(label: String, value: String, delta: Int?, footnote: String?, isAlert: Bool)] = [
             ("Merged",             "\(dossier.kpi.mergedThisWeek)",     dossier.kpi.mergedThisWeekDelta, nil,                                                                       false),
             ("Open PRs",         "\(dossier.kpi.openPRs)",             nil,                            nil,                                                                       false),
-("Security",         "\(dossier.kpi.securityAlerts)",      nil,                            dossier.kpi.criticalAlerts > 0 ? "\(dossier.kpi.criticalAlerts) critical" : nil, dossier.kpi.criticalAlerts > 0),
+("Security",         dossier.kpi.securityAlerts == 0 ? "0 🎉" : "\(dossier.kpi.securityAlerts)", nil, dossier.kpi.criticalAlerts > 0 ? "\(dossier.kpi.criticalAlerts) critical" : nil, dossier.kpi.criticalAlerts > 0),
             ("Contributors 30d", "\(dossier.kpi.contributors30d)",     nil,                            nil,                                                                        false),
         ]
         ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
