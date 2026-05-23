@@ -120,6 +120,12 @@ struct RepositoryDossier: Sendable {
         ),
         openPRs: [
             OpenPR(
+                id: 4805,
+                title: "Bump postgres driver to 2.14",
+                authorLogin: "miguel-t",
+                createdAt: Date(timeIntervalSinceNow: -1 * 86_400)
+            ),
+            OpenPR(
                 id: 4821,
                 title: "Add idempotency keys to refund endpoint",
                 authorLogin: "jordan-m",
@@ -138,35 +144,35 @@ struct RepositoryDossier: Sendable {
                 createdAt: Date(timeIntervalSinceNow: -8 * 86_400)
             ),
             OpenPR(
-                id: 4805,
-                title: "Bump postgres driver to 2.14",
-                authorLogin: "miguel-t",
-                createdAt: Date(timeIntervalSinceNow: -1 * 86_400)
-            ),
-            OpenPR(
                 id: 4799,
                 title: "Document the dispute lifecycle in README",
                 authorLogin: "priya-s",
                 createdAt: Date(timeIntervalSinceNow: -12 * 86_400)
+            ),
+            OpenPR(
+                id: 4778,
+                title: "Refactor billing receipt PDF generation",
+                authorLogin: "sasha-q",
+                createdAt: Date(timeIntervalSinceNow: -45 * 86_400)
             )
         ],
         mergedByDay: [
+            DailyCount(label: "Sun", count: 1),
             DailyCount(label: "Mon", count: 4),
             DailyCount(label: "Tue", count: 6),
             DailyCount(label: "Wed", count: 3),
             DailyCount(label: "Thu", count: 5),
             DailyCount(label: "Fri", count: 4),
-            DailyCount(label: "Sat", count: 1),
-            DailyCount(label: "Sun", count: 1)
+            DailyCount(label: "Sat", count: 1)
         ],
         ciRunsByDay: [
+            DailyCount(label: "Sun", count: 8),
             DailyCount(label: "Mon", count: 22),
             DailyCount(label: "Tue", count: 31),
             DailyCount(label: "Wed", count: 18),
             DailyCount(label: "Thu", count: 27),
             DailyCount(label: "Fri", count: 24),
-            DailyCount(label: "Sat", count: 12),
-            DailyCount(label: "Sun", count: 8)
+            DailyCount(label: "Sat", count: 12)
         ],
         contributors: [
             Contributor(login: "jordan-m", mergedPRs30d: 14, role: "Lead"),
@@ -583,7 +589,7 @@ extension RepositoryDossier {
         alertItems = items
 
         // Pull requests
-        let sortedPRs = (repository.openPullRequests ?? []).sorted { $0.createdAt < $1.createdAt }
+        let sortedPRs = (repository.openPullRequests ?? []).sorted { $0.createdAt > $1.createdAt }
         openPRs = sortedPRs.map { pr in
             OpenPR(
                 id: pr.number,
@@ -606,8 +612,8 @@ extension RepositoryDossier {
         }
 
         // KPI strip
-        let sevenDaysAgo = Date(timeIntervalSinceNow: -7 * 86_400)
-        let stalePRCount = sortedPRs.filter { $0.createdAt < sevenDaysAgo }.count
+        let thirtyDaysAgo = Date(timeIntervalSinceNow: -30 * 86_400)
+        let stalePRCount = sortedPRs.filter { $0.createdAt < thirtyDaysAgo }.count
         let velocity7d = (repository.velocityMetrics ?? []).first {
             $0.periodType == VelocityPeriod.sevenDays.rawValue
         }
