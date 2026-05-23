@@ -315,6 +315,7 @@ struct RepositoryDossierView: View {
         if let peak = heatmap.peakDate {
             let fmt = DateFormatter()
             fmt.dateFormat = "EEE MMM d"
+            fmt.timeZone = TimeZone(identifier: "UTC")
             parts.append("peak \(fmt.string(from: peak))")
         }
         return Text(parts.joined(separator: " · "))
@@ -715,13 +716,9 @@ private struct DossierHeatmapView: View {
                                 let index = row * columns + column
                                 let intensity = index < cells.count ? cells[index] : 0
                                 RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                    .fill(BriefingColor.ink.opacity(opacity(for: intensity)))
-                                    .overlay(
-                                        peakIndex == index
-                                            ? RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                                .strokeBorder(BriefingColor.green, lineWidth: 1.5)
-                                            : nil
-                                    )
+                                    .fill(peakIndex == index
+                                        ? BriefingColor.green
+                                        : BriefingColor.ink.opacity(opacity(for: intensity)))
                                     .frame(width: cellWidth, height: cellWidth)
                             }
                         }
@@ -763,6 +760,7 @@ private struct DossierHeatmapView: View {
     private func shortDate(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "MMM d"
+        fmt.timeZone = TimeZone(identifier: "UTC")
         return fmt.string(from: date)
     }
 
