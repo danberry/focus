@@ -17,7 +17,8 @@ struct BriefingSparkBarView: View {
     /// Color used to highlight the bar with the largest value. Defaults to green.
     var highlightColor: Color = .customGreen
 
-    private let maxHeight: CGFloat = 20
+    /// Maximum bar height in points. Defaults to `20` for compact KPI card use.
+    var maxHeight: CGFloat = 20
 
     // MARK: - Body
 
