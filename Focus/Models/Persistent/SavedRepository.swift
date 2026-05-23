@@ -41,8 +41,8 @@ final class SavedRepository {
     /// performance alerts in the weekly briefing.
     var isInMaintenance: Bool = false
 
-    /// Whether the repository is private on GitHub.
-    var isPrivate: Bool = false
+    /// The visibility of the repository on GitHub (`"PUBLIC"`, `"PRIVATE"`, or `"INTERNAL"`).
+    var visibility: String = "PUBLIC"
 
     // MARK: - Init
 

@@ -17,7 +17,7 @@ enum RepositoryQueries {
     /// - `$first: Int!` — number of repositories to return per page (required).
     /// - `$after: String` — pagination cursor; omit or pass `null` for the first page.
     ///
-    /// **Selected fields:** `id`, `name`, `nameWithOwner`, `description`, `isPrivate`,
+    /// **Selected fields:** `id`, `name`, `nameWithOwner`, `description`, `visibility`,
     /// `isFork`, `stargazerCount`, `forkCount`, `primaryLanguage.name`, `url`,
     /// `updatedAt`, `owner.login`, `owner.avatarUrl`.
     ///
@@ -35,7 +35,7 @@ enum RepositoryQueries {
                         name
                         nameWithOwner
                         description
-                        isPrivate
+                        visibility
                         isFork
                         stargazerCount
                         forkCount
@@ -59,7 +59,7 @@ enum RepositoryQueries {
     /// - `$owner: String!` — the repository owner's login (user or organization).
     /// - `$name: String!` — the repository name (not the full `owner/name` slug).
     ///
-    /// **Selected fields:** `id`, `name`, `nameWithOwner`, `description`, `isPrivate`,
+    /// **Selected fields:** `id`, `name`, `nameWithOwner`, `description`, `visibility`,
     /// `isFork`, `stargazerCount`, `forkCount`, `primaryLanguage.name`, `url`,
     /// `updatedAt`, `owner.login`, `owner.avatarUrl`.
     ///
@@ -72,7 +72,7 @@ enum RepositoryQueries {
                 name
                 nameWithOwner
                 description
-                isPrivate
+                visibility
                 isFork
                 stargazerCount
                 forkCount
@@ -175,7 +175,7 @@ enum RepositoryQueries {
     /// - `$after: String` — pagination cursor; omit or pass `null` for the first page.
     ///
     /// **Selected fields (per matching repository):** `id`, `name`, `nameWithOwner`,
-    /// `description`, `isPrivate`, `isFork`, `stargazerCount`, `forkCount`,
+    /// `description`, `visibility`, `isFork`, `stargazerCount`, `forkCount`,
     /// `primaryLanguage.name`, `url`, `updatedAt`, `owner.login`, `owner.avatarUrl`.
     ///
     /// **Pagination:** `pageInfo.endCursor` and `pageInfo.hasNextPage` are included
@@ -194,7 +194,7 @@ enum RepositoryQueries {
                             name
                             nameWithOwner
                             description
-                            isPrivate
+                            visibility
                             isFork
                             stargazerCount
                             forkCount

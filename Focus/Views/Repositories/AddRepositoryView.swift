@@ -160,7 +160,7 @@ struct AddRepositoryView: View {
                 primaryLanguage: repo.primaryLanguage?.name
             )
             saved.repositoryDescription = repo.description
-            saved.isPrivate = repo.isPrivate
+            saved.visibility = repo.visibility
             modelContext.insert(saved)
 
             await securityService.syncAllDependabotAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)

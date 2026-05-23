@@ -205,7 +205,7 @@ struct RepositoryDossierView: View {
     private var metaStrip: some View {
         let tokens: [String] = [
             dossier.department.map { $0.uppercased() },
-            dossier.isPrivate ? "PRIVATE" : "PUBLIC",
+            dossier.visibility,
             dossier.lastPushedAt.map { "LAST PUSH \(lastPushString(from: $0))" }
         ].compactMap { $0 }
 

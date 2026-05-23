@@ -24,8 +24,8 @@ struct RepositoryDossier: Sendable {
     /// The repository's short description as it appears on GitHub.
     let description: String
 
-    /// Whether the repository is private on GitHub.
-    let isPrivate: Bool
+    /// The visibility of the repository on GitHub (`"PUBLIC"`, `"PRIVATE"`, or `"INTERNAL"`).
+    let visibility: String
 
     /// The name of the department that owns this repository's team, or `nil` when not assigned.
     let department: String?
@@ -86,7 +86,7 @@ struct RepositoryDossier: Sendable {
         name: "payments-api",
         displayName: "Payments API",
         description: "Core payments service handling charges, refunds, and webhook delivery.",
-        isPrivate: true,
+        visibility: "PRIVATE",
         department: "Platform",
         lastPushedAt: Date(timeIntervalSinceNow: -14 * 60),
         defaultBranch: "main",
@@ -487,7 +487,7 @@ extension RepositoryDossier {
         name = repository.name
         displayName = repository.displayName
         description = repository.repositoryDescription ?? ""
-        isPrivate = repository.isPrivate
+        visibility = repository.visibility
         department = repository.team?.department?.name
         lastPushedAt = (repository.branches ?? []).map { $0.pushedAt }.max()
         defaultBranch = (repository.branches ?? []).first(where: { $0.isDefault })?.name ?? "main"
