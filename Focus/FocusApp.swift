@@ -66,9 +66,11 @@ struct FocusApp: App {
                 )
                 syncManager.scheduleNextSync()
 
-                // Remove any duplicate SavedRepository records before syncing.
+                // Remove any duplicate records created by CloudKit sync before syncing.
                 let context = ModelContext(modelContainer)
                 deduplicateSavedRepositories(in: context)
+                deduplicateTeams(in: context)
+                deduplicateMembers(in: context)
 
                 // Sync on fresh launch — onChange(of: scenePhase) only fires on transitions,
                 // so it misses the initial .active state when the app is cold-started.
@@ -134,6 +136,83 @@ private func repositoryRichness(_ repo: SavedRepository) -> Int {
                  + (repo.commitActivity?.count ?? 0)
                  + (repo.releases?.count ?? 0)
     return security + activity
+}
+
+/// Removes duplicate ``Team`` records that share the same name.
+///
+/// For each group of duplicates the record with the most members and repositories is kept.
+/// Members and repositories from duplicates are re-assigned to the canonical record before
+/// deletion so no cascade-delete removes live data.
+@MainActor
+private func deduplicateTeams(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<Team>()) else { return }
+
+    var groups: [String: [Team]] = [:]
+    for team in all {
+        groups[team.name, default: []].append(team)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { teamRichness($0) > teamRichness($1) }
+        let canonical = ranked[0]
+        for duplicate in ranked.dropFirst() {
+            if canonical.department == nil { canonical.department = duplicate.department }
+            if canonical.organization == nil { canonical.organization = duplicate.organization }
+            // Snapshot before iterating — relationship arrays mutate as we re-assign.
+            let membersToMove = duplicate.members ?? []
+            for member in membersToMove { member.team = canonical }
+            let reposToMove = duplicate.repositories ?? []
+            for repo in reposToMove { repo.team = canonical }
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate team record(s)")
+    }
+}
+
+/// Returns a richness score for a team based on the count of its related records.
+private func teamRichness(_ team: Team) -> Int {
+    (team.members?.count ?? 0) + (team.repositories?.count ?? 0)
+}
+
+/// Removes duplicate ``Member`` records that share the same team and identity key.
+///
+/// Identity is the member's GitHub login when available, falling back to their display name.
+/// For each group of duplicates the record with the most contribution data is kept.
+@MainActor
+private func deduplicateMembers(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<Member>()) else { return }
+
+    var groups: [String: [Member]] = [:]
+    for member in all {
+        let teamKey = member.team?.name ?? ""
+        let memberKey = member.githubLogin ?? member.name
+        groups["\(teamKey):\(memberKey)", default: []].append(member)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { memberRichness($0) > memberRichness($1) }
+        for duplicate in ranked.dropFirst() {
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate member record(s)")
+    }
+}
+
+/// Returns a richness score for a member based on the count of their contribution records.
+private func memberRichness(_ member: Member) -> Int {
+    (member.contributions?.count ?? 0) + (member.dailyContributions?.count ?? 0)
 }
 
 // MARK: - ModelContainer
