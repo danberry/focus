@@ -50,7 +50,7 @@ struct RepositoryDossierView: View {
                     Text("This Week at a Glance")
                         .font(BriefingFont.eyebrow)
                         .textCase(.uppercase)
-                        .foregroundStyle(BriefingColor.ink2)
+                        .foregroundStyle(BriefingColor.ink3)
                         .padding(.horizontal, 16)
                     kpiStrip
                 }
