@@ -540,6 +540,18 @@ extension RepositoryDossier {
             )
         }
 
+        // Contributors — open PR authors ranked by count, enriched with team roles
+        let memberByLogin: [String: Member] = Dictionary(
+            (repository.team?.members ?? []).compactMap { member in
+                guard let login = member.githubLogin else { return nil }
+                return (login, member)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let openPRAuthorCounts: [String: Int] = sortedPRs.reduce(into: [:]) { counts, pr in
+            counts[pr.authorLogin, default: 0] += 1
+        }
+
         // KPI strip
         let sevenDaysAgo = Date(timeIntervalSinceNow: -7 * 86_400)
         let stalePRCount = sortedPRs.filter { $0.createdAt < sevenDaysAgo }.count
@@ -558,7 +570,7 @@ extension RepositoryDossier {
             criticalAlerts: criticalCount,
             ciPassPct: 0,
             ciRuns7d: 0,
-            contributors30d: 0
+            contributors30d: openPRAuthorCounts.keys.count
         )
 
         // Activity heatmap — assembled from stored per-day commit counts
@@ -593,7 +605,15 @@ extension RepositoryDossier {
         }
         mergedByDay = []
         ciRunsByDay = []
-        contributors = []
+        contributors = openPRAuthorCounts
+            .map { login, count in
+                Contributor(
+                    login: login,
+                    mergedPRs30d: count,
+                    role: memberByLogin[login]?.jobTitle?.name
+                )
+            }
+            .sorted { $0.mergedPRs30d > $1.mergedPRs30d }
         hotFiles = []
         branches = []
 
