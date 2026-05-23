@@ -787,11 +787,11 @@ extension RepositoryDossier {
             cells[weekdayRow * 26 + weekColumn] = intensityBucket(count, max: maxCount)
         }
 
-        let firstWeek = weeklyTotals.first ?? 0
-        let lastWeek = weeklyTotals.last ?? 0
-        let percentageChange: Double? = firstWeek > 0 ? Double(lastWeek - firstWeek) / Double(firstWeek) : nil
+        let firstHalf = weeklyTotals.prefix(13).reduce(0, +)
+        let secondHalf = weeklyTotals.suffix(13).reduce(0, +)
+        let percentageChange: Double? = firstHalf > 0 ? Double(secondHalf - firstHalf) / Double(firstHalf) : nil
         print("[Velocity] weeklyTotals: \(weeklyTotals)")
-        print("[Velocity] firstWeek=\(firstWeek) lastWeek=\(lastWeek) percentageChange=\(percentageChange.map { String(format: "%.2f%%", $0 * 100) } ?? "nil (firstWeek is 0)")")
+        print("[Velocity] firstHalf=\(firstHalf) secondHalf=\(secondHalf) percentageChange=\(percentageChange.map { String(format: "%.2f%%", $0 * 100) } ?? "nil (firstHalf is 0)")")
 
         let endDate = calendar.date(byAdding: .day, value: 26 * 7 - 1, to: startSunday) ?? today
 
