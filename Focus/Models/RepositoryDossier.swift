@@ -787,11 +787,9 @@ extension RepositoryDossier {
             cells[weekdayRow * 26 + weekColumn] = intensityBucket(count, max: maxCount)
         }
 
-        // Compare 13-week aggregates for a stable trend signal; single-week
-        // comparison amplifies noise from sparse weeks at the window boundary.
-        let firstHalf = weeklyTotals.prefix(13).reduce(0, +)
-        let secondHalf = weeklyTotals.suffix(13).reduce(0, +)
-        let percentageChange: Double? = firstHalf > 0 ? Double(secondHalf - firstHalf) / Double(firstHalf) : nil
+        let firstWeek = weeklyTotals.first ?? 0
+        let lastWeek = weeklyTotals.last ?? 0
+        let percentageChange: Double? = firstWeek > 0 ? Double(lastWeek - firstWeek) / Double(firstWeek) : nil
 
         let endDate = calendar.date(byAdding: .day, value: 26 * 7 - 1, to: startSunday) ?? today
 
