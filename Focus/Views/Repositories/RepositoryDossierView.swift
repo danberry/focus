@@ -129,13 +129,13 @@ struct RepositoryDossierView: View {
                     .foregroundStyle(BriefingColor.rule)
 
                 section(title: "04 · Health & Security") {
-                    DossierCardView(tone: .red) {
+                    DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Security", tone: .red)
+                            cardTitle("Security")
                             HStack(alignment: .firstTextBaseline) {
                                 Text("\(dossier.security.total)")
                                     .font(BriefingFont.kpiSupporting)
-                                    .foregroundStyle(BriefingColor.red)
+                                    .foregroundStyle(BriefingColor.ink)
                                 Text("open alerts")
                                     .font(BriefingFont.meta)
                                     .foregroundStyle(BriefingColor.ink3)
