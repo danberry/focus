@@ -18,6 +18,9 @@ struct RepositoryDossier: Sendable {
     /// The repository name (without owner prefix).
     let name: String
 
+    /// The user-facing label for the repository, as entered in the app.
+    let displayName: String
+
     /// The repository's short description as it appears on GitHub.
     let description: String
 
@@ -72,6 +75,7 @@ struct RepositoryDossier: Sendable {
     static let preview: RepositoryDossier = RepositoryDossier(
         owner: "acme-co",
         name: "payments-api",
+        displayName: "Payments API",
         description: "Core payments service handling charges, refunds, and webhook delivery.",
         defaultBranch: "main",
         primaryLanguage: "Swift",
@@ -469,6 +473,7 @@ extension RepositoryDossier {
     init(repository: SavedRepository) {
         owner = repository.owner
         name = repository.name
+        displayName = repository.displayName
         description = ""
         defaultBranch = (repository.branches ?? []).first(where: { $0.isDefault })?.name ?? "main"
         primaryLanguage = repository.primaryLanguage

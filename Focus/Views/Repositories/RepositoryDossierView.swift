@@ -23,6 +23,21 @@ struct RepositoryDossierView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(dossier.displayName)
+                        .font(.system(size: 38, weight: .regular, design: .serif))
+                        .foregroundStyle(BriefingColor.ink)
+                    if !dossier.description.isEmpty {
+                        Text(dossier.description)
+                            .font(BriefingFont.body)
+                            .foregroundStyle(BriefingColor.ink2)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
+
                 kpiStrip
                     .padding(.vertical, 12)
 
@@ -170,8 +185,8 @@ struct RepositoryDossierView: View {
             }
         }
         .background(BriefingColor.paper)
-        .navigationTitle(dossier.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle(dossier.displayName)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Section Helpers
