@@ -24,6 +24,7 @@ struct RepositoryDossierView: View {
         ScrollView {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 4) {
+                    metaStrip
                     Text(dossier.displayName)
                         .font(.system(size: 38, weight: .regular, design: .serif))
                         .foregroundStyle(BriefingColor.ink)
@@ -187,6 +188,33 @@ struct RepositoryDossierView: View {
         .background(BriefingColor.paper)
         .navigationTitle(dossier.displayName)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: - Meta Strip
+
+    /// The single-line eyebrow above the repository name showing department, privacy, and last push.
+    private var metaStrip: some View {
+        let tokens: [String] = [
+            dossier.department.map { $0.uppercased() },
+            dossier.isPrivate ? "PRIVATE" : "PUBLIC",
+            dossier.lastPushedAt.map { "LAST PUSH \(lastPushString(from: $0))" }
+        ].compactMap { $0 }
+
+        return Text(tokens.joined(separator: " · "))
+            .font(BriefingFont.eyebrow)
+            .foregroundStyle(BriefingColor.ink3)
+    }
+
+    /// Returns a compact relative-time string for the given date, e.g. `"just now"`, `"14 min ago"`,
+    /// `"3h ago"`, or `"5d ago"`.
+    private func lastPushString(from date: Date) -> String {
+        let seconds = Int(Date().timeIntervalSince(date))
+        if seconds < 60 { return "just now" }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes) min ago" }
+        let hours = minutes / 60
+        if hours < 24 { return "\(hours)h ago" }
+        return "\(hours / 24)d ago"
     }
 
     // MARK: - Section Helpers

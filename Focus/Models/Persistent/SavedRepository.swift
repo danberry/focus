@@ -41,6 +41,9 @@ final class SavedRepository {
     /// performance alerts in the weekly briefing.
     var isInMaintenance: Bool = false
 
+    /// Whether the repository is private on GitHub.
+    var isPrivate: Bool = false
+
     // MARK: - Init
 
     /// Creates a new saved repository.
