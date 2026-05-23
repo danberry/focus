@@ -54,24 +54,28 @@ struct RepositoryDossierView: View {
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
 
-                section(number: "01", title: "Activity") {
-                    DossierCardView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Commit Heatmap")
-                            if dossier.activityHeatmap.cells.isEmpty {
-                                emptyText
-                            } else {
-                                DossierHeatmapView(cells: dossier.activityHeatmap.cells)
-                            }
+                // Activity section — custom layout to insert the meta strip between the header and the cards.
+                VStack(alignment: .leading, spacing: 12) {
+                    DossierSectionHeader(number: "01", title: "Activity")
+                    if dossier.activityHeatmap.totalCommits > 0 {
+                        activityMetaStrip
+                    }
+                    if sizeClass == .regular {
+                        LazyVGrid(
+                            columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
+                            alignment: .leading,
+                            spacing: 16
+                        ) {
+                            activityCards
+                        }
+                    } else {
+                        VStack(spacing: 12) {
+                            activityCards
                         }
                     }
-                    .gridCellColumns(2)
-                    DossierVelocitySparkCardView(
-                        weeklyMerged: dossier.velocitySpark.weeklyMerged,
-                        mergedThisWeek: dossier.kpi.mergedThisWeek,
-                        mergedThisWeekDelta: dossier.kpi.mergedThisWeekDelta
-                    )
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
 
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
@@ -299,6 +303,50 @@ struct RepositoryDossierView: View {
             )
             .frame(maxWidth: includeAll ? .infinity : nil)
         }
+    }
+
+    // MARK: - Activity Section
+
+    /// The meta strip shown between the Activity section header and the cards.
+    private var activityMetaStrip: some View {
+        let heatmap = dossier.activityHeatmap
+        var parts: [String] = ["Last 26 weeks"]
+        if heatmap.totalCommits > 0 {
+            parts.append("\(heatmap.totalCommits.formatted(.number)) commits")
+        }
+        if let peak = heatmap.peakDate {
+            let fmt = DateFormatter()
+            fmt.dateFormat = "EEE MMM d"
+            parts.append("peak \(fmt.string(from: peak))")
+        }
+        return Text(parts.joined(separator: " · "))
+            .font(BriefingFont.meta)
+            .foregroundStyle(BriefingColor.ink3)
+    }
+
+    /// The heatmap card and velocity card shown inside the Activity section grid.
+    @ViewBuilder
+    private var activityCards: some View {
+        DossierCardView {
+            VStack(alignment: .leading, spacing: 8) {
+                cardTitle("Commit Heatmap")
+                if dossier.activityHeatmap.cells.isEmpty {
+                    emptyText
+                } else {
+                    DossierHeatmapView(
+                        cells: dossier.activityHeatmap.cells,
+                        startDate: dossier.activityHeatmap.startDate,
+                        endDate: dossier.activityHeatmap.endDate
+                    )
+                }
+            }
+        }
+        .gridCellColumns(2)
+        DossierVelocitySparkCardView(
+            weeklyCommits: dossier.velocitySpark.weeklyCommits,
+            percentageChange: dossier.velocitySpark.percentageChange,
+            startDate: dossier.activityHeatmap.startDate
+        )
     }
 
     // MARK: - Card Title
@@ -631,11 +679,18 @@ private struct DossierKPITileView: View {
 
 // MARK: - DossierHeatmapView
 
-/// A grid of small colored rectangles forming a 26-week × 7-day commit heatmap.
+/// A grid of small colored rectangles forming a 26-week × 7-day commit heatmap,
+/// with optional start/end date labels along the bottom edge.
 private struct DossierHeatmapView: View {
 
     /// Intensity values in row-major order, each in the range `0`–`4`.
     let cells: [Int]
+
+    /// The date anchoring the left edge of the grid, displayed as a bottom-left label.
+    var startDate: Date? = nil
+
+    /// The date anchoring the right edge of the grid, displayed as a bottom-right label.
+    var endDate: Date? = nil
 
     /// The number of weekday rows in the grid.
     private let rows = 7
@@ -645,24 +700,48 @@ private struct DossierHeatmapView: View {
 
     /// The view's content.
     var body: some View {
-        GeometryReader { proxy in
-            let spacing: CGFloat = 2
-            let cellWidth = min(12, max(2, (proxy.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)))
-            VStack(spacing: spacing) {
-                ForEach(0..<rows, id: \.self) { row in
-                    HStack(spacing: spacing) {
-                        ForEach(0..<columns, id: \.self) { column in
-                            let index = row * columns + column
-                            let intensity = index < cells.count ? cells[index] : 0
-                            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                .fill(BriefingColor.ink.opacity(opacity(for: intensity)))
-                                .frame(width: cellWidth, height: cellWidth)
+        VStack(spacing: 6) {
+            GeometryReader { proxy in
+                let spacing: CGFloat = 2
+                let cellWidth = min(12, max(2, (proxy.size.width - spacing * CGFloat(columns - 1)) / CGFloat(columns)))
+                VStack(spacing: spacing) {
+                    ForEach(0..<rows, id: \.self) { row in
+                        HStack(spacing: spacing) {
+                            ForEach(0..<columns, id: \.self) { column in
+                                let index = row * columns + column
+                                let intensity = index < cells.count ? cells[index] : 0
+                                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                    .fill(BriefingColor.ink.opacity(opacity(for: intensity)))
+                                    .frame(width: cellWidth, height: cellWidth)
+                            }
                         }
                     }
                 }
             }
+            .frame(height: 7 * 12 + 6 * 2)
+
+            if startDate != nil || endDate != nil {
+                HStack {
+                    if let start = startDate {
+                        Text(shortDate(start))
+                            .font(BriefingFont.meta)
+                            .foregroundStyle(BriefingColor.ink3)
+                    }
+                    Spacer()
+                    if let end = endDate {
+                        Text(shortDate(end))
+                            .font(BriefingFont.meta)
+                            .foregroundStyle(BriefingColor.ink3)
+                    }
+                }
+            }
         }
-        .frame(height: 7 * 12 + 6 * 2)
+    }
+
+    private func shortDate(_ date: Date) -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMM d"
+        return fmt.string(from: date)
     }
 
     /// Maps an intensity bucket (`0`–`4`) to an opacity value.

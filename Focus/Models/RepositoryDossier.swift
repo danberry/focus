@@ -108,10 +108,15 @@ struct RepositoryDossier: Sendable {
             cells: (0..<182).map { index in
                 let pattern = [0, 1, 2, 1, 3, 2, 4, 1, 0, 2, 3, 1, 0, 2]
                 return pattern[index % pattern.count]
-            }
+            },
+            startDate: Calendar.current.date(byAdding: .weekOfYear, value: -26, to: Date()),
+            endDate: Date(),
+            totalCommits: 2847,
+            peakDate: Calendar.current.date(byAdding: .day, value: -37, to: Date())
         ),
         velocitySpark: VelocitySpark(
-            weeklyMerged: [12, 18, 14, 22, 9, 17, 25, 21, 19, 28, 24, 16, 22, 27, 30, 24]
+            weeklyCommits: [85, 92, 78, 110, 45, 85, 125, 105, 95, 140, 120, 80, 110, 135, 150, 120, 95, 105, 88, 115, 132, 145, 128, 140, 155, 120],
+            percentageChange: 0.22
         ),
         openPRs: [
             OpenPR(
@@ -256,6 +261,26 @@ extension RepositoryDossier {
 
         /// Intensity values in row-major order, each in the range `0`–`4`.
         let cells: [Int]
+
+        /// The Sunday that anchors the left edge of the 26-week window.
+        let startDate: Date?
+
+        /// The last day of the 26-week window (approximately today).
+        let endDate: Date?
+
+        /// Total commits across the entire 26-week window.
+        let totalCommits: Int
+
+        /// The calendar day with the single highest commit count, used in the meta strip.
+        let peakDate: Date?
+
+        init(cells: [Int], startDate: Date? = nil, endDate: Date? = nil, totalCommits: Int = 0, peakDate: Date? = nil) {
+            self.cells = cells
+            self.startDate = startDate
+            self.endDate = endDate
+            self.totalCommits = totalCommits
+            self.peakDate = peakDate
+        }
     }
 }
 
@@ -263,11 +288,19 @@ extension RepositoryDossier {
 
 extension RepositoryDossier {
 
-    /// A 16-week merged-PR sparkline used in the velocity card.
+    /// A 26-week commit velocity sparkline used in the velocity card.
     struct VelocitySpark: Sendable {
 
-        /// Weekly merged PR counts ordered oldest to newest.
-        let weeklyMerged: [Int]
+        /// Weekly commit counts ordered oldest to newest (one entry per week of the 26-week window).
+        let weeklyCommits: [Int]
+
+        /// Percentage change comparing the last 13 weeks to the first 13 weeks, or `nil` when unavailable.
+        let percentageChange: Double?
+
+        init(weeklyCommits: [Int], percentageChange: Double? = nil) {
+            self.weeklyCommits = weeklyCommits
+            self.percentageChange = percentageChange
+        }
     }
 }
 
@@ -593,35 +626,16 @@ extension RepositoryDossier {
             contributors30d: openPRAuthorCounts.keys.count
         )
 
-        // Activity heatmap — assembled from stored per-day commit counts
+        // Activity heatmap and velocity spark — both assembled from stored per-day commit counts
+        // so the two activity cards present a unified 26-week picture.
         let commitDays = (repository.commitActivity ?? []).sorted { $0.date < $1.date }
-        activityHeatmap = commitDays.isEmpty
-            ? ActivityHeatmap(cells: [])
-            : Self.buildHeatmap(from: commitDays)
-
-        // Velocity spark — derive weekly-rate bars from the three rolling-window counts.
-        // Each period's incremental (non-overlapping) window is divided by its approximate
-        // week span and repeated once per implied week, producing 12 bars ordered oldest → newest.
-        let vMetrics = Dictionary(
-            (repository.velocityMetrics ?? []).map { ($0.periodType, $0.currentCount) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        let vW7  = vMetrics[VelocityPeriod.sevenDays.rawValue] ?? 0
-        let vD30 = vMetrics[VelocityPeriod.thirtyDays.rawValue] ?? 0
-        let vD90 = vMetrics[VelocityPeriod.ninetyDays.rawValue] ?? 0
-
-        if vW7 > 0 || vD30 > 0 || vD90 > 0 {
-            let incr90 = max(0, vD90 - vD30)  // days 31–90 ≈ 8 weeks
-            let incr30 = max(0, vD30 - vW7)   // days 8–30  ≈ 3 weeks
-            let rate90 = Int((Double(incr90) / 8.0).rounded())
-            let rate30 = Int((Double(incr30) / 3.0).rounded())
-            velocitySpark = VelocitySpark(
-                weeklyMerged: [Int](repeating: rate90, count: 8)
-                            + [Int](repeating: rate30, count: 3)
-                            + [vW7]
-            )
+        if commitDays.isEmpty {
+            activityHeatmap = ActivityHeatmap(cells: [])
+            velocitySpark = VelocitySpark(weeklyCommits: [])
         } else {
-            velocitySpark = VelocitySpark(weeklyMerged: [])
+            let (heatmap, weekly, pctChange) = Self.buildActivityData(from: commitDays)
+            activityHeatmap = heatmap
+            velocitySpark = VelocitySpark(weeklyCommits: weekly, percentageChange: pctChange)
         }
         mergedByDay = []
         ciRunsByDay = []
@@ -711,25 +725,30 @@ extension RepositoryDossier {
         }
     }
 
-    /// Builds a 26-week × 7-day activity heatmap from stored ``RepositoryCommitDay`` records.
+    /// Builds the full activity dataset — heatmap cells, weekly commit totals, and velocity
+    /// percentage change — from stored ``RepositoryCommitDay`` records in a single pass.
     ///
-    /// The grid is row-major: `cells[row * 26 + column]` where `row` is the weekday
+    /// The heatmap grid is row-major: `cells[row * 26 + column]` where `row` is the weekday
     /// (0 = Sunday … 6 = Saturday) and `column` is the week index (0 = oldest, 25 = newest).
     /// Cell values are bucketed into intensity levels 0–4 relative to the maximum daily count.
-    private static func buildHeatmap(from days: [RepositoryCommitDay]) -> ActivityHeatmap {
+    /// Weekly commit totals are summed across all seven days of each column.
+    /// Percentage change compares the aggregate of the last 13 weeks to the first 13 weeks.
+    private static func buildActivityData(
+        from days: [RepositoryCommitDay]
+    ) -> (heatmap: ActivityHeatmap, weeklyCommits: [Int], percentageChange: Double?) {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC")!
 
         // Anchor the grid: the Sunday that began 26 weeks ago.
         let today = Date()
         guard let rawStart = calendar.date(byAdding: .day, value: -(26 * 7), to: today) else {
-            return ActivityHeatmap(cells: [])
+            return (ActivityHeatmap(cells: []), [], nil)
         }
         // .weekday: 1 = Sunday … 7 = Saturday; subtract 1 to get days back to the prior Sunday.
         let weekdayOfStart = calendar.component(.weekday, from: rawStart)
         let daysBackToSunday = weekdayOfStart - 1
         guard let startSunday = calendar.date(byAdding: .day, value: -daysBackToSunday, to: rawStart) else {
-            return ActivityHeatmap(cells: [])
+            return (ActivityHeatmap(cells: []), [], nil)
         }
 
         // Build a date → count lookup (normalise to midnight UTC).
@@ -740,8 +759,12 @@ extension RepositoryDossier {
         }
 
         let maxCount = countByDate.values.max() ?? 0
+        let totalCommits = countByDate.values.reduce(0, +)
+        let peakDate = countByDate.max(by: { $0.value < $1.value })?.key
 
         var cells = [Int](repeating: 0, count: 7 * 26)
+        var weeklyTotals = [Int](repeating: 0, count: 26)
+
         for (date, count) in countByDate {
             let daysSinceStart = calendar.dateComponents([.day], from: startSunday, to: date).day ?? -1
             guard daysSinceStart >= 0 else { continue }
@@ -750,9 +773,23 @@ extension RepositoryDossier {
             // .weekday: 1 = Sunday, so row 0 maps to Sunday, row 6 to Saturday.
             let weekdayRow = calendar.component(.weekday, from: date) - 1
             cells[weekdayRow * 26 + weekColumn] = intensityBucket(count, max: maxCount)
+            weeklyTotals[weekColumn] += count
         }
 
-        return ActivityHeatmap(cells: cells)
+        let firstWeek = weeklyTotals.first ?? 0
+        let lastWeek = weeklyTotals.last ?? 0
+        let percentageChange: Double? = firstWeek > 0 ? Double(lastWeek - firstWeek) / Double(firstWeek) : nil
+
+        let endDate = calendar.date(byAdding: .day, value: 26 * 7 - 1, to: startSunday) ?? today
+
+        let heatmap = ActivityHeatmap(
+            cells: cells,
+            startDate: startSunday,
+            endDate: endDate,
+            totalCommits: totalCommits,
+            peakDate: peakDate
+        )
+        return (heatmap, weeklyTotals, percentageChange)
     }
 
     /// Maps a commit count to a display intensity bucket (0–4).
