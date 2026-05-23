@@ -32,10 +32,8 @@ struct RepositoryDossierView: View {
                     Text(dossier.displayName)
                         .font(.system(size: 38, weight: .regular, design: .serif))
                         .foregroundStyle(BriefingColor.ink)
-                        .onScrollVisibilityChange(threshold: 1) { isVisible in
-                            withAnimation(.easeInOut(duration: 0.15)) {
-                                showNavTitle = !isVisible
-                            }
+                        .onScrollVisibilityChange(threshold: 0.1) { isVisible in
+                            showNavTitle = !isVisible
                         }
                     if !dossier.description.isEmpty {
                         Text(dossier.description)

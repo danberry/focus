@@ -59,7 +59,7 @@ struct ContentView: View {
         NavigationStack {
             List {
                 ForEach(filteredRepositories) { repo in
-                    NavigationLink(destination: RepositoryDossierView(dossier: RepositoryDossier(repository: repo))) {
+                    NavigationLink(value: repo) {
                         SavedRepositoryRow(repository: repo)
                     }
                     .contextMenu {
@@ -127,6 +127,15 @@ struct ContentView: View {
                         ContentUnavailableView.search(text: searchText)
                     }
                 }
+            }
+            .navigationDestination(
+                for: SavedRepository.self
+            ) { repo in
+                RepositoryDossierView(
+                    dossier: RepositoryDossier(
+                        repository: repo
+                    )
+                )
             }
             .navigationDestination(item: $detailRepository) { repo in
                 RepositoryDetailView(repository: repo)
