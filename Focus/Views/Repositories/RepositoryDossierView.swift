@@ -214,8 +214,8 @@ struct RepositoryDossierView: View {
 
     // MARK: - KPI Strip
 
-    /// KPI strip: six tiles filling the full width on regular-width displays on a dark charcoal
-    /// strip; a horizontally scrolling row of fixed-width tiles on compact displays.
+    /// KPI strip: tiles filling the full width on regular-width displays on a dark charcoal
+    /// strip; a 2×2 grid on compact (iPhone) displays.
     @ViewBuilder
     private var kpiStrip: some View {
         if sizeClass == .regular {
@@ -226,20 +226,18 @@ struct RepositoryDossierView: View {
             .padding(.vertical, 4)
             .background(.gray100)
         } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    kpiTiles(includeAll: false)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 0) {
+                kpiTiles(includeAll: true, showDividers: false)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
             .background(.gray100)
         }
     }
 
     /// The KPI tiles, with thin dividers injected between them on regular width.
     @ViewBuilder
-    private func kpiTiles(includeAll: Bool) -> some View {
+    private func kpiTiles(includeAll: Bool, showDividers: Bool = true) -> some View {
         let tiles: [(label: String, value: String, delta: Int?, footnote: String?, isAlert: Bool)] = [
             ("Merged",             "\(dossier.kpi.mergedThisWeek)",     dossier.kpi.mergedThisWeekDelta, nil,                                                                       false),
             ("Open PRs",         "\(dossier.kpi.openPRs)",             nil,                            nil,                                                                       false),
@@ -247,7 +245,7 @@ struct RepositoryDossierView: View {
             ("Contributors 30d", "\(dossier.kpi.contributors30d)",     nil,                            nil,                                                                        false),
         ]
         ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
-            if index > 0 {
+            if showDividers && index > 0 {
                 Divider()
                     .frame(maxWidth: 1, maxHeight: .infinity)
                     .background(.gray400)
