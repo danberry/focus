@@ -366,10 +366,10 @@ struct RepositoryDossierView: View {
                 DossierCardView {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .firstTextBaseline) {
-                            cardTitle("Merged · This Week")
+                            cardTitle("Merged")
                             Spacer()
                             Text("\(dossier.kpi.mergedThisWeek)")
-                                .font(BriefingFont.kpiSupporting)
+                                .font(BriefingFont.eyebrow)
                                 .foregroundStyle(BriefingColor.ink)
                         }
                         prBarChart(days: mergedByDay)
@@ -402,26 +402,29 @@ struct RepositoryDossierView: View {
     private func prBarChart(days: [RepositoryDossier.DailyCount]) -> some View {
         let maxCount = days.map { $0.count }.max() ?? 1
         VStack(spacing: 6) {
-            HStack(alignment: .bottom, spacing: 0) {
+            HStack(alignment: .bottom, spacing: 5) {
                 ForEach(days) { day in
                     let barH: CGFloat = maxCount > 0 && day.count > 0
                         ? max(4, CGFloat(day.count) / CGFloat(maxCount) * 72)
                         : 0
                     let isMax = day.count > 0 && day.count == maxCount
                     VStack(spacing: 4) {
+                        Text("\(day.count)")
+                            .font(BriefingFont.meta)
+                            .foregroundStyle(BriefingColor.ink3)
                         if day.count > 0 {
-                            Text("\(day.count)")
-                                .font(BriefingFont.meta)
-                                .foregroundStyle(BriefingColor.ink3)
                             RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(isMax ? BriefingColor.ink : BriefingColor.ink.opacity(0.25))
+                                .fill(
+                                    isMax ? .customBlue : BriefingColor.ink
+                                        .opacity(0.25)
+                                )
                                 .frame(height: barH)
                         }
                     }
                     .frame(maxWidth: .infinity)
                 }
             }
-            HStack(spacing: 0) {
+            HStack(spacing: 5) {
                 ForEach(days) { day in
                     Text(day.label)
                         .font(BriefingFont.meta)
