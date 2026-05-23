@@ -440,30 +440,34 @@ struct RepositoryDossierView: View {
     private func prCard(_ pr: RepositoryDossier.OpenPR) -> some View {
         let ageDays = Int(Date().timeIntervalSince(pr.createdAt) / 86_400)
         let isStale = ageDays >= 30
-        DossierCardView(tone: isStale ? .red : .neutral) {
+        DossierCardView(tone: .neutral) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("#\(pr.id, format: .number.grouping(.never))")
                         .font(BriefingFont.meta)
-                        .foregroundStyle(isStale ? BriefingColor.red : BriefingColor.ink3)
+                        .foregroundStyle(isStale ? Color("customYellow") : BriefingColor.ink3)
                     Spacer()
                     Text(ageString(from: pr.createdAt))
                         .font(BriefingFont.meta)
-                        .foregroundStyle(isStale ? BriefingColor.red : BriefingColor.ink3)
+                        .foregroundStyle(isStale ? Color("customYellow") : BriefingColor.ink3)
                 }
-                Text(pr.title)
-                    .font(BriefingFont.body)
-                    .foregroundStyle(BriefingColor.ink)
-                    .lineLimit(2)
                 HStack(spacing: 8) {
-                    Text(loginInitials(pr.authorLogin))
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(BriefingColor.ink2)
-                        .frame(width: 22, height: 22)
-                        .background(BriefingColor.paper3, in: Circle())
-                    Text(isStale ? "stale" : "open")
-                        .font(BriefingFont.meta)
-                        .foregroundStyle(isStale ? BriefingColor.red : BriefingColor.ink3)
+                    AsyncImage(url: URL(string: "https://github.com/\(pr.authorLogin).png?size=44")) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Text(loginInitials(pr.authorLogin))
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(BriefingColor.ink2)
+                    }
+                    .frame(width: 22, height: 22)
+                    .background(BriefingColor.paper3, in: Circle())
+                    .clipShape(Circle())
+                    Text(pr.title)
+                        .font(BriefingFont.body)
+                        .foregroundStyle(BriefingColor.ink)
+                        .lineLimit(2)
                 }
             }
         }
