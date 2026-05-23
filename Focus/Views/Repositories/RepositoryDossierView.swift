@@ -46,8 +46,15 @@ struct RepositoryDossierView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 16)
 
-                kpiStrip
-                    .padding(.vertical, 12)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("This Week at a Glance")
+                        .font(BriefingFont.eyebrow)
+                        .textCase(.uppercase)
+                        .foregroundStyle(BriefingColor.ink2)
+                        .padding(.horizontal, 16)
+                    kpiStrip
+                }
+                .padding(.vertical, 12)
 
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
