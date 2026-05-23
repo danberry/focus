@@ -311,28 +311,7 @@ struct RepositoryDossierView: View {
             Text(ageString(from: pr.createdAt))
                 .font(BriefingFont.meta)
                 .foregroundStyle(BriefingColor.ink3)
-            ciChip(pr.ciStatus)
         }
-    }
-
-    /// A small colored chip representing CI status.
-    private func ciChip(_ status: RepositoryDossier.OpenPR.CIStatus) -> some View {
-        let symbol: String
-        let color: Color
-        switch status {
-        case .passing:
-            symbol = "checkmark.circle.fill"
-            color = BriefingColor.green
-        case .failing:
-            symbol = "xmark.octagon.fill"
-            color = BriefingColor.red
-        case .none:
-            symbol = "circle.dashed"
-            color = BriefingColor.ink3
-        }
-        return Image(systemName: symbol)
-            .font(BriefingFont.meta)
-            .foregroundStyle(color)
     }
 
     /// Renders a row inside the contributors card.
