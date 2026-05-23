@@ -25,6 +25,7 @@ struct RepositoryDossierView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 4) {
                     metaStrip
+                        .padding(.bottom, 6)
                     Text(dossier.displayName)
                         .font(.system(size: 38, weight: .regular, design: .serif))
                         .foregroundStyle(BriefingColor.ink)
@@ -203,6 +204,7 @@ struct RepositoryDossierView: View {
         return Text(tokens.joined(separator: " · "))
             .font(BriefingFont.eyebrow)
             .foregroundStyle(BriefingColor.ink3)
+            .textCase(.uppercase)
     }
 
     /// Returns a compact relative-time string for the given date, e.g. `"just now"`, `"14 min ago"`,
