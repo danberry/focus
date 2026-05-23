@@ -268,14 +268,12 @@ struct RepositoryDossierView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(BriefingColor.paper2)
         } else {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 kpiTiles(includeAll: true, showDividers: false)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(BriefingColor.paper2)
         }
     }
 
