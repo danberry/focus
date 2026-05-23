@@ -45,7 +45,7 @@ struct RepositoryDossierView: View {
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
 
-                section(title: "01 · Activity") {
+                section(number: "01", title: "Activity") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
                             cardTitle("Commit Heatmap")
@@ -67,7 +67,7 @@ struct RepositoryDossierView: View {
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
 
-                section(title: "02 · Pull Requests") {
+                section(number: "02", title: "Pull Requests") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
                             cardTitle("Open PRs")
@@ -96,7 +96,7 @@ struct RepositoryDossierView: View {
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
 
-                section(title: "03 · People") {
+                section(number: "03", title: "People") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
                             cardTitle("Contributors (30d)")
@@ -114,7 +114,7 @@ struct RepositoryDossierView: View {
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
 
-                section(title: "04 · Health & Security") {
+                section(number: "04", title: "Health & Security") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
                             cardTitle("Security")
@@ -157,7 +157,7 @@ struct RepositoryDossierView: View {
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
 
-                section(title: "05 · Branches & Releases") {
+                section(number: "05", title: "Branches & Releases") {
                     DossierCardView {
                         VStack(alignment: .leading, spacing: 8) {
                             cardTitle("Branches")
@@ -222,9 +222,9 @@ struct RepositoryDossierView: View {
     /// Builds a section composed of an eyebrow header and a card grid.
     /// On regular-width (iPad/desktop) displays cards in two columns; on compact in one.
     @ViewBuilder
-    private func section<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(number: String, title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            DossierSectionHeader(title: title)
+            DossierSectionHeader(number: number, title: title)
             if sizeClass == .regular {
                 LazyVGrid(
                     columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
@@ -507,18 +507,30 @@ struct RepositoryDossierView: View {
 
 // MARK: - DossierSectionHeader
 
-/// A monospaced eyebrow label used above each grouping of cards inside ``RepositoryDossierView``.
+/// The editorial-style eyebrow header rendered above each section inside ``RepositoryDossierView``.
+///
+/// Renders `§ {number}` in red followed by the section title in the standard ink color,
+/// matching the typographic treatment used in ``SectionHeaderView``.
 private struct DossierSectionHeader: View {
 
-    /// The header text.
+    /// The two-digit section number, e.g. `"01"`.
+    let number: String
+
+    /// The section title, e.g. `"Activity"`.
     let title: String
 
     /// The view's content.
     var body: some View {
-        Text(title)
-            .font(BriefingFont.eyebrow)
-            .textCase(.uppercase)
-            .foregroundStyle(BriefingColor.ink3)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text("§ \(number)")
+                .font(BriefingFont.eyebrow)
+                .textCase(.uppercase)
+                .foregroundStyle(BriefingColor.red)
+            Text(title)
+                .font(BriefingFont.eyebrow)
+                .textCase(.uppercase)
+                .foregroundStyle(BriefingColor.ink3)
+        }
     }
 }
 
