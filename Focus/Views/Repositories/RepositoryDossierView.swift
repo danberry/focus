@@ -85,31 +85,7 @@ struct RepositoryDossierView: View {
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
 
-                section(number: "02", title: "Pull Requests") {
-                    DossierCardView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Open PRs")
-                            if dossier.openPRs.isEmpty {
-                                emptyText
-                            } else {
-                                ForEach(dossier.openPRs.prefix(5)) { pr in
-                                    openPRRow(pr)
-                                }
-                            }
-                        }
-                    }
-                    DossierCardView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Merged by Day")
-                            if dossier.mergedByDay.isEmpty {
-                                emptyText
-                            } else {
-                                BriefingSparkBarView(values: normalized(dossier.mergedByDay.map { Double($0.count) }))
-                                weekdayLabels(dossier.mergedByDay)
-                            }
-                        }
-                    }
-                }
+                pullRequestsSection
 
                 Divider()
                     .foregroundStyle(BriefingColor.rule)
@@ -359,6 +335,136 @@ struct RepositoryDossierView: View {
         )
     }
 
+    // MARK: - Pull Requests Section
+
+    /// The full Pull Requests dossier section: header with "See all" link, meta strip, bar chart, and PR cards.
+    private var pullRequestsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                DossierSectionHeader(number: "02", title: "Pull Requests")
+                Spacer()
+                NavigationLink(
+                    destination: DossierAllOpenPRsView(
+                        openPRs: dossier.openPRs,
+                        repoDisplayName: dossier.displayName
+                    )
+                ) {
+                    Text("See all →")
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(.accent)
+                }
+            }
+            prMetaStrip
+            if !dossier.mergedByDay.isEmpty {
+                DossierCardView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .firstTextBaseline) {
+                            cardTitle("Merged · This Week")
+                            Spacer()
+                            Text("\(dossier.kpi.mergedThisWeek)")
+                                .font(BriefingFont.kpiSupporting)
+                                .foregroundStyle(BriefingColor.ink)
+                        }
+                        prBarChart(days: dossier.mergedByDay)
+                    }
+                }
+            }
+            if dossier.openPRs.isEmpty {
+                DossierCardView { emptyText }
+            } else {
+                ForEach(dossier.openPRs.prefix(6)) { pr in
+                    prCard(pr)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+    }
+
+    /// The meta strip for the Pull Requests section showing open, stale, and merged-this-week counts.
+    private var prMetaStrip: some View {
+        let thirtyDaysAgo = Date(timeIntervalSinceNow: -30 * 86_400)
+        let staleCount = dossier.openPRs.filter { $0.createdAt < thirtyDaysAgo }.count
+        return Text("\(dossier.openPRs.count) open · \(staleCount) stale · \(dossier.kpi.mergedThisWeek) merged this week")
+            .font(BriefingFont.meta)
+            .foregroundStyle(BriefingColor.ink3)
+    }
+
+    /// A labeled bar chart showing merged PR counts by weekday.
+    @ViewBuilder
+    private func prBarChart(days: [RepositoryDossier.DailyCount]) -> some View {
+        let maxCount = days.map { $0.count }.max() ?? 1
+        VStack(spacing: 6) {
+            HStack(alignment: .bottom, spacing: 0) {
+                ForEach(days) { day in
+                    let barH: CGFloat = maxCount > 0 && day.count > 0
+                        ? max(4, CGFloat(day.count) / CGFloat(maxCount) * 72)
+                        : 0
+                    let isMax = day.count > 0 && day.count == maxCount
+                    VStack(spacing: 4) {
+                        if day.count > 0 {
+                            Text("\(day.count)")
+                                .font(BriefingFont.meta)
+                                .foregroundStyle(BriefingColor.ink3)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                .fill(isMax ? BriefingColor.ink : BriefingColor.ink.opacity(0.25))
+                                .frame(height: barH)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            HStack(spacing: 0) {
+                ForEach(days) { day in
+                    Text(day.label)
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(BriefingColor.ink3)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    /// A card representing a single open pull request, with a red tone when stale (≥ 30 days old).
+    @ViewBuilder
+    private func prCard(_ pr: RepositoryDossier.OpenPR) -> some View {
+        let ageDays = Int(Date().timeIntervalSince(pr.createdAt) / 86_400)
+        let isStale = ageDays >= 30
+        DossierCardView(tone: isStale ? .red : .neutral) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("#\(pr.id, format: .number.grouping(.never))")
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(isStale ? BriefingColor.red : BriefingColor.ink3)
+                    Spacer()
+                    Text(ageString(from: pr.createdAt))
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(isStale ? BriefingColor.red : BriefingColor.ink3)
+                }
+                Text(pr.title)
+                    .font(BriefingFont.body)
+                    .foregroundStyle(BriefingColor.ink)
+                    .lineLimit(2)
+                HStack(spacing: 8) {
+                    Text(loginInitials(pr.authorLogin))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(BriefingColor.ink2)
+                        .frame(width: 22, height: 22)
+                        .background(BriefingColor.paper3, in: Circle())
+                    Text(isStale ? "stale" : "open")
+                        .font(BriefingFont.meta)
+                        .foregroundStyle(isStale ? BriefingColor.red : BriefingColor.ink3)
+                }
+            }
+        }
+    }
+
+    /// Derives two-letter initials from a GitHub login (e.g. `"jordan-m"` → `"JM"`).
+    private func loginInitials(_ login: String) -> String {
+        let parts = login.split(separator: "-").map { String($0.prefix(1)).uppercased() }
+        return parts.count >= 2 ? parts.prefix(2).joined() : String(login.prefix(2)).uppercased()
+    }
+
     // MARK: - Card Title
 
     /// An eyebrow-styled card section label.
@@ -370,27 +476,6 @@ struct RepositoryDossierView: View {
     }
 
     // MARK: - Row Builders
-
-    /// Renders a row inside the open-PR card.
-    private func openPRRow(_ pr: RepositoryDossier.OpenPR) -> some View {
-        HStack(spacing: 8) {
-            Text("#\(pr.id, format: .number.grouping(.never))")
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
-            Text(pr.title)
-                .font(BriefingFont.body)
-                .foregroundStyle(BriefingColor.ink)
-                .lineLimit(1)
-            Spacer(minLength: 4)
-            Text("@\(pr.authorLogin)")
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
-                .lineLimit(1)
-            Text(ageString(from: pr.createdAt))
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
-        }
-    }
 
     /// Renders a row inside the contributors card.
     private func contributorRow(_ contributor: RepositoryDossier.Contributor) -> some View {
