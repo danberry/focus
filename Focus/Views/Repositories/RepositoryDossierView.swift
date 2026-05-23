@@ -93,18 +93,6 @@ struct RepositoryDossierView: View {
                             }
                         }
                     }
-                    DossierCardView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Hot Files (30d)")
-                            if dossier.hotFiles.isEmpty {
-                                emptyText
-                            } else {
-                                ForEach(dossier.hotFiles.prefix(6)) { file in
-                                    hotFileRow(file)
-                                }
-                            }
-                        }
-                    }
                 }
 
                 Divider()
@@ -316,21 +304,6 @@ struct RepositoryDossierView: View {
         }
     }
 
-    /// Renders a row inside the hot-files card.
-    private func hotFileRow(_ file: RepositoryDossier.HotFile) -> some View {
-        HStack(spacing: 8) {
-            Text(fileName(from: file.path))
-                .font(BriefingFont.body)
-                .foregroundStyle(BriefingColor.ink)
-                .lineLimit(1)
-                .truncationMode(.head)
-            Spacer(minLength: 4)
-            Text("\(file.churns30d)")
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
-        }
-    }
-
     /// Renders a row inside the alerts card.
     private func alertRow(_ alert: RepositoryDossier.AlertItem) -> some View {
         HStack(spacing: 8) {
@@ -473,11 +446,6 @@ struct RepositoryDossierView: View {
         case .moderate: .yellow
         case .low: BriefingColor.ink3
         }
-    }
-
-    /// Extracts the trailing path component (file name) from a repository-relative path.
-    private func fileName(from path: String) -> String {
-        path.split(separator: "/").last.map(String.init) ?? path
     }
 
     /// Returns a compact "Nd" / "Nh" age label for the given timestamp.
