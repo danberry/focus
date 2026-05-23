@@ -42,6 +42,9 @@ struct SyncService: Sendable {
     /// The service used to sync branch data.
     private let branchService: BranchService
 
+    /// The service used to refresh repository metadata (description, primary language).
+    private let repositoryService: RepositoryService
+
     // MARK: - Init
 
     /// Creates a `SyncService` with the seven domain services it coordinates.
@@ -52,7 +55,8 @@ struct SyncService: Sendable {
         pullRequestService: PullRequestService,
         commitActivityService: CommitActivityService,
         releaseService: ReleaseService,
-        branchService: BranchService
+        branchService: BranchService,
+        repositoryService: RepositoryService
     ) {
         self.securityService = securityService
         self.codeownersService = codeownersService
@@ -61,6 +65,7 @@ struct SyncService: Sendable {
         self.commitActivityService = commitActivityService
         self.releaseService = releaseService
         self.branchService = branchService
+        self.repositoryService = repositoryService
     }
 
     // MARK: - Sync
@@ -147,17 +152,19 @@ struct SyncService: Sendable {
         async let commitActivity = commitActivityService.fetchCommitActivity(owner: owner, repo: name)
         async let releases = releaseService.fetchReleases(owner: owner, repo: name)
         async let branches = branchService.fetchBranches(owner: owner, repo: name)
+        async let repoMeta = try? repositoryService.fetchRepository(owner: owner, name: name)
 
-        let (dep, cs, ss, co, vel, prs, ca, rel, br) = await (
+        let (dep, cs, ss, co, vel, prs, ca, rel, br, meta) = await (
             dependabotAlerts, codeScanningAlerts, secretScanningAlerts,
-            codeownersEntries, velocityData, openPRs, commitActivity, releases, branches
+            codeownersEntries, velocityData, openPRs, commitActivity, releases, branches, repoMeta
         )
 
         return RepoSyncFetch(
             owner: owner, name: name,
             dependabotAlerts: dep, codeScanningAlerts: cs, secretScanningAlerts: ss,
             codeownersEntries: co, velocityData: vel, openPRs: prs, commitActivity: ca,
-            releases: rel, branches: br
+            releases: rel, branches: br,
+            repositoryDescription: meta?.description
         )
     }
 
@@ -194,6 +201,9 @@ struct SyncService: Sendable {
         commitActivityService.applyCommitActivity(fetch.commitActivity, to: repository, in: context)
         releaseService.applyReleases(fetch.releases, to: repository, in: context)
         branchService.applyBranches(fetch.branches, to: repository, in: context)
+        if let desc = fetch.repositoryDescription {
+            repository.repositoryDescription = desc
+        }
     }
 }
 
@@ -215,4 +225,5 @@ private struct RepoSyncFetch: Sendable {
     let commitActivity: [CommitActivityWeek]?
     let releases: [ReleaseData]?
     let branches: [BranchData]?
+    let repositoryDescription: String?
 }

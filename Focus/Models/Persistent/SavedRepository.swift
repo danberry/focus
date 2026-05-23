@@ -28,6 +28,9 @@ final class SavedRepository {
     /// The repository's primary programming language, or `nil` if GitHub reports none.
     var primaryLanguage: String?
 
+    /// The repository description from GitHub, or `nil` if none is set.
+    var repositoryDescription: String?
+
     /// The login of the GitHub organization that owns this repository, or `nil` if the owner is a user account.
     ///
     /// Stored as a string rather than a relationship to ``SavedOrganization`` because the

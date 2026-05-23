@@ -140,7 +140,8 @@ final class BackgroundSyncManager {
             pullRequestService: PullRequestService(graphQL: graphQL),
             commitActivityService: CommitActivityService(rest: rest),
             releaseService: ReleaseService(graphQL: graphQL),
-            branchService: BranchService(graphQL: graphQL)
+            branchService: BranchService(graphQL: graphQL),
+            repositoryService: RepositoryService(graphQL: graphQL)
         )
         await syncService.syncAll(in: context) { current, total in
             self.syncCurrent = current
