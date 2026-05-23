@@ -149,21 +149,15 @@ struct MergedPRsReportView: View {
 
     @ViewBuilder
     private var loadingView: some View {
-        switch selectedPeriod {
-        case .today, .yesterday:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        case .thisWeek, .lastWeek:
-            VStack(spacing: 12) {
-                ProgressView(value: Double(loadedRepoCount), total: Double(max(totalRepoCount, 1)))
-                    .frame(maxWidth: 240)
-                    .animation(.easeInOut(duration: 0.25), value: loadedRepoCount)
-                Text("\(loadedRepoCount) of \(totalRepoCount) repos")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 12) {
+            ProgressView(value: Double(loadedRepoCount), total: Double(max(totalRepoCount, 1)))
+                .frame(maxWidth: 240)
+                .animation(.easeInOut(duration: 0.25), value: loadedRepoCount)
+            Text("\(loadedRepoCount) of \(totalRepoCount) repos")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Date Subtitles
@@ -252,9 +246,17 @@ struct MergedPRsReportView: View {
 
             switch period {
             case .today:
-                result = try await service.fetchMergedPRs(for: repos, on: startOfToday())
+                result = try await fetchConcurrently(
+                    service: service, repos: repos,
+                    from: startOfToday(), to: startOfToday(),
+                    trackingProgressFor: period
+                )
             case .yesterday:
-                result = try await service.fetchMergedPRs(for: repos, on: startOfYesterday())
+                result = try await fetchConcurrently(
+                    service: service, repos: repos,
+                    from: startOfYesterday(), to: startOfYesterday(),
+                    trackingProgressFor: period
+                )
             case .thisWeek:
                 result = try await fetchConcurrently(
                     service: service, repos: repos,
