@@ -334,7 +334,8 @@ struct RepositoryDossierView: View {
                     DossierHeatmapView(
                         cells: dossier.activityHeatmap.cells,
                         startDate: dossier.activityHeatmap.startDate,
-                        endDate: dossier.activityHeatmap.endDate
+                        endDate: dossier.activityHeatmap.endDate,
+                        peakDate: dossier.activityHeatmap.peakDate
                     )
                 }
             }
@@ -691,6 +692,9 @@ private struct DossierHeatmapView: View {
     /// The date anchoring the right edge of the grid, displayed as a bottom-right label.
     var endDate: Date? = nil
 
+    /// The calendar day with the highest commit count; its cell receives a green ring.
+    var peakDate: Date? = nil
+
     /// The number of weekday rows in the grid.
     private let rows = 7
 
@@ -699,6 +703,7 @@ private struct DossierHeatmapView: View {
 
     /// The view's content.
     var body: some View {
+        let peakIndex = peakCellIndex()
         VStack(spacing: 6) {
             GeometryReader { proxy in
                 let spacing: CGFloat = 2
@@ -711,6 +716,12 @@ private struct DossierHeatmapView: View {
                                 let intensity = index < cells.count ? cells[index] : 0
                                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                                     .fill(BriefingColor.ink.opacity(opacity(for: intensity)))
+                                    .overlay(
+                                        peakIndex == index
+                                            ? RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                                .strokeBorder(BriefingColor.green, lineWidth: 1.5)
+                                            : nil
+                                    )
                                     .frame(width: cellWidth, height: cellWidth)
                             }
                         }
@@ -735,6 +746,18 @@ private struct DossierHeatmapView: View {
                 }
             }
         }
+    }
+
+    private func peakCellIndex() -> Int? {
+        guard let start = startDate, let peak = peakDate else { return nil }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        let days = cal.dateComponents([.day], from: start, to: peak).day ?? -1
+        guard days >= 0 else { return nil }
+        let col = days / 7
+        guard col < columns else { return nil }
+        let row = cal.component(.weekday, from: peak) - 1
+        return row * columns + col
     }
 
     private func shortDate(_ date: Date) -> String {
