@@ -55,9 +55,20 @@ struct DossierAllOpenPRsView: View {
             Text(pr.title)
                 .font(BriefingFont.body)
                 .foregroundStyle(BriefingColor.ink)
-            Text("@\(pr.authorLogin)")
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
+            HStack(spacing: 6) {
+                AsyncImage(url: URL(string: "https://github.com/\(pr.authorLogin).png?size=40")) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    BriefingColor.paper3
+                }
+                .frame(width: 20, height: 20)
+                .clipShape(Circle())
+                Text("@\(pr.authorLogin)")
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(BriefingColor.ink3)
+            }
         }
     }
 
