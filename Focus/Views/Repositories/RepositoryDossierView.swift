@@ -217,24 +217,23 @@ struct RepositoryDossierView: View {
 
     // MARK: - KPI Strip
 
-    /// KPI strip: tiles filling the full width on regular-width displays on a dark charcoal
-    /// strip; a 2×2 grid on compact (iPhone) displays.
+    /// KPI strip: tiles filling the full width on regular-width displays; a 2×2 grid on compact (iPhone) displays.
     @ViewBuilder
     private var kpiStrip: some View {
         if sizeClass == .regular {
-            HStack(spacing: 0) {
-                kpiTiles(includeAll: true)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
-            .background(.gray100)
-        } else {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 0) {
+            HStack(spacing: 8) {
                 kpiTiles(includeAll: true, showDividers: false)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 4)
-            .background(.gray100)
+            .padding(.vertical, 12)
+            .background(BriefingColor.paper2)
+        } else {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                kpiTiles(includeAll: true, showDividers: false)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(BriefingColor.paper2)
         }
     }
 
@@ -546,12 +545,12 @@ private struct DossierKPITileView: View {
             Text(label)
                 .font(BriefingFont.eyebrow)
                 .textCase(.uppercase)
-                .foregroundStyle(.gray700)
+                .foregroundStyle(isAlert ? BriefingColor.red2 : BriefingColor.ink3)
                 .lineLimit(1)
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
                     .font(BriefingFont.kpiSupporting)
-                    .foregroundStyle(isAlert ? BriefingColor.red : .white)
+                    .foregroundStyle(isAlert ? BriefingColor.red : BriefingColor.ink)
                 if let delta {
                     deltaBadge(delta)
                 }
@@ -559,13 +558,14 @@ private struct DossierKPITileView: View {
             if let footnote {
                 Text(footnote)
                     .font(BriefingFont.meta)
-                    .foregroundStyle(.gray700)
+                    .foregroundStyle(BriefingColor.ink3)
                     .lineLimit(1)
             }
         }
-        .frame(minWidth: 110, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(isAlert ? BriefingColor.redBg : BriefingColor.paper, in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Helpers
