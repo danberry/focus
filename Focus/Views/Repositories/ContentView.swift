@@ -49,8 +49,8 @@ struct ContentView: View {
     @State private var searchText = ""
     /// The active security alert filter applied to the repository list.
     @State private var activeFilter: SecurityAlertFilter = .all
-    /// The repository whose dossier sheet is currently being presented, or `nil` when no dossier is shown.
-    @State private var dossierRepository: SavedRepository?
+    /// The repository whose detail view is being pushed from the context menu, or `nil` when none is shown.
+    @State private var detailRepository: SavedRepository?
 
     // MARK: - Body
 
@@ -59,12 +59,12 @@ struct ContentView: View {
         NavigationStack {
             List {
                 ForEach(filteredRepositories) { repo in
-                    NavigationLink(destination: RepositoryDetailView(repository: repo)) {
+                    NavigationLink(destination: RepositoryDossierView(dossier: RepositoryDossier(repository: repo))) {
                         SavedRepositoryRow(repository: repo)
                     }
                     .contextMenu {
-                        Button("View Dossier", systemImage: "doc.text.magnifyingglass") {
-                            dossierRepository = repo
+                        Button("View Details", systemImage: "info.circle") {
+                            detailRepository = repo
                         }
                     }
                 }
@@ -128,15 +128,8 @@ struct ContentView: View {
                     }
                 }
             }
-            .fullScreenCover(item: $dossierRepository) { repo in
-                NavigationStack {
-                    RepositoryDossierView(dossier: RepositoryDossier(repository: repo))
-                        .toolbar {
-                            ToolbarItem(placement: .topBarTrailing) {
-                                Button("Done") { dossierRepository = nil }
-                            }
-                        }
-                }
+            .navigationDestination(item: $detailRepository) { repo in
+                RepositoryDetailView(repository: repo)
             }
             .sheet(isPresented: $isAddingRepository) {
                 AddRepositoryView(
