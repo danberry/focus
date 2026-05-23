@@ -19,8 +19,8 @@ struct GitHubRepository: Codable, Sendable, Hashable, Identifiable {
     /// A human-readable description of the repository, or `nil` if none is set.
     let description: String?
 
-    /// Whether the repository is private.
-    let isPrivate: Bool
+    /// The visibility of the repository (`"PUBLIC"`, `"PRIVATE"`, or `"INTERNAL"`).
+    let visibility: String
 
     /// Whether the repository is a fork of another repository.
     let isFork: Bool

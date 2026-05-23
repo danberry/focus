@@ -26,7 +26,7 @@ struct RepositoryServiceTests {
                         "name": "Hello-World",
                         "name_with_owner": "octocat/Hello-World",
                         "description": "My first repo",
-                        "is_private": false,
+                        "visibility": "PUBLIC",
                         "is_fork": false,
                         "stargazer_count": 1000,
                         "fork_count": 500,
@@ -44,7 +44,7 @@ struct RepositoryServiceTests {
         #expect(repo.name == "Hello-World")
         #expect(repo.stargazerCount == 1000)
         #expect(repo.primaryLanguage?.name == "Swift")
-        #expect(repo.isPrivate == false)
+        #expect(repo.visibility == "PUBLIC")
     }
 
     // MARK: - fetchViewerRepositories
@@ -62,7 +62,7 @@ struct RepositoryServiceTests {
                                     "name": "repo-a",
                                     "name_with_owner": "me/repo-a",
                                     "description": null,
-                                    "is_private": true,
+                                    "visibility": "PRIVATE",
                                     "is_fork": false,
                                     "stargazer_count": 0,
                                     "fork_count": 0,
