@@ -89,7 +89,7 @@ private struct VelocityAreaChartView: View {
             func point(at i: Int) -> CGPoint {
                 CGPoint(
                     x: size.width * CGFloat(i) / CGFloat(n - 1),
-                    y: chartBottom * CGFloat(1.0 - normalized[i])
+                    y: (chartBottom - 5) * CGFloat(1.0 - normalized[i])
                 )
             }
 
@@ -133,12 +133,14 @@ private struct VelocityAreaChartView: View {
 
     // MARK: - Helpers
 
-    /// Returns normalized (0–1) values after applying a 5-point centered moving average
-    /// to smooth out week-to-week jitter and surface the overall trend.
+    /// Returns normalized (0–1) values after applying a 5-point centered moving average,
+    /// using min-max scaling so the lowest value maps to 0 and the peak maps to 1.
     private func normalizedValues() -> [Double] {
         let smoothed = movingAverage(values.map(Double.init), window: 5)
-        guard let peak = smoothed.max(), peak > 0 else { return smoothed.map { _ in 0 } }
-        return smoothed.map { $0 / peak }
+        guard let minVal = smoothed.min(), let maxVal = smoothed.max(), maxVal > minVal else {
+            return smoothed.map { _ in 0.5 }
+        }
+        return smoothed.map { ($0 - minVal) / (maxVal - minVal) }
     }
 
     /// Applies a centered moving average with the given odd `window` size.
