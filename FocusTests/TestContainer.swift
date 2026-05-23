@@ -13,6 +13,7 @@ func makeTestContainer() throws -> ModelContainer {
     return try ModelContainer(
         for:
             SavedRepository.self,
+            SavedBranch.self,
             Team.self,
             Member.self,
             MemberContribution.self,

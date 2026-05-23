@@ -138,6 +138,33 @@ enum RepositoryQueries {
         }
         """
 
+    // MARK: - Branches
+
+    /// Fetches the 20 most recently updated branches for a repository.
+    ///
+    /// The response includes the default branch name and each branch's last commit date.
+    /// Branches with no `Commit` target (e.g. tags pointing to tree objects) are excluded
+    /// by the caller via `compactMap`.
+    static let repositoryBranches = """
+        query RepositoryBranches($owner: String!, $name: String!) {
+            repository(owner: $owner, name: $name) {
+                defaultBranchRef {
+                    name
+                }
+                refs(refPrefix: "refs/heads/", first: 20, orderBy: {field: TAG_COMMIT_DATE, direction: DESC}) {
+                    nodes {
+                        name
+                        target {
+                            ... on Commit {
+                                committedDate
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        """
+
     // MARK: - Search
 
     /// Searches GitHub repositories using the GitHub search syntax.

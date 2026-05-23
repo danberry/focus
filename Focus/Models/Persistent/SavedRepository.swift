@@ -113,6 +113,12 @@ final class SavedRepository {
     @Relationship(deleteRule: .cascade, inverse: \SavedRelease.repository)
     var releases: [SavedRelease]?
 
+    /// The branches for this repository, updated on each sync.
+    ///
+    /// Cascade-deleted when the repository is removed. Inverse of ``SavedBranch/repository``.
+    @Relationship(deleteRule: .cascade, inverse: \SavedBranch.repository)
+    var branches: [SavedBranch]?
+
     /// The team that owns this repository, or `nil` if no team has been assigned.
     ///
     /// Nullified when the team is removed. Inverse of ``Team/repositories``.
