@@ -199,8 +199,14 @@ struct RepositoryDossierView: View {
             }
         }
         .background(BriefingColor.paper)
-        .navigationTitle(showNavTitle ? dossier.displayName : "")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text(dossier.displayName)
+                    .font(.headline)
+                    .opacity(showNavTitle ? 1 : 0)
+            }
+        }
     }
 
     // MARK: - Meta Strip
