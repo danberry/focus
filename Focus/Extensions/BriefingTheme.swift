@@ -164,6 +164,9 @@ enum BriefingFont {
     /// 36pt serif — verdicts shown beside each section eyebrow.
     static let sectionVerdict: Font = .system(size: 36, weight: .medium, design: .serif)
 
+    /// 24pt serif — section titles inside detail views (e.g. dossier section headers).
+    static let sectionTitle: Font = .system(size: 24, weight: .medium, design: .serif)
+
     /// 64pt monospaced-digit with alternate 6 & 9 — hero KPI numbers.
     static let kpiHero: Font = kpiFont(size: 64)
 

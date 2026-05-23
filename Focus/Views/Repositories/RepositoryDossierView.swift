@@ -519,8 +519,8 @@ struct RepositoryDossierView: View {
 
 /// The editorial-style eyebrow header rendered above each section inside ``RepositoryDossierView``.
 ///
-/// Renders `§ {number}` in red followed by the section title in the standard ink color,
-/// matching the typographic treatment used in ``SectionHeaderView``.
+/// Renders `§ {number}` as a small monospaced eyebrow followed by the section title in the
+/// serif `sectionTitle` font, matching the typographic treatment used in ``SectionHeaderView``.
 private struct DossierSectionHeader: View {
 
     /// The two-digit section number, e.g. `"01"`.
@@ -537,9 +537,8 @@ private struct DossierSectionHeader: View {
                 .textCase(.uppercase)
                 .foregroundStyle(BriefingColor.red)
             Text(title)
-                .font(BriefingFont.eyebrow)
-                .textCase(.uppercase)
-                .foregroundStyle(BriefingColor.ink3)
+                .font(BriefingFont.sectionTitle)
+                .foregroundStyle(BriefingColor.ink)
         }
     }
 }
