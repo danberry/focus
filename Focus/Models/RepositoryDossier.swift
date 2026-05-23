@@ -474,7 +474,7 @@ extension RepositoryDossier {
         owner = repository.owner
         name = repository.name
         displayName = repository.displayName
-        description = ""
+        description = repository.repositoryDescription ?? ""
         defaultBranch = (repository.branches ?? []).first(where: { $0.isDefault })?.name ?? "main"
         primaryLanguage = repository.primaryLanguage
 

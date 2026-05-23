@@ -159,6 +159,7 @@ struct AddRepositoryView: View {
                 displayName: trimmedDisplayName,
                 primaryLanguage: repo.primaryLanguage?.name
             )
+            saved.repositoryDescription = repo.description
             modelContext.insert(saved)
 
             await securityService.syncAllDependabotAlerts(owner: trimmedOwner, repo: trimmedName, repository: saved, in: modelContext)
