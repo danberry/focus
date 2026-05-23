@@ -739,15 +739,15 @@ extension RepositoryDossier {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC")!
 
-        // Anchor the grid: the Sunday that began 26 weeks ago.
+        // Anchor the grid to the Sunday of the current week, then go back 25 weeks.
+        // This matches suffix(26) from the GitHub Stats API, which stores weeks from
+        // (this week's Sunday − 25×7) through the current (possibly incomplete) week.
+        // Going back 26×7 from today and snapping to Sunday produces an anchor that is
+        // one week earlier than the API data, leaving column 0 permanently empty.
         let today = Date()
-        guard let rawStart = calendar.date(byAdding: .day, value: -(26 * 7), to: today) else {
-            return (ActivityHeatmap(cells: []), [], nil)
-        }
-        // .weekday: 1 = Sunday … 7 = Saturday; subtract 1 to get days back to the prior Sunday.
-        let weekdayOfStart = calendar.component(.weekday, from: rawStart)
-        let daysBackToSunday = weekdayOfStart - 1
-        guard let startSunday = calendar.date(byAdding: .day, value: -daysBackToSunday, to: rawStart) else {
+        let weekdayOfToday = calendar.component(.weekday, from: today)
+        guard let thisSunday = calendar.date(byAdding: .day, value: -(weekdayOfToday - 1), to: today),
+              let startSunday = calendar.date(byAdding: .day, value: -(25 * 7), to: thisSunday) else {
             return (ActivityHeatmap(cells: []), [], nil)
         }
 
