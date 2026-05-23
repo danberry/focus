@@ -11,6 +11,8 @@ import SwiftData
 @Model
 final class Codeowner {
 
+    // TODO: Add #Unique<Codeowner>([\.handle, \.pathPattern, \.repository]) once pathPattern is made non-optional.
+
     // MARK: - Properties
 
     /// The GitHub login or team slug for this owner (e.g., `"octocat"` or `"org/team-name"`).

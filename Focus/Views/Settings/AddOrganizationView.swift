@@ -83,6 +83,14 @@ struct AddOrganizationView: View {
     private func save() async {
         let trimmedLogin = login.trimmingCharacters(in: .whitespaces)
 
+        let duplicateDescriptor = FetchDescriptor<SavedOrganization>(
+            predicate: #Predicate { $0.login == trimmedLogin }
+        )
+        if let existing = try? modelContext.fetch(duplicateDescriptor), !existing.isEmpty {
+            error = .organizationAlreadySaved
+            return
+        }
+
         isLoading = true
         error = nil
 
