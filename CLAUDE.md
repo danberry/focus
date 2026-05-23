@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+> [!CAUTION]
+> **`.claire` DOES NOT EXIST. The directory is `.claude`.**
+> Before every Read, Edit, Write, or Bash call that includes a path, verify it spells `.claude` — not `.claire`. This typo has caused repeated interruptions. There is no `.claire` directory anywhere in this project.
+
 ## Project Overview
 
 **focus** is an iOS/Swift application project. The repository is in early development.
