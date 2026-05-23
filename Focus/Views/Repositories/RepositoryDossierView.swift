@@ -17,6 +17,9 @@ struct RepositoryDossierView: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
+    /// Controls inline navigation bar title visibility — true once the scroll-view title is off screen.
+    @State private var showNavTitle = false
+
     // MARK: - Body
 
     /// The view's content.
@@ -28,6 +31,11 @@ struct RepositoryDossierView: View {
                     Text(dossier.displayName)
                         .font(.system(size: 38, weight: .regular, design: .serif))
                         .foregroundStyle(BriefingColor.ink)
+                        .onScrollVisibilityChange(threshold: 1) { isVisible in
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                showNavTitle = !isVisible
+                            }
+                        }
                     if !dossier.description.isEmpty {
                         Text(dossier.description)
                             .font(BriefingFont.body)
@@ -186,7 +194,7 @@ struct RepositoryDossierView: View {
             }
         }
         .background(BriefingColor.paper)
-        .navigationTitle(dossier.displayName)
+        .navigationTitle(showNavTitle ? dossier.displayName : "")
         .navigationBarTitleDisplayMode(.inline)
     }
 
