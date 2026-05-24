@@ -1,7 +1,5 @@
 import SwiftUI
 import SwiftData
-import OSLog
-import CloudKit
 
 // MARK: - FocusApp
 
@@ -48,17 +46,6 @@ struct FocusApp: App {
                 }
             }
             .task {
-                // Diagnose CloudKit account status on launch.
-                let status = try? await CKContainer.default().accountStatus()
-                switch status {
-                case .available:       print("[Focus] ☁️ iCloud account: available")
-                case .noAccount:       print("[Focus] ☁️ iCloud account: NO ACCOUNT signed in")
-                case .restricted:      print("[Focus] ☁️ iCloud account: restricted")
-                case .couldNotDetermine: print("[Focus] ☁️ iCloud account: could not determine")
-                case .temporarilyUnavailable: print("[Focus] ☁️ iCloud account: temporarily unavailable")
-                default:               print("[Focus] ☁️ iCloud account: unknown status \(String(describing: status))")
-                }
-
                 // Register the BGProcessingTask handler before the app finishes launching.
                 syncManager.setup(
                     modelContainer: modelContainer,
@@ -75,6 +62,10 @@ struct FocusApp: App {
                 deduplicateDepartments(in: context)
                 deduplicateTeams(in: context)
                 deduplicateMembers(in: context)
+                deduplicateDependabotAlerts(in: context)
+                deduplicateCodeScanningAlerts(in: context)
+                deduplicateSecretScanningAlerts(in: context)
+                deduplicateOpenPullRequests(in: context)
 
                 // Sync on fresh launch — onChange(of: scenePhase) only fires on transitions,
                 // so it misses the initial .active state when the app is cold-started.
@@ -342,17 +333,149 @@ private func deduplicateDepartments(in context: ModelContext) {
     }
 }
 
+/// Removes duplicate ``DependabotAlert`` records for the same repository and alert number.
+///
+/// CloudKit sync can materialise multiple copies of the same logical alert with different
+/// `PersistentIdentifier` values. For each duplicate group the record with the most populated
+/// fields (non-nil `fixedAt`, `dismissedAt`, etc.) is kept; the rest are deleted.
+@MainActor
+private func deduplicateDependabotAlerts(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<DependabotAlert>()) else { return }
+
+    var groups: [String: [DependabotAlert]] = [:]
+    for alert in all {
+        let repoKey = "\(alert.repository?.owner ?? "")/\(alert.repository?.name ?? "")"
+        groups["\(repoKey):\(alert.alertNumber)", default: []].append(alert)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { dependabotAlertRichness($0) > dependabotAlertRichness($1) }
+        for duplicate in ranked.dropFirst() {
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate Dependabot alert record(s)")
+    }
+}
+
+/// Returns a richness score for a Dependabot alert based on how many optional fields are populated.
+private func dependabotAlertRichness(_ alert: DependabotAlert) -> Int {
+    (alert.fixedAt != nil ? 1 : 0)
+    + (alert.dismissedAt != nil ? 1 : 0)
+    + (alert.autoDismissedAt != nil ? 1 : 0)
+    + (alert.cveId != nil ? 1 : 0)
+    + (alert.fixVersion != nil ? 1 : 0)
+}
+
+/// Removes duplicate ``CodeScanningAlert`` records for the same repository and alert number.
+///
+/// CloudKit sync can materialise multiple copies of the same logical alert. For each duplicate
+/// group the record with the most populated optional fields is kept; the rest are deleted.
+@MainActor
+private func deduplicateCodeScanningAlerts(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<CodeScanningAlert>()) else { return }
+
+    var groups: [String: [CodeScanningAlert]] = [:]
+    for alert in all {
+        let repoKey = "\(alert.repository?.owner ?? "")/\(alert.repository?.name ?? "")"
+        groups["\(repoKey):\(alert.alertNumber)", default: []].append(alert)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { codeScanningAlertRichness($0) > codeScanningAlertRichness($1) }
+        for duplicate in ranked.dropFirst() {
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate code scanning alert record(s)")
+    }
+}
+
+/// Returns a richness score for a code scanning alert based on how many optional fields are populated.
+private func codeScanningAlertRichness(_ alert: CodeScanningAlert) -> Int {
+    (alert.fixedAt != nil ? 1 : 0)
+    + (alert.dismissedAt != nil ? 1 : 0)
+    + (alert.locationPath != nil ? 1 : 0)
+    + (alert.messageText != nil ? 1 : 0)
+    + (alert.securitySeverityLevel != nil ? 1 : 0)
+}
+
+/// Removes duplicate ``SecretScanningAlert`` records for the same repository and alert number.
+///
+/// CloudKit sync can materialise multiple copies of the same logical alert. For each duplicate
+/// group the record with the most populated optional fields is kept; the rest are deleted.
+@MainActor
+private func deduplicateSecretScanningAlerts(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<SecretScanningAlert>()) else { return }
+
+    var groups: [String: [SecretScanningAlert]] = [:]
+    for alert in all {
+        let repoKey = "\(alert.repository?.owner ?? "")/\(alert.repository?.name ?? "")"
+        groups["\(repoKey):\(alert.alertNumber)", default: []].append(alert)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { secretScanningAlertRichness($0) > secretScanningAlertRichness($1) }
+        for duplicate in ranked.dropFirst() {
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate secret scanning alert record(s)")
+    }
+}
+
+/// Returns a richness score for a secret scanning alert based on how many optional fields are populated.
+private func secretScanningAlertRichness(_ alert: SecretScanningAlert) -> Int {
+    (alert.resolvedAt != nil ? 1 : 0)
+    + (alert.resolution != nil ? 1 : 0)
+}
+
+/// Removes duplicate ``OpenPullRequest`` records for the same repository and PR number.
+///
+/// CloudKit sync can materialise multiple copies of the same logical PR. For each duplicate
+/// group the most recently-created record is kept; the rest are deleted.
+@MainActor
+private func deduplicateOpenPullRequests(in context: ModelContext) {
+    guard let all = try? context.fetch(FetchDescriptor<OpenPullRequest>()) else { return }
+
+    var groups: [String: [OpenPullRequest]] = [:]
+    for pr in all {
+        let repoKey = "\(pr.repository?.owner ?? "")/\(pr.repository?.name ?? "")"
+        groups["\(repoKey):\(pr.number)", default: []].append(pr)
+    }
+
+    var deletedCount = 0
+    for group in groups.values where group.count > 1 {
+        let ranked = group.sorted { $0.createdAt > $1.createdAt }
+        for duplicate in ranked.dropFirst() {
+            context.delete(duplicate)
+            deletedCount += 1
+        }
+    }
+
+    if deletedCount > 0 {
+        try? context.save()
+        print("[Focus] 🧹 Removed \(deletedCount) duplicate open PR record(s)")
+    }
+}
+
 // MARK: - ModelContainer
 
-private let containerLogger = Logger(subsystem: "com.danberry.Focus", category: "ModelContainer")
-
-/// Builds the app's SwiftData model container, preferring a CloudKit-backed store.
-///
-/// Attempts to open the existing store at the default SwiftData URL with
-/// `cloudKitDatabase: .automatic` so iCloud sync is enabled and existing local
-/// data migrates transparently. Falls back to a local-only store at the same
-/// URL if CloudKit initialisation fails (e.g. no iCloud account signed in,
-/// entitlement mismatch in a development build, or simulator without iCloud).
 private func makeFocusModelContainer() -> ModelContainer {
     let storeURL = URL.applicationSupportDirectory.appending(path: "default.store")
 
@@ -379,21 +502,7 @@ private func makeFocusModelContainer() -> ModelContainer {
         SavedBranch.self,
     ]
 
-    // Prefer CloudKit-backed store so data roams across the user's devices.
-    let cloudConfig = ModelConfiguration(url: storeURL, cloudKitDatabase: .automatic)
-    do {
-        let container = try ModelContainer(for: Schema(allTypes), configurations: cloudConfig)
-        containerLogger.info("CloudKit-backed store opened at \(storeURL.path)")
-        print("[Focus] ✅ CloudKit store opened successfully")
-        return container
-    } catch {
-        containerLogger.error("CloudKit store failed (\(error)). Falling back to local-only store.")
-        print("[Focus] ❌ CloudKit store FAILED — using local-only. Error: \(error)")
-    }
-
-    // Fallback: local-only store at the same URL — preserves existing data even
-    // when CloudKit is unavailable (no iCloud account, simulator, CI, etc.).
-    let localConfig = ModelConfiguration(url: storeURL, cloudKitDatabase: .none)
+    let config = ModelConfiguration(url: storeURL, cloudKitDatabase: .none)
     // swiftlint:disable:next force_try
-    return try! ModelContainer(for: Schema(allTypes), configurations: localConfig)
+    return try! ModelContainer(for: Schema(allTypes), configurations: config)
 }
