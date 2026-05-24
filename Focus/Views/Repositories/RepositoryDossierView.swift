@@ -113,13 +113,19 @@ struct RepositoryDossierView: View {
 
                 section(number: "03", title: "People") {
                     DossierCardView {
-                        VStack(alignment: .leading, spacing: 8) {
-                            cardTitle("Contributors (30d)")
+                        VStack {
                             if dossier.contributors.isEmpty {
                                 emptyText
                             } else {
                                 ForEach(dossier.contributors.prefix(6)) { contributor in
-                                    contributorRow(contributor)
+                                    let index = dossier.contributors.firstIndex(
+                                        where: { $0.login
+                                            == contributor.login } )!
+                                    let includeDivider = index < 5 && index < dossier.contributors.count - 1
+                                    contributorRow(
+                                        contributor,
+                                        includeDivider: includeDivider
+                                    )
                                 }
                             }
                         }
@@ -580,25 +586,57 @@ struct RepositoryDossierView: View {
     // MARK: - Row Builders
 
     /// Renders a row inside the contributors card.
-    private func contributorRow(_ contributor: RepositoryDossier.Contributor) -> some View {
-        HStack(spacing: 8) {
-            Text("@\(contributor.login)")
-                .font(BriefingFont.body)
-                .foregroundStyle(BriefingColor.ink)
-                .lineLimit(1)
-            if let role = contributor.role {
-                Text(role)
-                    .font(BriefingFont.meta)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(BriefingColor.paper3, in: Capsule())
-                    .foregroundStyle(BriefingColor.ink2)
+    private func contributorRow(_ contributor: RepositoryDossier.Contributor, includeDivider: Bool) -> some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                AsyncImage(
+                    url: URL(
+                        string: "https://github.com/\(contributor.login).png?size=90"
+                    )
+                ) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Text(loginInitials(contributor.login))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(BriefingColor.ink2)
+                }
+                .frame(width: 30, height: 30)
+                .background(BriefingColor.paper3, in: Circle())
+                .clipShape(Circle())
+                
+                VStack(alignment: .leading) {
+                    
+                    if let name = contributor.name {
+                        Text(name)
+                            .font(BriefingFont.body)
+                            .foregroundStyle(BriefingColor.ink)
+                            .lineLimit(1)
+                    } else {
+                        Text("@\(contributor.login)")
+                            .font(BriefingFont.body)
+                            .foregroundStyle(BriefingColor.ink)
+                            .lineLimit(1)
+                    }
+                    
+                    
+                    if let role = contributor.role {
+                        Text(role)
+                            .font(BriefingFont.meta)
+                            .foregroundStyle(BriefingColor.ink2)
+                    }
+                }
+                Spacer(minLength: 4)
+                Text("\(contributor.mergedPRs30d)")
+                    .foregroundStyle(BriefingColor.ink3)
             }
-            Spacer(minLength: 4)
-            Text("\(contributor.mergedPRs30d)")
-                .font(BriefingFont.meta)
-                .foregroundStyle(BriefingColor.ink3)
+            
+            if includeDivider {
+                Divider()
+            }
         }
+        .padding(.bottom, includeDivider ? 8 : 0)
     }
 
     /// Renders a row inside the alerts card.
