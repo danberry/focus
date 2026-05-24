@@ -175,12 +175,12 @@ struct RepositoryDossier: Sendable {
             DailyCount(label: "Sat", count: 12)
         ],
         contributors: [
-            Contributor(login: "jordan-m", mergedPRs30d: 14, role: "Lead"),
-            Contributor(login: "ana-s", mergedPRs30d: 11, role: nil),
-            Contributor(login: "rahul-k", mergedPRs30d: 9, role: nil),
-            Contributor(login: "miguel-t", mergedPRs30d: 7, role: "Reviewer"),
-            Contributor(login: "priya-s", mergedPRs30d: 5, role: nil),
-            Contributor(login: "sasha-q", mergedPRs30d: 3, role: nil)
+            Contributor(
+                login: "jordan-m",
+                name: "",
+                mergedPRs30d: 14,
+                role: "Lead"
+            )
         ],
         hotFiles: [
             HotFile(path: "Sources/Payments/ChargeProcessor.swift", churns30d: 38, weeklyChurns: [4, 7, 5, 9, 6, 4, 3]),
@@ -359,6 +359,9 @@ extension RepositoryDossier {
 
         /// The contributor's GitHub login.
         let login: String
+        
+        /// The contributor's name.
+        let name: String?
 
         /// Pull requests merged by this contributor during the last 30 days.
         let mergedPRs30d: Int
@@ -649,6 +652,7 @@ extension RepositoryDossier {
             .map { login, count in
                 Contributor(
                     login: login,
+                    name: memberByLogin[login]?.name,
                     mergedPRs30d: count,
                     role: memberByLogin[login]?.jobTitle?.name
                 )
