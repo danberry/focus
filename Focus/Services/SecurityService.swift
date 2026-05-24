@@ -319,8 +319,13 @@ struct SecurityService: Sendable {
     func applyCodeScanningAlerts(_ alerts: [CodeScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        var existingByNumber = (repository.codeScanningAlertDetails ?? []).reduce(into: [Int: CodeScanningAlert]()) {
-            $0[$1.alertNumber] = $1
+        var existingByNumber: [Int: CodeScanningAlert] = [:]
+        for alert in repository.codeScanningAlertDetails ?? [] {
+            if existingByNumber[alert.alertNumber] != nil {
+                context.delete(alert)
+            } else {
+                existingByNumber[alert.alertNumber] = alert
+            }
         }
 
         for response in alerts {
@@ -423,8 +428,13 @@ struct SecurityService: Sendable {
     func applySecretScanningAlerts(_ alerts: [SecretScanningAlertResponse]?, to repository: SavedRepository, in context: ModelContext) {
         guard let alerts else { return }
 
-        var existingByNumber = (repository.secretScanningAlertDetails ?? []).reduce(into: [Int: SecretScanningAlert]()) {
-            $0[$1.alertNumber] = $1
+        var existingByNumber: [Int: SecretScanningAlert] = [:]
+        for alert in repository.secretScanningAlertDetails ?? [] {
+            if existingByNumber[alert.alertNumber] != nil {
+                context.delete(alert)
+            } else {
+                existingByNumber[alert.alertNumber] = alert
+            }
         }
 
         for response in alerts {
