@@ -151,7 +151,6 @@ struct AddRepositoryView: View {
 
         do {
             let repo = try await repositoryService.fetchRepository(owner: trimmedOwner, name: trimmedName)
-            let metrics = await securityService.fetchMetrics(owner: trimmedOwner, repo: trimmedName)
             let saved = SavedRepository(
                 githubId: repo.id,
                 owner: trimmedOwner,

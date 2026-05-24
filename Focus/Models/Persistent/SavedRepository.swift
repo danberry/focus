@@ -42,7 +42,7 @@ final class SavedRepository {
     var isInMaintenance: Bool = false
 
     /// The visibility of the repository on GitHub (`"PUBLIC"`, `"PRIVATE"`, or `"INTERNAL"`).
-    var visibility: String = "PUBLIC"
+    var visibility: String = ""
 
     // MARK: - Init
 

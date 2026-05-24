@@ -164,7 +164,8 @@ struct SyncService: Sendable {
             dependabotAlerts: dep, codeScanningAlerts: cs, secretScanningAlerts: ss,
             codeownersEntries: co, velocityData: vel, openPRs: prs, commitActivity: ca,
             releases: rel, branches: br,
-            repositoryDescription: meta?.description
+            repositoryDescription: meta?.description,
+            visibility: meta?.visibility
         )
     }
 
@@ -204,6 +205,9 @@ struct SyncService: Sendable {
         if let desc = fetch.repositoryDescription {
             repository.repositoryDescription = desc
         }
+        if let visibility = fetch.visibility {
+            repository.visibility = visibility
+        }
     }
 }
 
@@ -226,4 +230,5 @@ private struct RepoSyncFetch: Sendable {
     let releases: [ReleaseData]?
     let branches: [BranchData]?
     let repositoryDescription: String?
+    let visibility: String?
 }
