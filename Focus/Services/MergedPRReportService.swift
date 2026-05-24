@@ -181,7 +181,6 @@ struct MergedPRReportService: Sendable {
     private func formattedDate(_ date: Date) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
-        fmt.timeZone = TimeZone(identifier: "UTC")
         return fmt.string(from: date)
     }
 }

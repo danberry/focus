@@ -1,5 +1,22 @@
 import SwiftUI
 
+extension Date {
+    
+    static func currentWeek() -> DateInterval? {
+        let calendar = Calendar.current
+        let today = Date()
+        let interval = calendar.dateInterval(
+            of: .weekOfYear,
+            for: today
+        )
+        guard let interval else { return nil }
+        let end = calendar.date(byAdding: .day, value: 6, to: interval.start)
+        guard let end else { return nil }
+        return DateInterval(start: interval.start, end: end)
+    }
+    
+}
+
 // MARK: - RepositoryDossierView
 
 /// A scrollable "dossier" screen that summarizes a single repository across activity,
@@ -273,11 +290,31 @@ struct RepositoryDossierView: View {
     /// The KPI tiles, with thin dividers injected between them on regular width.
     @ViewBuilder
     private func kpiTiles(includeAll: Bool, showDividers: Bool = true) -> some View {
-        let tiles: [(label: String, value: String, delta: Int?, footnote: String?, isAlert: Bool)] = [
-            ("Merged",             "\(dossier.kpi.mergedThisWeek)",     dossier.kpi.mergedThisWeekDelta, nil,                                                                       false),
-            ("Open PRs",         "\(dossier.kpi.openPRs)",             nil,                            nil,                                                                       false),
-("Security",         dossier.kpi.securityAlerts == 0 ? "0 🎉" : "\(dossier.kpi.securityAlerts)", nil, dossier.kpi.criticalAlerts > 0 ? "\(dossier.kpi.criticalAlerts) critical" : nil, dossier.kpi.criticalAlerts > 0),
-            ("Contributors 30d", "\(dossier.kpi.contributors30d)",     nil,                            nil,                                                                        false),
+        let tiles: [(label: String, value: String, delta: Int?, isSuccess: Bool)] = [
+            (
+                "Merged",
+                "\(dossier.kpi.mergedThisWeek)",
+                dossier.kpi.mergedThisWeekDelta,
+                false
+            ),
+            (
+                "Open PRs",
+                "\(dossier.kpi.openPRs)",
+                nil,
+                false
+            ),
+            (
+                "Security",
+                "\(dossier.kpi.securityAlerts)",
+                nil,
+                dossier.kpi.securityAlerts == 0
+            ),
+            (
+                "Contributors 30d",
+                "\(dossier.kpi.contributors30d)",
+                nil,
+                false
+            ),
         ]
         ForEach(Array(tiles.enumerated()), id: \.offset) { index, tile in
             if showDividers && index > 0 {
@@ -289,8 +326,7 @@ struct RepositoryDossierView: View {
                 label: tile.label,
                 value: tile.value,
                 delta: tile.delta,
-                footnote: tile.footnote,
-                isAlert: tile.isAlert
+                isSuccess: tile.isSuccess
             )
             .frame(maxWidth: includeAll ? .infinity : nil)
         }
@@ -379,8 +415,16 @@ struct RepositoryDossierView: View {
             if dossier.openPRs.isEmpty {
                 DossierCardView { emptyText }
             } else {
-                ForEach(dossier.openPRs.prefix(6)) { pr in
-                    prCard(pr)
+                DossierCardView {
+                    VStack(spacing: 10) {
+                        ForEach(dossier.openPRs.prefix(6)) { pr in
+                            let index = dossier.openPRs.firstIndex(
+                                where: { $0.id
+                                    == pr.id } )!
+                            let includeDivider = index < 5 && index < dossier.openPRs.count - 1
+                            prCard(pr, includeDivider: includeDivider)
+                        }
+                    }
                 }
             }
         }
@@ -437,38 +481,44 @@ struct RepositoryDossierView: View {
 
     /// A card representing a single open pull request, with a red tone when stale (≥ 30 days old).
     @ViewBuilder
-    private func prCard(_ pr: RepositoryDossier.OpenPR) -> some View {
+    private func prCard(_ pr: RepositoryDossier.OpenPR, includeDivider: Bool) -> some View {
         let ageDays = Int(Date().timeIntervalSince(pr.createdAt) / 86_400)
         let isStale = ageDays >= 30
-        DossierCardView(tone: .neutral) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("#\(pr.id, format: .number.grouping(.never))")
-                        .font(BriefingFont.meta)
-                        .foregroundStyle(isStale ? Color("customYellow") : BriefingColor.ink3)
-                    Spacer()
-                    Text(ageString(from: pr.createdAt))
-                        .font(BriefingFont.meta)
-                        .foregroundStyle(isStale ? Color("customYellow") : BriefingColor.ink3)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("#\(pr.id, format: .number.grouping(.never))")
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(
+                        isStale ? .customYellow : BriefingColor.ink3
+                    )
+                Spacer()
+                Text(ageString(from: pr.createdAt))
+                    .font(BriefingFont.meta)
+                    .foregroundStyle(
+                        isStale ? .customYellow : BriefingColor.ink3
+                    )
+            }
+            HStack(spacing: 8) {
+                AsyncImage(url: URL(string: "https://github.com/\(pr.authorLogin).png?size=44")) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Text(loginInitials(pr.authorLogin))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(BriefingColor.ink2)
                 }
-                HStack(spacing: 8) {
-                    AsyncImage(url: URL(string: "https://github.com/\(pr.authorLogin).png?size=44")) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Text(loginInitials(pr.authorLogin))
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(BriefingColor.ink2)
-                    }
-                    .frame(width: 22, height: 22)
-                    .background(BriefingColor.paper3, in: Circle())
-                    .clipShape(Circle())
-                    Text(pr.title)
-                        .font(BriefingFont.body)
-                        .foregroundStyle(BriefingColor.ink)
-                        .lineLimit(2)
-                }
+                .frame(width: 22, height: 22)
+                .background(BriefingColor.paper3, in: Circle())
+                .clipShape(Circle())
+                Text(pr.title)
+                    .font(BriefingFont.body)
+                    .foregroundStyle(BriefingColor.ink)
+                    .lineLimit(2)
+            }
+            if includeDivider {
+                Divider()
+                    .padding(.top, 4)
             }
         }
     }
@@ -484,12 +534,9 @@ struct RepositoryDossierView: View {
     /// Fetches merged PRs for this repository during the current calendar week (Sun–Sat, UTC)
     /// and populates `mergedByDay` with per-weekday counts.
     private func loadMergedByDay() async {
-        var utcCalendar = Calendar(identifier: .gregorian)
-        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
-        let today = Date()
-        guard let weekInterval = utcCalendar.dateInterval(of: .weekOfYear, for: today) else { return }
-        let weekStart = weekInterval.start
-        let weekEnd = min(today, weekInterval.end.addingTimeInterval(-1))
+        guard let week = Date.currentWeek() else { return }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone.gmt
 
         let service = MergedPRReportService(
             graphQL: GraphQLClient(tokenProvider: authService.tokenProvider)
@@ -498,15 +545,18 @@ struct RepositoryDossierView: View {
         do {
             let byRepo = try await service.fetchMergedPRs(
                 for: [(owner: dossier.owner, name: dossier.name)],
-                from: weekStart,
-                to: weekEnd
+                from: week.start,
+                to: week.end
             )
             let allPRs = byRepo.values.flatMap { $0 }
             let dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
             var counts = [Int](repeating: 0, count: 7)
             for pr in allPRs {
                 // weekday: 1 = Sunday, 2 = Monday, …, 7 = Saturday
-                let weekday = utcCalendar.component(.weekday, from: pr.mergedAt) - 1
+                let weekday = calendar.component(
+                    .weekday,
+                    from: pr.mergedAt
+                ) - 1
                 if weekday >= 0 && weekday < 7 { counts[weekday] += 1 }
             }
             mergedByDay = zip(dayLabels, counts).map { label, count in
@@ -775,11 +825,8 @@ private struct DossierKPITileView: View {
     /// An optional week-over-week delta.
     var delta: Int? = nil
 
-    /// An optional secondary footnote (e.g. `"3 critical"`).
-    var footnote: String? = nil
-
     /// When `true`, the tile renders the value in the red alert color.
-    var isAlert: Bool = false
+    var isSuccess: Bool = false
 
     // MARK: - Body
 
@@ -789,37 +836,36 @@ private struct DossierKPITileView: View {
             Text(label)
                 .font(BriefingFont.eyebrow)
                 .textCase(.uppercase)
-                .foregroundStyle(isAlert ? BriefingColor.red2 : BriefingColor.ink3)
+                .foregroundStyle(BriefingColor.ink3)
                 .lineLimit(1)
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
                     .font(BriefingFont.kpiSupporting)
-                    .foregroundStyle(isAlert ? BriefingColor.red : BriefingColor.ink)
-                if let delta {
+                    .foregroundStyle(BriefingColor.ink)
+                if isSuccess {
+                    Text("🎉")
+                        .font(.system(size: 17, weight: .semibold))
+                } else if let delta {
                     deltaBadge(delta)
                 }
-            }
-            if let footnote {
-                Text(footnote)
-                    .font(BriefingFont.meta)
-                    .foregroundStyle(BriefingColor.ink3)
-                    .lineLimit(1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(isAlert ? BriefingColor.redBg : BriefingColor.paper, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(isAlert ? BriefingColor.red.opacity(0.25) : Color.primary.opacity(0.08), lineWidth: 1))
+        .background(BriefingColor.paper, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
     }
 
     // MARK: - Helpers
 
     /// A tiny badge showing the signed week-over-week delta.
     private func deltaBadge(_ value: Int) -> some View {
-        let symbol = value > 0 ? "↑" : (value < 0 ? "↓" : "→")
-        let color: Color = value > 0 ? BriefingColor.green : (value < 0 ? BriefingColor.red : .gray700)
-        return Text(symbol)
+        let symbol = value > 0 ? "arrow.up.forward" : (value < 0 ? "arrow.down.forward" : "arrow.forward")
+        let color: Color = value > 0 ? .customGreen : (
+            value < 0 ? .customPurple : .gray
+        )
+        return Image(systemName: symbol)
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(color)
     }

@@ -61,7 +61,7 @@ struct ShippingKPICardView: View {
     }
 
     private var subtitle: String? {
-        guard let prior = shipping.priorWeekValue else { return nil }
+        guard shipping.priorWeekValue != nil else { return nil }
         return "PRs merged"
     }
 }
